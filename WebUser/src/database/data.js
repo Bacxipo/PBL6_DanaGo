@@ -152,5 +152,70 @@ const placesData = [
         mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d249133.31358100995!2d108.11088354381765!3d16.126593049698688!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31423d72d1be522d%3A0x1e7339a6534e4e7!2zQsOhbiDEkeG6o28gU8ahbiBUcsOg!5e1!3m2!1svi!2sus!4v1788396840081!5m2!1svi!2sus'
     }
 ];
+const reviews = [
+        {
+            id: 1,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Nguyễn Văn A",
+            stars: 5,
+            comment: "Địa điểm rất đẹp, không khí mát mẻ và trong lành. Gia đình mình rất thích chuyến đi này!",
+        },
+        {
+            id: 2,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Trần Thị B",
+            stars: 4.5,
+            comment: "Khung cảnh tuyệt vời để chụp hình check-in. Mọi người nên đi vào buổi sáng để đỡ đông hơn nhé.",
+        },
+        {
+            id: 3,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Lê Hoàng C",
+            stars: 4,
+            comment: "Dịch vụ khá ổn, nhân viên thân thiện. Giá vé hợp lý với trải nghiệm mang lại.",
+        },
+        {
+            id: 4,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Nguyễn Văn A",
+            stars: 5,
+            comment: "Địa điểm rất đẹp, không khí mát mẻ và trong lành. Gia đình mình rất thích chuyến đi này!",
+        },
+        {
+            id: 5,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Trần Thị B",
+            stars: 4.5,
+            comment: "Khung cảnh tuyệt vời để chụp hình check-in. Mọi người nên đi vào buổi sáng để đỡ đông hơn nhé.",
+        },
+        {
+            id: 6,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Lê Hoàng C",
+            stars: 4,
+            comment: "Dịch vụ khá ổn, nhân viên thân thiện. Giá vé hợp lý với trải nghiệm mang lại.",
+        },
+        {
+            id: 7,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Nguyễn Văn A",
+            stars: 5,
+            comment: "Địa điểm rất đẹp, không khí mát mẻ và trong lành. Gia đình mình rất thích chuyến đi này!",
+        },
+        {
+            id: 8,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Trần Thị B",
+            stars: 4.5,
+            comment: "Khung cảnh tuyệt vời để chụp hình check-in. Mọi người nên đi vào buổi sáng để đỡ đông hơn nhé.",
+        },
+        {
+            id: 9,
+            avataUrl: "https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg",
+            name: "Lê Hoàng C",
+            stars: 4,
+            comment: "Dịch vụ khá ổn, nhân viên thân thiện. Giá vé hợp lý với trải nghiệm mang lại.",
+        },
+    ];
 
-export { categoriesData, placesData, districtsData };
+export { categoriesData, placesData, districtsData, reviews };

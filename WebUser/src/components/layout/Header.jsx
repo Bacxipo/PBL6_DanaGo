@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom';
-
+import {User} from 'lucide-react';
 export default function Header() {
     return (
         <header className="bg-white shadow-md w-full py-4 sticky top-0 z-50">
@@ -31,9 +31,9 @@ export default function Header() {
                     <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">Trip</a>
                     <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">Suggestions</a>
                 </nav>
-                <div>
-                    <i className="fa-solid fa-user text-[#006971] text-lg"></i>
-                </div>
+                <NavLink to="/personal" className="flex items-center gap-2 text-gray-600 hover:text-[#006971] transition-colors">
+                    <User className="w-5 h-5 cursor-pointer" />
+                </NavLink>
             </div>
         </header>
     );

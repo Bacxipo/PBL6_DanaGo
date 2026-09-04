@@ -2,9 +2,9 @@ import { useParams, Link } from "react-router-dom";
 import { MapPin, ArrowLeft, Star } from "lucide-react";
 import PlaceAction from "../components/comon/PlaceAction";
 import PlaceMap from "../components/comon/PlaceMap";
-import { placesData } from "../database/data";
+import { placesData,reviews } from "../database/data";
 import PlaceReview from "../components/comon/PlaceReview";
-
+import ReviewForm from "../components/comon/ReviewForm";
 export default function DetailPlace() {
     const { id } = useParams();
     const place = placesData.find((item) => item.id === Number(id));
@@ -40,11 +40,21 @@ export default function DetailPlace() {
             <div>
                 <PlaceMap mapUrl={place.mapUrl} />
             </div>
-            <div className = 'w-2/3 flex flex-col gap-3'>
-                <h3 className="font-bold">Đánh giá từ du khách</h3>
-                <div className="flex gap-x-10">
-                    <PlaceReview avataUrl={"https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg"} name={"Nguyen Van A"} stars={4.8} comment="hellofohfifeefgfgiiFdgfgsbvsgsudvbfsuvbbufvbfvsbvddiusbvsfivgddbsgvbs" />
-                    <PlaceReview avataUrl={"https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg"} name={"Nguyen Van A"} stars={4.8} comment="hello" />
+            <div className = 'w-full flex flex-col gap-3'>
+                <div className="w-2/3 flex flex-col gap-6 mt-6">
+                    <ReviewForm/>
+                    <h3 className="font-bold">Đánh giá từ du khách</h3>
+                    <div className="flex flex-col gap-4 h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                        {reviews.map((review) => (
+                            <PlaceReview
+                                key={review.id}
+                                avataUrl={review.avataUrl}
+                                name={review.name}
+                                stars={review.stars}
+                                comment={review.comment}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

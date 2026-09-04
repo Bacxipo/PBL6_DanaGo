@@ -2,7 +2,7 @@ import Catalog from '../components/comon/Catalog';
 import PlaceCard from '../components/comon/PlaceCard';
 
 import heroImg from '../assets/images/cr.jpg';
-
+import { Link } from 'react-router-dom';
 import { categoriesData,placesData,districtsData } from '../database/data';
 
 export default function Home() {
@@ -68,9 +68,9 @@ export default function Home() {
                     <p className='text-cyan-100 text-sm md:text-base'>Để chúng tôi gợi ý hành trình hoàn hảo dựa trên sở thích và ngân sách của bạn</p>
                 </div>
                 <div>
-                    <a href="/explore" className='inline-flex items-center justify-center px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-colors shadow-md'>
+                    <Link to="/explore" className='inline-flex items-center justify-center px-6 py-3 bg-white text-[#006971] hover:bg-gray-200 font-bold rounded-xl transition-colors shadow-md'>
                         Bắt đầu ngay
-                    </a>
+                    </Link>
                 </div>
             </div>
         </section>

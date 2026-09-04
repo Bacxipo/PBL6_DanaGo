@@ -48,7 +48,7 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
 
     if (id) {
         return (
-            <Link to={`/place/${id}`} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col justify-between cursor-pointer">
+            <Link to={`/explore/place/${id}`} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col justify-between cursor-pointer">
                 {content}
             </Link>
         );
