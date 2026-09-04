@@ -3,6 +3,7 @@ import { MapPin, ArrowLeft, Star } from "lucide-react";
 import PlaceAction from "../components/comon/PlaceAction";
 import PlaceMap from "../components/comon/PlaceMap";
 import { placesData } from "../database/data";
+import PlaceReview from "../components/comon/PlaceReview";
 
 export default function DetailPlace() {
     const { id } = useParams();
@@ -38,6 +39,13 @@ export default function DetailPlace() {
             </div>
             <div>
                 <PlaceMap mapUrl={place.mapUrl} />
+            </div>
+            <div className = 'w-2/3 flex flex-col gap-3'>
+                <h3 className="font-bold">Đánh giá từ du khách</h3>
+                <div className="flex gap-x-10">
+                    <PlaceReview avataUrl={"https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg"} name={"Nguyen Van A"} stars={4.8} comment="hellofohfifeefgfgiiFdgfgsbvsgsudvbfsuvbbufvbfvsbvddiusbvsfivgddbsgvbs" />
+                    <PlaceReview avataUrl={"https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg"} name={"Nguyen Van A"} stars={4.8} comment="hello" />
+                </div>
             </div>
         </section>
     );
