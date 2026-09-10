@@ -1,0 +1,57 @@
+services:
+  # 1. PostgreSQL Database Container (Dùng tạm thời trước khi chuyển sang NeonConsole)
+  postgres:
+    image: postgres:16-alpine
+    container_name: danago_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: danago_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d danago_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. NestJS API Service
+  api:
+    image: danago_api:latest
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: danago_api
+    restart: always
+    ports:
+      - '5000:5000'
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/danago_db?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 3. Next.js Web Service
+  web:
+    image: danago_web:latest
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: danago_web
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

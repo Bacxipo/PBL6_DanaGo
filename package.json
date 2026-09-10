@@ -1,0 +1,13 @@
+{
+  "name": "danago-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api start:dev",
+    "dev:user": "pnpm --filter react-tailwind dev",
+    "build": "pnpm --recursive build",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down"
+  }
+}
