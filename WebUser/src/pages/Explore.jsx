@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState ,useEffect} from "react";
 import Rating from '../components/comon/Rating';
-import PlaceCard from '../components/comon/PlaceCard';
 import { categoriesData, placesData, districtsData } from '../database/data';
-
+import PlaceList from "../components/comon/PlaceList";
 export default function Explore() {
     const [category, setCategory] = useState("Tất cả");
     const [address,setAddress] = useState("Tất cả quận");
+
     const filterPlace = placesData.filter((item)=>{
         const choseCategory = category === "Tất cả" || item.category === category;
         const choseAddress = address === "Tất cả quận" || item.address === address;
         return choseCategory && choseAddress;
-    })
+    });
 
     return (
         <section className="w-full space-y-12 pb-8 flex gap-6">
@@ -37,7 +37,9 @@ export default function Explore() {
                             <button
                                 key={item.id}
                                 type="button"
-                                onClick={() => setCategory(item.name)}
+                                onClick={() => {
+                                    setCategory(item.name);
+                                }}
                                 className={`cursor-pointer px-4 py-2 rounded-xl text-sm text-center transition-all ${
                                     category === item.name 
                                         ? "bg-[#007C83] text-white font-bold shadow-sm" 
@@ -83,7 +85,9 @@ export default function Explore() {
                     <div>
                         <select
                             value = {address}
-                            onChange={(e)=> setAddress(e.target.value)} 
+                            onChange={(e)=> {
+                                setAddress(e.target.value); 
+                            }}
                             className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none cursor-pointer">
                             {districtsData.map((item) => (
                                 <option key={item.id} value={item.name}>{item.name}</option>
@@ -95,33 +99,10 @@ export default function Explore() {
                     <button type="submit" className="bg-[#006971] w-full p-2.5 rounded-xl font-bold text-white cursor-pointer hover:bg-[#00555c] transition-colors">Áp dụng</button>
                 </div>
             </aside>
-            <div className = 'flex flex-col gap-y-4 font-bold'>
+            <div className = 'flex flex-col gap-y-4 font-bold w-3/4'>
                 <span>Tìm thấy {filterPlace.length} kết quả</span>
                 <div className="w-full h-[calc(100vh-150px)] overflow-y-auto pr-2">
-                    {filterPlace.length > 0 ?  
-                        (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            {filterPlace.map((item) => (
-                                <PlaceCard
-                                    key={item.id}
-                                    id={item.id}
-                                    name={item.name}
-                                    img={item.img}
-                                    des={item.des}
-                                    stars={item.stars}
-                                    price={item.priceDisplay}
-                                    category={item.category}
-                                    address={item.address}
-                                />      
-                            ))} 
-                        </div>
-                        ):
-                        (
-                            <div className="flex items-center justify-center h-full min-h-[400px] text-center">
-                                <h3 className="text-xl font-bold text-gray-700 mb-2">Không tìm thấy dữ liệu</h3>
-                            </div>
-                        )
-                    }        
+                    <PlaceList places = {filterPlace}/>
                 </div>
             </div>
         </section>

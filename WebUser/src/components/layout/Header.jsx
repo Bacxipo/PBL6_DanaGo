@@ -16,7 +16,7 @@ export default function Header() {
                                 : "text-gray-600 hover:text-[#006971] text-sm font-semibold transition-colors"
                         }
                     >
-                        Home
+                        Trang chủ
                     </NavLink>
                     <NavLink 
                         to="/explore" 
@@ -26,10 +26,10 @@ export default function Header() {
                                 : "text-gray-600 hover:text-[#006971] text-sm font-semibold transition-colors"
                         }
                     >
-                        Explore
+                        Khám phá
                     </NavLink>
-                    <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">Trip</a>
-                    <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">Suggestions</a>
+                    <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">Cộng đồng</a>
+                    <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">AI Plan</a>
                 </nav>
                 <NavLink to="/personal" className="flex items-center gap-2 text-gray-600 hover:text-[#006971] transition-colors">
                     <User className="w-5 h-5 cursor-pointer" />

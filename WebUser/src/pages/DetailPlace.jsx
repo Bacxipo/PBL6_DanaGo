@@ -5,9 +5,14 @@ import PlaceMap from "../components/comon/PlaceMap";
 import { placesData,reviews } from "../database/data";
 import PlaceReview from "../components/comon/PlaceReview";
 import ReviewForm from "../components/comon/ReviewForm";
+import { useEffect } from "react";
 export default function DetailPlace() {
     const { id } = useParams();
     const place = placesData.find((item) => item.id === Number(id));
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [id]);
 
     if (!place) {
         return (

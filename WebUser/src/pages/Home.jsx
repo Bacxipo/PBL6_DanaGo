@@ -45,7 +45,7 @@ export default function Home() {
             <div className="w-full max-w-7xl mx-auto px-2">
                 <h2 className="text-black font-bold text-2xl md:text-3xl mb-6">Địa điểm nổi tiếng</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                    {placesData.map((place) => (
+                    {placesData.slice(0, 4).map((place) => (
                         <PlaceCard 
                             key={place.id}
                             id={place.id}

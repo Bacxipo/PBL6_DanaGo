@@ -1,9 +1,9 @@
-export default function UserInfo(){
+export default function SettingInfo(){
     return(
         <div className='flex flex-col'>
-            <h3>Thông tin cá nhân</h3>
+            <h3 className="text-lg font-semibold text-gray-800">Thông tin cá nhân</h3>
             <form className= 'flex flex-col '>
-                <div className = 'flex gap-6'>
+                <div className = 'flex gap-6 p-3'>
                     <div className = 'rounded-full w-32 h-32 overflow-hidden'>
                         <img src="https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg" alt="" className="w-full h-full object-cover"/>
                     </div>
@@ -29,6 +29,31 @@ export default function UserInfo(){
                 <div>
                     <span>Giới thiệu bản thân</span>
                     <textarea placeholder="Nhập giới thiệu bản thân" className="w-full p-2 text-sm text-gray-800 outline-none placeholder-gray-500"></textarea>
+                </div>
+                <div className="flex gap-4 mt-4 justify-end">
+                    <button type="reset" className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-semibold text-sm transition-colors">
+                        Hủy
+                    </button>
+                    <button type="submit" className="px-4 py-2 bg-[#006971] hover:bg-[#005258] text-white rounded-md font-semibold text-sm transition-colors">
+                        Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+            <h3 className="text-lg font-semibold text-gray-800">Thay đổi mật khẩu</h3>
+            <form className= 'flex flex-col'>
+                <div className = 'flex flex-col gap-6 p-3'>
+                    <label>
+                        <span>Mật khẩu hiện tại:</span>
+                        <input type="password" placeholder="Nhập mật khẩu hiện tại" className="w-full p-2 text-sm text-gray-800 outline-none placeholder-gray-500"/>
+                    </label>
+                    <label>
+                        <span>Mật khẩu mới:</span>
+                        <input type="password" placeholder="Nhập mật khẩu mới" className="w-full p-2 text-sm text-gray-800 outline-none placeholder-gray-500"/>
+                    </label>
+                    <label>
+                        <span>Xác nhận mật khẩu mới:</span>
+                        <input type="password" placeholder="Xác nhận mật khẩu mới" className="w-full p-2 text-sm text-gray-800 outline-none placeholder-gray-500"/>
+                    </label>
                 </div>
                 <div className="flex gap-4 mt-4 justify-end">
                     <button type="reset" className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-semibold text-sm transition-colors">
