@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/destination_item.dart';
+import 'package:smarttrip/screens/Detail_place_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
-import 'package:smarttrip/widgets/category_selector.dart';
-import 'package:smarttrip/widgets/custom_buttom_nav_bar.dart';
-import 'package:smarttrip/widgets/destination_tile.dart';
-import 'package:smarttrip/widgets/featured_card.dart';
-import 'package:smarttrip/widgets/home_search_bar.dart';
+import 'package:smarttrip/widgets/home/category_selector.dart';
+import 'package:smarttrip/widgets/home/custom_bottom_nav_bar.dart';
+import 'package:smarttrip/widgets/home/destination_tile.dart';
+import 'package:smarttrip/widgets/home/featured_card.dart';
+import 'package:smarttrip/widgets/home/home_search_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +26,13 @@ class _HomeScreenState extends State<HomeScreen> {
     "Trekking",
     "Cafe",
   ];
+  void _navigateToDetail(DestinationItem item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => DetailPlaceScreen(item: item)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     return FeaturedCard(
                       item: item,
                       onTap: () {
-                        // Chi tiết địa điểm
+                        _navigateToDetail(item);
                       },
                     );
                   },
@@ -112,7 +120,12 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
               Column(
                 children: DestinationItem.recommendedItems.map((item) {
-                  return DestinationTile(item: item, onTap: () {});
+                  return DestinationTile(
+                    item: item,
+                    onTap: () {
+                      _navigateToDetail(item);
+                    },
+                  );
                 }).toList(),
               ),
               const SizedBox(height: 20),
@@ -127,7 +140,12 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 14),
               Column(
                 children: DestinationItem.nearbyItems.map((item) {
-                  return DestinationTile(item: item, onTap: () {});
+                  return DestinationTile(
+                    item: item,
+                    onTap: () {
+                      _navigateToDetail(item);
+                    },
+                  );
                 }).toList(),
               ),
               const SizedBox(height: 20),

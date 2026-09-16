@@ -7,6 +7,12 @@ class DestinationItem {
   final String tag;
   final String? distance;
 
+  final String? description;
+  final String? address;
+  final String? openHours;
+  final List<String>? galleryImages;
+  final double? price;
+
   const DestinationItem({
     required this.id,
     required this.title,
@@ -15,6 +21,11 @@ class DestinationItem {
     required this.rating,
     required this.tag,
     this.distance,
+    this.description,
+    this.address,
+    this.openHours,
+    this.galleryImages,
+    this.price,
   });
   static final List<DestinationItem> featuredItems = [
     const DestinationItem(
@@ -25,6 +36,16 @@ class DestinationItem {
           'https://danangfantasticity.com/wp-content/uploads/2018/10/cau-rong-top-20-cay-cau-ky-quai-nhat-the-gioi-theo-boredom-therapy-02.jpg',
       rating: 4.9,
       tag: 'Miễn phí',
+      address: 'Quận Hải Châu',
+      openHours: 'Cả ngày',
+      description:
+          'Cầu Rồng là một trong những biểu tượng kiến trúc độc đáo và niềm tự hào của người dân Đà Nẵng. Cây cầu có thiết kế hình một con rồng uốn lượn vươn mình ra biển lớn, thể hiện khát vọng phát triển mạnh mẽ của thành phố.',
+      galleryImages: [
+        'https://i.pinimg.com/736x/a3/8d/bb/a38dbbc84f787ada73f23eabc5c771eb.jpg',
+        'https://danangfantasticity.com/wp-content/uploads/2018/10/cau-rong-top-20-cay-cau-ky-quai-nhat-the-gioi-theo-boredom-therapy-04.jpg',
+        'https://danangfantasticity.com/wp-content/uploads/2018/10/cau-rong-top-20-cay-cau-ky-quai-nhat-the-gioi-theo-boredom-therapy-05.jpg',
+        'https://danangfantasticity.com/wp-content/uploads/2018/10/cau-rong-top-20-cay-cau-ky-quai-nhat-the-gioi-theo-boredom-therapy-06.jpg',
+      ],
     ),
     const DestinationItem(
       id: '2',
@@ -34,6 +55,16 @@ class DestinationItem {
           'https://media.istockphoto.com/id/1569696238/vi/anh/nh%C3%ACn-t%E1%BB%AB-tr%C3%AAn-kh%C3%B4ng-c%E1%BB%A7a-l%C3%A0ng-ph%C3%A1p-t%E1%BA%A1i-%C4%91%E1%BB%93i-bana-%C4%91%C3%A0-n%E1%BA%B5ng-vi%E1%BB%87t-nam.jpg?s=612x612&w=0&k=20&c=Lb2p3tQwJnwUaSivIi16wy9gOJXI63Nj2hoCR9dM39k=',
       rating: 4.8,
       tag: 'Vé vào cửa',
+      address: 'Hòa Vang',
+      openHours: '08:00 - 22:00',
+      description:
+          'Khu du lịch sinh thái kết hợp nghỉ dưỡng đẳng cấp với Cầu Vàng nổi tiếng thế giới.',
+      galleryImages: [
+        'https://media.istockphoto.com/id/2257167190/vi/anh/nh%C3%ACn-t%E1%BB%AB-tr%C3%AAn-kh%C3%B4ng-c%E1%BA%A7u-v%C3%A0ng-t%E1%BA%A1i-b%C3%A0-n%C3%A0-hills-%E1%BB%9F-%C4%91%C3%A0-n%E1%BA%B5ng-vi%E1%BB%87t-nam.jpg?s=612x612&w=0&k=20&c=sQbg9XpmXjFSOfqSZp8fBB9ex0GBGpVv4OyHfqSdvyo=',
+        'https://media.istockphoto.com/id/1569696238/vi/anh/nh%C3%ACn-t%E1%BB%AB-tr%C3%AAn-kh%C3%B4ng-c%E1%BB%A7a-l%C3%A0ng-ph%C3%A1p-t%E1%BA%A1i-%C4%91%E1%BB%93i-bana-%C4%91%C3%A0-n%E1%BA%B5ng-vi%E1%BB%87t-nam.jpg?s=612x612&w=0&k=20&c=Lb2p3tQwJnwUaSivIi16wy9gOJXI63Nj2hoCR9dM39k=',
+        'https://media.istockphoto.com/id/2219142901/vi/anh/cabanas-tr%C3%AAn-c%C3%A1p-treo-tr%C3%AAn-n%C3%BAi-trong-r%E1%BB%ABng-%E1%BB%9F-vi%E1%BB%87t-nam-trong-c%C3%B4ng-vi%C3%AAn-b%C3%A0-n%C3%A0-hills-v%C3%A0o-m%C3%B9a-h%C3%A8-%E1%BB%9F.jpg?s=612x612&w=0&k=20&c=HCL7RNyQ75zZv92rRmOgPnwju2KEs0sQq5kVnGMeZx4=',
+        'https://media.istockphoto.com/id/2205797477/vi/anh/m%E1%BB%99t-th%E1%BB%8B-tr%E1%BA%A5n-%C4%91%C3%A1-th%E1%BB%9Di-trung-c%E1%BB%95-xinh-%C4%91%E1%BA%B9p-%E1%BB%9F-l%C3%A0ng-ph%C3%A1p-%E1%BB%9F-c%C3%B4ng-vi%C3%AAn-b%C3%A0-n%C3%A0-hills-l%C3%BAc-ho%C3%A0ng-h%C3%B4n-%C4%91%C3%A0.jpg?s=612x612&w=0&k=20&c=Gdq8itkJOnWWDDoz7JxXOSSUSsAPYm6IwqgGUWoUdfI=',
+      ],
     ),
   ];
   static final List<DestinationItem> recommendedItems = [
