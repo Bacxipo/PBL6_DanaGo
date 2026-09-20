@@ -1,17 +1,21 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './modules/auth/auth.module';
-import { TourModule } from './modules/tour/tour.module';
-import { BookingModule } from './modules/booking/booking.module';
-import { PaymentModule } from './modules/payment/payment.module';
+import { DatabaseModule } from './shared/database/database.module';
+import { IdentityModule } from './modules/identity/identity.module';
+import { DestinationModule } from './modules/destination/destination.module';
+import { ItineraryModule } from './modules/itinerary/itinerary.module';
+import { CommunityModule } from './modules/community/community.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
-    AuthModule,
-    TourModule,
-    BookingModule,
-    PaymentModule,
+    DatabaseModule,
+    IdentityModule,
+    DestinationModule,
+    ItineraryModule,
+    CommunityModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

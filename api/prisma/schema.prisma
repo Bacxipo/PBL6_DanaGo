@@ -1,0 +1,248 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  USER
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  ACTIVE
+  LOCKED
+  PENDING
+
+  @@map("user_status")
+}
+
+enum ContentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("content_status")
+}
+
+enum ContactType {
+  HOTEL
+  RESTAURANT
+  TOUR
+  KHAC
+
+  @@map("contact_type")
+}
+
+enum NotificationType {
+  ITINERARY_REMINDER
+  PROMOTION
+
+  @@map("notification_type")
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  username     String     @unique @db.VarChar(50)
+  fullName     String     @map("full_name") @db.VarChar(100)
+  email        String     @unique @db.VarChar(150)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  avatarUrl    String?    @map("avatar_url") @db.VarChar(255)
+  bio          String?    @db.Text
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamp()
+
+  preferences          UserPreference[]
+  createdDestinations  Destination[]      @relation("CreatedDestinations")
+  uploadedImages       DestinationImage[]
+  itineraries          Itinerary[]
+  reviews              Review[]
+  uploadedReviewImages ReviewImage[]
+  favorites            Favorite[]
+  notifications        Notification[]
+
+  @@map("user")
+}
+
+model Category {
+  id      Int     @id @default(autoincrement())
+  name    String  @db.VarChar(50)
+  iconUrl String? @map("icon_url") @db.VarChar(255)
+
+  userPreferences UserPreference[]
+  destinations    Destination[]
+
+  @@map("category")
+}
+
+model UserPreference {
+  userId     Int @map("user_id")
+  categoryId Int @map("category_id")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, categoryId])
+  @@map("user_preference")
+}
+
+model Destination {
+  id          Int           @id @default(autoincrement())
+  name        String        @db.VarChar(150)
+  description String?       @db.Text
+  district    String        @db.VarChar(50)
+  latitude    Decimal?      @db.Decimal(10, 7)
+  longitude   Decimal?      @db.Decimal(10, 7)
+  addressUrl  String?       @map("address_url") @db.VarChar(255)
+  categoryId  Int?          @map("category_id")
+  ticketPrice String?       @default("Miễn phí") @map("ticket_price") @db.VarChar(150)
+  openHours   String?       @map("open_hours") @db.VarChar(100)
+  avgRating   Decimal?      @default(0) @map("avg_rating") @db.Decimal(2, 1)
+  status      ContentStatus @default(PENDING)
+  createdBy   Int?          @map("created_by")
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamp()
+
+  category       Category?          @relation(fields: [categoryId], references: [id])
+  creator        User?              @relation("CreatedDestinations", fields: [createdBy], references: [id])
+  contactInfos   ContactInfo[]
+  images         DestinationImage[]
+  itineraryItems ItineraryItem[]
+  reviews        Review[]
+  favorites      Favorite[]
+
+  @@map("destination")
+}
+
+model ContactInfo {
+  id            Int         @id @default(autoincrement())
+  destinationId Int         @map("destination_id")
+  name          String      @db.VarChar(150)
+  type          ContactType @default(KHAC)
+  phone         String?     @db.VarChar(20)
+  email         String?     @db.VarChar(150)
+  facebookUrl   String?     @map("facebook_url") @db.VarChar(255)
+  address       String?     @db.VarChar(255)
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@map("contact_info")
+}
+
+model DestinationImage {
+  id            Int      @id @default(autoincrement())
+  destinationId Int      @map("destination_id")
+  imageUrl      String   @map("image_url") @db.VarChar(255)
+  uploadedBy    Int?     @map("uploaded_by")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  uploader    User?       @relation(fields: [uploadedBy], references: [id])
+
+  @@map("destination_image")
+}
+
+model Itinerary {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  title     String   @db.VarChar(150)
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+  budget    Decimal? @default(0) @db.Decimal(12, 0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ItineraryItem[]
+
+  @@map("itinerary")
+}
+
+model ItineraryItem {
+  id            Int      @id @default(autoincrement())
+  itineraryId   Int      @map("itinerary_id")
+  destinationId Int      @map("destination_id")
+  dayIndex      Int      @map("day_index")
+  orderIndex    Int      @default(0) @map("order_index")
+  budget        Decimal? @default(0) @db.Decimal(12, 0)
+
+  itinerary   Itinerary       @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  destination Destination     @relation(fields: [destinationId], references: [id])
+  checklists  ChecklistItem[]
+
+  @@map("itinerary_item")
+}
+
+model ChecklistItem {
+  id              Int     @id @default(autoincrement())
+  itineraryItemId Int     @map("itinerary_item_id")
+  itemName        String  @map("item_name") @db.VarChar(100)
+  isChecked       Boolean @default(false) @map("is_checked")
+
+  itineraryItem ItineraryItem @relation(fields: [itineraryItemId], references: [id], onDelete: Cascade)
+
+  @@map("checklist_item")
+}
+
+model Review {
+  id            Int           @id @default(autoincrement())
+  userId        Int           @map("user_id")
+  destinationId Int           @map("destination_id")
+  rating        Int
+  comment       String?       @db.Text
+  status        ContentStatus @default(PENDING)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp()
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination   @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  images      ReviewImage[]
+
+  @@unique([userId, destinationId])
+  @@map("review")
+}
+
+model ReviewImage {
+  id         Int      @id @default(autoincrement())
+  reviewId   Int      @map("review_id")
+  imageUrl   String   @map("image_url") @db.VarChar(255)
+  uploadedBy Int?     @map("uploaded_by")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  uploader User?   @relation(fields: [uploadedBy], references: [id])
+
+  @@map("review_image")
+}
+
+model Favorite {
+  userId        Int      @map("user_id")
+  destinationId Int      @map("destination_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, destinationId])
+  @@map("favorite")
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int              @map("user_id")
+  type      NotificationType
+  title     String?          @db.VarChar(150)
+  content   String?          @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamp()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification")
+}
