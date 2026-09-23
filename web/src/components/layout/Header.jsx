@@ -18,7 +18,7 @@ export default function Header() {
         <header className="bg-white shadow-md w-full py-4 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
                 <Link href="/" className="text-[#006971] font-bold text-xl flex items-center gap-2">
-                    Smart Trip Đà Nẵng
+                    DanaGo
                 </Link>
                 <nav className="flex space-x-6 gap-x-8">
                     <Link href="/" className={getLinkClass('/')}>
@@ -27,7 +27,9 @@ export default function Header() {
                     <Link href="/explore" className={getLinkClass('/explore')}>
                         Khám phá
                     </Link>
-                    <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">Cộng đồng</a>
+                    <Link href="/community" className={getLinkClass('/community')}>
+                        Cộng đồng
+                    </Link>
                     <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">AI Plan</a>
                 </nav>
                 <Link href="/personal" className="flex items-center gap-2 text-gray-600 hover:text-[#006971] transition-colors">

@@ -1,16 +1,33 @@
+'use client';
+
+import React, { useState } from 'react';
 import { MapPin, Heart } from 'lucide-react';
 import Link from 'next/link';
 import Rating from '../ui/Rating';
-import Image from 'next/image'
+import Image from 'next/image';
 
 export default function PlaceCard({ id, name, img, des, stars, price, category, address }) {
+    const [isFav, setIsFav] = useState(false);
+
+    const handleHeartClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsFav(!isFav);
+    };
+
     const imgSrc = typeof img === 'string' ? img : img?.src || img;
 
     const content = (
         <>
             <div className="relative w-full h-48 overflow-hidden bg-gray-100">
                 <div className="relative w-full h-full overflow-hidden">
-                    <Image src={imgSrc} alt={name} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"/>
+                    <Image
+                        src={imgSrc}
+                        alt={name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"
+                    />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
                 
@@ -19,7 +36,23 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                         {category}
                     </span>
                 )}
-                <Heart className="w-4 h-4 absolute top-3 right-3 text-white/80 hover:text-red-500 transition-colors cursor-pointer" />
+
+                {/* Biểu tượng Heart UI */}
+                <button
+                    type="button"
+                    onClick={handleHeartClick}
+                    className="absolute top-3 right-3 p-1.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs transition cursor-pointer z-10"
+                    title={isFav ? "Bỏ yêu thích" : "Yêu thích"}
+                >
+                    <Heart
+                        className={`w-4 h-4 transition-all duration-200 ${
+                            isFav
+                                ? 'fill-red-500 text-red-500 scale-110'
+                                : 'text-white/90 hover:text-red-400'
+                        }`}
+                    />
+                </button>
+
                 {price && (
                     <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold text-[#006971] shadow-sm">
                         {price}

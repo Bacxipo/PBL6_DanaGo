@@ -28,3 +28,12 @@ export { default as ReviewForm } from './review/ReviewForm';
 // UI components
 export { default as Pagination } from './ui/Pagination';
 export { default as Rating } from './ui/Rating';
+
+// Community components
+export { default as CreatePostBox } from './community/CreatePostBox';
+export { default as CreatePostModal } from './community/CreatePostModal';
+export { default as PassportPostCard } from './community/PassportPostCard';
+export { default as ArticlePostCard } from './community/ArticlePostCard';
+export { default as StandardPostCard } from './community/StandardPostCard';
+export { default as CommunityFeed } from './community/CommunityFeed';
+
