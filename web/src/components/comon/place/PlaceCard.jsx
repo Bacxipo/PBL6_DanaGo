@@ -1,6 +1,7 @@
 import { MapPin, Heart } from 'lucide-react';
 import Link from 'next/link';
-import Rating from './Rating';
+import Rating from '../ui/Rating';
+import Image from 'next/image'
 
 export default function PlaceCard({ id, name, img, des, stars, price, category, address }) {
     const imgSrc = typeof img === 'string' ? img : img?.src || img;
@@ -8,7 +9,9 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
     const content = (
         <>
             <div className="relative w-full h-48 overflow-hidden bg-gray-100">
-                <img src={imgSrc} alt={name} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"/>
+                <div className="relative w-full h-full overflow-hidden">
+                    <Image src={imgSrc} alt={name} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"/>
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
                 
                 {category && (

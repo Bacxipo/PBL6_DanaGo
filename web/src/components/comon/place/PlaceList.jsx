@@ -1,11 +1,18 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PlaceCard from "./PlaceCard";
-import Pagination from "./Pagination";
+import Pagination from "../ui/Pagination";
 
 export default function PlaceList({ places = [] }) {
     const [currentPage, setCurrentPage] = useState(1);
+    const [prevPlaces, setPrevPlaces] = useState(places);
+
+    // Khi danh sách places thay đổi thì quay về trang 1 (đồng bộ trong rendering theo quy tắc React)
+    if (places !== prevPlaces) {
+        setPrevPlaces(places);
+        setCurrentPage(1);
+    }
 
     // Số địa điểm mỗi trang
     const placesPerPage = 6;
@@ -21,11 +28,6 @@ export default function PlaceList({ places = [] }) {
         startIndex,
         startIndex + placesPerPage
     );
-
-    // Khi danh sách places thay đổi thì quay về trang 1
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [places]);
 
     return (
         <>

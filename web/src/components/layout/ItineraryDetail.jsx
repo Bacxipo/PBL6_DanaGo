@@ -1,116 +1,227 @@
 'use client';
+
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
-import ItineraryHeader from '../comon/ItineraryHeader';
-import DayTabsNav from '../comon/DayTabsNav';
-import ItineraryCard from '../comon/ItineraryCard';
-import DayColumnEmpty from '../comon/DayColumnEmpty';
-import QuickSearchSidebar from '../comon/QuickSearchSidebar';
+import ItineraryListView from '../comon/itinerary/ItineraryListView';
+import ItineraryEditorView from '../comon/itinerary/ItineraryEditorView';
+import CreateItineraryModal from '../comon/itinerary/CreateItineraryModal';
+import PlaceDetailModal from '../comon/place/PlaceDetailModal';
+
+import { sampleItineraries, quickSearchPlacesData } from '@/database/data';
+
+// Utility helper to calculate day tabs list from start & end dates
+const calculateDaysList = (startDateStr, endDateStr, daysMap = {}) => {
+    if (!startDateStr || !endDateStr) return [];
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
+    const diffTime = Math.max(0, end - start);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const result = [];
+    for (let i = 1; i <= diffDays; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + (i - 1));
+        const dayFormatted = `${d.getDate()}/${d.getMonth() + 1}`;
+        const count = daysMap[i] ? daysMap[i].length : 0;
+        result.push({
+            id: i,
+            title: `Ngày ${i} (${dayFormatted})`,
+            count: count,
+            date: d.toISOString().split('T')[0]
+        });
+    }
+    return result;
+};
 
 export default function ItineraryDetail() {
+    const [itineraries, setItineraries] = useState(sampleItineraries);
+    const [selectedItineraryId, setSelectedItineraryId] = useState(null);
     const [activeDay, setActiveDay] = useState(1);
 
-    const daysData = [
-        { id: 1, title: 'Ngày 1 (15/10)', count: 3 },
-        { id: 2, title: 'Ngày 2 (16/10)', count: 0 },
-    ];
+    // Modals
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingItinerary, setEditingItinerary] = useState(null);
+    const [inspectingPlace, setInspectingPlace] = useState(null);
 
-    const [itinerary, setItinerary] = useState({
-        1: [
-            {
-                id: 101,
-                name: 'Bãi biển Mỹ Khê',
-                location: 'Sơn Trà, Đà Nẵng',
-                time: '08:00',
-                tag: 'Biển',
-                img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
-            },
-            {
-                id: 102,
-                name: 'Cầu Rồng',
-                location: 'Hải Châu, Đà Nẵng',
-                time: '14:00',
-                tag: 'Kiến trúc',
-                img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=600&q=80',
-            },
-        ],
-        2: [],
-    });
+    // Current selected itinerary
+    const currentItinerary = itineraries.find(it => it.id === selectedItineraryId);
 
-    const quickSearchPlaces = [
-        {
-            id: 201,
-            name: 'Mì Quảng Bà Mua',
-            rating: '4.5',
-            reviews: '240',
-            category: 'Ẩm thực địa phương',
-            categoryType: 'food',
-            img: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=200&q=80',
-        },
-        {
-            id: 202,
-            name: 'Bà Nà Hills',
-            rating: '4.8',
-            reviews: '1.2k',
-            category: 'Khu du lịch sinh thái',
-            categoryType: 'sightseeing',
-            img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=200&q=80',
-        },
-    ];
+    // Create or Edit Itinerary submit
+    const handleSaveItinerary = (data) => {
+        if (editingItinerary) {
+            // Update existing
+            setItineraries(prev => prev.map(it => {
+                if (it.id === editingItinerary.id) {
+                    return {
+                        ...it,
+                        ...data,
+                    };
+                }
+                return it;
+            }));
+            setEditingItinerary(null);
+        } else {
+            // Create new
+            const newId = Date.now();
+            const newItinerary = {
+                id: newId,
+                title: data.title,
+                startDate: data.startDate,
+                endDate: data.endDate,
+                description: data.description || 'Lịch trình du lịch mới tạo.',
+                coverImg: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+                days: { 1: [] }
+            };
+            setItineraries(prev => [newItinerary, ...prev]);
+            setSelectedItineraryId(newId);
+            setActiveDay(1);
+        }
+    };
 
+    // Delete Itinerary from list
+    const handleDeleteItinerary = (id, e) => {
+        e.stopPropagation();
+        if (confirm('Bạn có chắc chắn muốn xóa lịch trình này?')) {
+            setItineraries(prev => prev.filter(it => it.id !== id));
+            if (selectedItineraryId === id) {
+                setSelectedItineraryId(null);
+            }
+        }
+    };
+
+    // Delete place from active day
     const handleDeletePlace = (dayId, placeId) => {
-        setItinerary((prev) => ({
-            ...prev,
-            [dayId]: prev[dayId].filter((item) => item.id !== placeId),
+        if (!currentItinerary) return;
+        setItineraries(prev => prev.map(it => {
+            if (it.id === currentItinerary.id) {
+                const dayPlaces = it.days[dayId] || [];
+                return {
+                    ...it,
+                    days: {
+                        ...it.days,
+                        [dayId]: dayPlaces.filter(p => p.id !== placeId)
+                    }
+                };
+            }
+            return it;
         }));
     };
 
+    // Update start time for place in active day
+    const handleUpdateTime = (dayId, placeId, newTime) => {
+        if (!currentItinerary) return;
+        setItineraries(prev => prev.map(it => {
+            if (it.id === currentItinerary.id) {
+                const dayPlaces = it.days[dayId] || [];
+                return {
+                    ...it,
+                    days: {
+                        ...it.days,
+                        [dayId]: dayPlaces.map(p => p.id === placeId ? { ...p, time: newTime } : p)
+                    }
+                };
+            }
+            return it;
+        }));
+    };
+
+    // Add place to specific day with start time
+    const handleAddPlaceToItinerary = (place, targetDayId, startTime = '08:00') => {
+        if (!currentItinerary) return;
+        const newPlaceItem = {
+            id: Date.now(),
+            placeId: place.id,
+            name: place.name,
+            location: place.address || 'Đà Nẵng',
+            time: startTime,
+            tag: place.category || 'Địa điểm',
+            img: place.img || '',
+        };
+
+        setItineraries(prev => prev.map(it => {
+            if (it.id === currentItinerary.id) {
+                const currentDayPlaces = it.days[targetDayId] || [];
+                return {
+                    ...it,
+                    days: {
+                        ...it.days,
+                        [targetDayId]: [...currentDayPlaces, newPlaceItem]
+                    }
+                };
+            }
+            return it;
+        }));
+
+        setActiveDay(targetDayId);
+    };
+
+    // Quick add from sidebar directly to current active day
+    const handleQuickAdd = (place) => {
+        handleAddPlaceToItinerary(place, activeDay, '08:00');
+    };
+
+    const daysList = currentItinerary
+        ? calculateDaysList(currentItinerary.startDate, currentItinerary.endDate, currentItinerary.days)
+        : [];
+    const activeDayPlaces = currentItinerary ? (currentItinerary.days[activeDay] || []) : [];
+
     return (
-        <div className="w-full bg-slate-50/50 p-6 rounded-2xl min-h-screen">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                    <ItineraryHeader 
-                        title="Đà Nẵng 3 Ngày 2 Đêm"
-                        startDate="15/10/2024"
-                        endDate="17/10/2024"
-                    />
+        <>
+            {/* View 1: List of Itineraries */}
+            {!currentItinerary ? (
+                <ItineraryListView
+                    itineraries={itineraries}
+                    onSelectItinerary={(id) => {
+                        setSelectedItineraryId(id);
+                        setActiveDay(1);
+                    }}
+                    onCreateClick={() => {
+                        setEditingItinerary(null);
+                        setIsCreateModalOpen(true);
+                    }}
+                    onDeleteItinerary={handleDeleteItinerary}
+                    calculateDaysList={calculateDaysList}
+                />
+            ) : (
+                /* View 2: Itinerary Detail & Editor */
+                <ItineraryEditorView
+                    currentItinerary={currentItinerary}
+                    daysList={daysList}
+                    activeDay={activeDay}
+                    setActiveDay={setActiveDay}
+                    activeDayPlaces={activeDayPlaces}
+                    quickSearchPlacesData={quickSearchPlacesData}
+                    onBackToList={() => setSelectedItineraryId(null)}
+                    onEditInfo={() => {
+                        setEditingItinerary(currentItinerary);
+                        setIsCreateModalOpen(true);
+                    }}
+                    onDeletePlace={handleDeletePlace}
+                    onUpdateTime={handleUpdateTime}
+                    onQuickAdd={handleQuickAdd}
+                    onSelectPlace={(place) => setInspectingPlace(place)}
+                />
+            )}
 
-                    <DayTabsNav 
-                        days={daysData} 
-                        activeDay={activeDay} 
-                        onSelectDay={setActiveDay} 
-                    />
+            {/* Modal Edit/Create Itinerary */}
+            <CreateItineraryModal
+                isOpen={isCreateModalOpen}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setEditingItinerary(null);
+                }}
+                onSave={handleSaveItinerary}
+                initialData={editingItinerary}
+            />
 
-                    {/* Các cột hiển thị danh sách theo ngày */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                        {/* Cột Ngày 1 */}
-                        <div className="space-y-4">
-                            {itinerary[1]?.map((item) => (
-                                <ItineraryCard 
-                                    key={item.id} 
-                                    item={item} 
-                                    onDelete={(id) => handleDeletePlace(1, id)} 
-                                />
-                            ))}
-
-                            <button className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 hover:text-[#006971] hover:border-[#006971] hover:bg-emerald-50/30 transition font-medium flex items-center justify-center gap-2 cursor-pointer">
-                                <Plus className="w-4 h-4" />
-                                <span>Thêm điểm</span>
-                            </button>
-                        </div>
-
-                        <DayColumnEmpty onExplore={() => console.log('Khám phá địa điểm')} />
-                    </div>
-                </div>
-
-                <div>
-                    <QuickSearchSidebar 
-                        places={quickSearchPlaces} 
-                        onAddPlace={(place) => console.log('Thêm địa điểm:', place)} 
-                    />
-                </div>
-
-            </div>
-        </div>
+            {/* Modal Detail Place */}
+            <PlaceDetailModal
+                isOpen={!!inspectingPlace}
+                place={inspectingPlace}
+                onClose={() => setInspectingPlace(null)}
+                daysList={daysList}
+                activeDayId={activeDay}
+                onAddPlace={handleAddPlaceToItinerary}
+            />
+        </>
     );
 }

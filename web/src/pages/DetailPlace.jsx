@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import PlaceAction from '../components/comon/PlaceAction';
-import PlaceMap from '../components/comon/PlaceMap';
+import PlaceAction from '../components/comon/place/PlaceAction';
+import PlaceMap from '../components/comon/place/PlaceMap';
 import { placesData, reviews } from '../database/data';
-import PlaceReview from '../components/comon/PlaceReview';
-import ReviewForm from '../components/comon/ReviewForm';
+import PlaceReview from '../components/comon/review/PlaceReview';
+import ReviewForm from '../components/comon/review/ReviewForm';
 import { useEffect } from 'react';
 import Image from 'next/image';
 export default function DetailPlace({ id: propId }) {
@@ -36,7 +36,7 @@ export default function DetailPlace({ id: propId }) {
             </Link>
             <div className="flex w-full">
                 <div className="w-2/3 flex flex-col">
-                    <Image src={typeof place.img === 'string' ? place.img : place.img?.src || place.img} alt={place.name} className="w-full h-full object-cover rounded-xl" />
+                    <Image src={place.img} alt={place.name} width={1200} height={800} className="w-full h-full object-cover rounded-xl" />
                     <p className="text-[#006971] font-bold mt-2 text-sm">{place.category}</p>
                 </div>
                 <PlaceAction time={place.time} price={place.priceDisplay} move={place.move}/>
@@ -64,6 +64,7 @@ export default function DetailPlace({ id: propId }) {
                                 name={review.name}
                                 stars={review.stars}
                                 comment={review.comment}
+                                createdAt={review.createdAt}
                             />
                         ))}
                     </div>

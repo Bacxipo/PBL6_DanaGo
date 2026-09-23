@@ -1,5 +1,5 @@
-import Catalog from '../components/comon/Catalog';
-import PlaceCard from '../components/comon/PlaceCard';
+import Catalog from '../components/comon/place/Catalog';
+import PlaceCard from '../components/comon/place/PlaceCard';
 
 import heroImg from '../assets/images/cr.jpg';
 import Link from 'next/link';

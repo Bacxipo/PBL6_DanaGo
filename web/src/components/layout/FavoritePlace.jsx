@@ -1,7 +1,7 @@
 'use client';
 
 import { placesData } from '../../database/data.js';
-import PlaceList from '../comon/PlaceList.jsx';
+import PlaceList from '../comon/place/PlaceList.jsx';
 
 export default function FavoritePlace() {
     return (

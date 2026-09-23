@@ -1,4 +1,5 @@
-import { Star,Send } from "lucide-react";
+import { Star, Send } from "lucide-react";
+
 export default function ReviewForm(){
     return(
         <div className ='bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4'>

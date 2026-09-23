@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from "react";
-import Rating from '../components/comon/Rating';
+import Rating from '../components/comon/ui/Rating';
 import { categoriesData, placesData, districtsData } from '../database/data';
-import PlaceList from "../components/comon/PlaceList";
+import PlaceList from "../components/comon/place/PlaceList";
 
 export default function Explore() {
     const [category, setCategory] = useState("Tất cả");
