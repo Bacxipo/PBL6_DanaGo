@@ -18,6 +18,130 @@ class DetailPlaceScreen extends StatefulWidget {
 
 class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
   bool isFavorite = false;
+  late List<ReviewItemModel> _reviews = List.from(ReviewItemModel.mockReviews);
+  void _showAddReviewBottomSheet() {
+    double selectedRating = 5.0; // Đánh giá mặc định 5 sao
+    final TextEditingController commentController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Cho phép nâng khung lên khi bật bàn phím
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom +
+                    20, // Đẩy khung theo bàn phím
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Viết đánh giá của bạn',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Hàng chọn sao (1 đến 5 sao)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final starValue = index + 1.0;
+                      return IconButton(
+                        icon: Icon(
+                          starValue <= selectedRating
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: Colors.amber,
+                          size: 32,
+                        ),
+                        onPressed: () {
+                          setModalState(() {
+                            selectedRating = starValue;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Ô nhập nội dung nhận xét
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText:
+                          'Chia sẻ trải nghiệm của bạn về địa điểm này...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Nút Gửi đánh giá
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        if (commentController.text.trim().isEmpty) return;
+
+                        // Thêm bài đánh giá mới lên đầu danh sách
+                        setState(() {
+                          _reviews.insert(
+                            0,
+                            ReviewItemModel(
+                              id: DateTime.now().toString(),
+                              userName: 'Bạn (Bạn đọc)',
+                              avatarUrl: 'https://i.pravatar.cc/150?img=68',
+                              timeAgo: 'Vừa xong',
+                              rating: selectedRating,
+                              comment: commentController.text.trim(),
+                            ),
+                          );
+                        });
+                        Navigator.pop(context); // Đóng khung Modal
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Cảm ơn bạn đã gửi đánh giá!'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Gửi đánh giá',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,6 +242,7 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
                   DetailReviewsSection(
                     reviews: ReviewItemModel.mockReviews,
                     onSeeAll: () {},
+                    onWriteReview: _showAddReviewBottomSheet,
                   ),
                   const SizedBox(height: 20),
                 ],

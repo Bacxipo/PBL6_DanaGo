@@ -62,7 +62,7 @@ class HomeSearchBar extends StatelessWidget {
           ),
           child: ClipOval(
             child: Image.network(
-              'https://scontent.fdad3-6.fna.fbcdn.net/v/t39.30808-6/475869510_1945477732641527_8457676487602526743_n.jpg?stp=dst-jpg_tt6&cstp=mx720x720&ctp=s720x720&_nc_cat=100&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFwmeAxoswBsJP7wUJk9hxRhm1P7_Zy_TqGbU_v9nL9OjooryUVG3pdxFwkQ0kB0HOF47fbnqBEEJpQ_H_gtR16&_nc_ohc=kBz6zBfiO4kQ7kNvwG4ja2m&_nc_oc=Adom37Y80mYIPiIcGtGDVDK4IFB-IfQk5Kk5Rmmy8huJUG4MwuWfES7nPlyxG2lXMgGrOrsTgYqMLRalAl6qKcqn&_nc_zt=23&_nc_ht=scontent.fdad3-6.fna&_nc_gid=8j-ZLTICei_YsIHB_TiKog&_nc_ss=782a8&oh=00_AQJ1BECOiawejRHhxto-91evOeJs5Vft5snvCYDRdZfHNQ&oe=6AB07C46',
+              'https://i.postimg.cc/tC24nW4N/avt1.jpg',
               fit: BoxFit.cover,
             ),
           ),

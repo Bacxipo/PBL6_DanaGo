@@ -5,10 +5,12 @@ import 'package:smarttrip/theme/app_colors.dart';
 class DetailReviewsSection extends StatelessWidget {
   final List<ReviewItemModel> reviews;
   final VoidCallback onSeeAll;
+  final VoidCallback onWriteReview;
   const DetailReviewsSection({
     super.key,
     required this.reviews,
     required this.onSeeAll,
+    required this.onWriteReview,
   });
   @override
   Widget build(BuildContext context) {
@@ -21,16 +23,30 @@ class DetailReviewsSection extends StatelessWidget {
               'Đánh giá nổi bật',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            GestureDetector(
-              onTap: onSeeAll,
-              child: const Text(
-                'Xem tất cả',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+            Row(
+              children: [
+                // Nút Viết đánh giá
+                GestureDetector(
+                  onTap: onWriteReview,
+                  child: const Text(
+                    '+ Viết đánh giá',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                // Nút Xem tất cả
+                GestureDetector(
+                  onTap: onSeeAll,
+                  child: const Text(
+                    'Xem tất cả',
+                    style: TextStyle(color: Color(0xff6b7280), fontSize: 13),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
