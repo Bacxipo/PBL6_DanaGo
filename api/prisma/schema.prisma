@@ -72,6 +72,9 @@ model User {
   feedComments         FeedComment[]
   feedLikes            FeedLike[]
   chatSessions         ChatSession[]
+  createdEvents        Event[]            @relation("CreatedEvents")
+  uploadedEventImages  EventImage[]
+  eventFavorites       EventFavorite[]
 
   @@map("user")
 }
@@ -122,6 +125,7 @@ model Destination {
   reviews        Review[]
   favorites      Favorite[]
   feedPosts      FeedPost[]
+  events         Event[]
 
   @@map("destination")
 }
@@ -331,4 +335,51 @@ model ChatMessage {
   session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("chat_message")
+}
+
+// Module 8: Event Models
+model Event {
+  id            Int           @id @default(autoincrement())
+  name          String        @db.VarChar(150)
+  description   String?       @db.Text
+  destinationId Int?          @map("destination_id")
+  locationNote  String?       @map("location_note") @db.VarChar(255)
+  startDate     DateTime      @map("start_date") @db.Date
+  endDate       DateTime      @map("end_date") @db.Date
+  ticketPrice   Decimal?      @default(0) @map("ticket_price") @db.Decimal(12, 0)
+  status        ContentStatus @default(PENDING)
+  createdBy     Int?          @map("created_by")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp()
+
+  destination Destination?    @relation(fields: [destinationId], references: [id])
+  creator     User?           @relation("CreatedEvents", fields: [createdBy], references: [id])
+  images      EventImage[]
+  favorites   EventFavorite[]
+
+  @@map("event")
+}
+
+model EventImage {
+  id         Int      @id @default(autoincrement())
+  eventId    Int      @map("event_id")
+  imageUrl   String   @map("image_url") @db.VarChar(255)
+  uploadedBy Int?     @map("uploaded_by")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  uploader User? @relation(fields: [uploadedBy], references: [id])
+
+  @@map("event_image")
+}
+
+model EventFavorite {
+  userId    Int      @map("user_id")
+  eventId   Int      @map("event_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+  @@map("event_favorite")
 }

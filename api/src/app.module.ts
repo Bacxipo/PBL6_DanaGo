@@ -9,6 +9,7 @@ import { CommunityModule } from './modules/community/community.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { AiModule } from './modules/ai/ai.module';
+import { EventModule } from './modules/event/event.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AiModule } from './modules/ai/ai.module';
     NotificationModule,
     FeedModule,
     AiModule,
+    EventModule,
   ],
   controllers: [AppController],
   providers: [AppService],
