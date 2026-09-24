@@ -68,6 +68,10 @@ model User {
   uploadedReviewImages ReviewImage[]
   favorites            Favorite[]
   notifications        Notification[]
+  feedPosts            FeedPost[]
+  feedComments         FeedComment[]
+  feedLikes            FeedLike[]
+  chatSessions         ChatSession[]
 
   @@map("user")
 }
@@ -117,6 +121,7 @@ model Destination {
   itineraryItems ItineraryItem[]
   reviews        Review[]
   favorites      Favorite[]
+  feedPosts      FeedPost[]
 
   @@map("destination")
 }
@@ -245,4 +250,85 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification")
+}
+
+// Module 6: Feed Models
+model FeedPost {
+  id            Int           @id @default(autoincrement())
+  userId        Int           @map("user_id")
+  destinationId Int?          @map("destination_id")
+  content       String        @db.Text
+  status        ContentStatus @default(PENDING)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp()
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination?    @relation(fields: [destinationId], references: [id])
+  images      FeedPostImage[]
+  comments    FeedComment[]
+  likes       FeedLike[]
+
+  @@map("feed_post")
+}
+
+model FeedPostImage {
+  id        Int      @id @default(autoincrement())
+  postId    Int      @map("post_id")
+  imageUrl  String   @map("image_url") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  post FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("feed_post_image")
+}
+
+model FeedComment {
+  id        Int      @id @default(autoincrement())
+  postId    Int      @map("post_id")
+  userId    Int      @map("user_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  post FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feed_comment")
+}
+
+model FeedLike {
+  postId    Int      @map("post_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  post FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@map("feed_like")
+}
+
+// Module 7: AI Models
+model ChatSession {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  title     String?  @db.VarChar(150)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp()
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@map("chat_session")
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  sessionId Int      @map("session_id")
+  sender    String   @db.VarChar(20) // "user" | "assistant"
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("chat_message")
 }

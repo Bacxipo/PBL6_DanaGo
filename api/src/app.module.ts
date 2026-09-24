@@ -7,6 +7,8 @@ import { DestinationModule } from './modules/destination/destination.module';
 import { ItineraryModule } from './modules/itinerary/itinerary.module';
 import { CommunityModule } from './modules/community/community.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { FeedModule } from './modules/feed/feed.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { NotificationModule } from './modules/notification/notification.module';
     ItineraryModule,
     CommunityModule,
     NotificationModule,
+    FeedModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
