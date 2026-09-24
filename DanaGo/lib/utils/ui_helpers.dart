@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class UiHelpers {
-  // Show message
   static void showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(

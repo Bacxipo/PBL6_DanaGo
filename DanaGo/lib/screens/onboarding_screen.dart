@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/onboarding_item.dart';
-import 'package:smarttrip/screen/Login_screen.dart';
-import 'package:smarttrip/widgets/onboarding_card.dart';
-import 'package:smarttrip/widgets/onboarding_header.dart';
+import 'package:smarttrip/screens/login_screen.dart';
+import 'package:smarttrip/widgets/onboarding/onboarding_card.dart';
+import 'package:smarttrip/widgets/onboarding/onboarding_header.dart';
 
 class Khampha extends StatefulWidget {
   const Khampha({super.key});

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/screens/home_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
-import 'package:smarttrip/widgets/interest_card.dart';
+import 'package:smarttrip/widgets/interest/interest_card.dart';
 
 class InterestScreen extends StatefulWidget {
   const InterestScreen({super.key});
@@ -39,6 +40,10 @@ class _InterestScreenState extends State<InterestScreen> {
       return;
     }
     UiHelpers.showSuccess(context, 'Đã lưu sở thích thành công');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    );
   }
 
   @override

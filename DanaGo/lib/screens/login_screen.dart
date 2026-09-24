@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:smarttrip/screen/Register_screen.dart';
-import 'package:smarttrip/screen/forgot_password_screen.dart';
-import 'package:smarttrip/screen/interest_screen.dart';
+import 'package:smarttrip/screens/register_screen.dart';
+import 'package:smarttrip/screens/forgot_password_screen.dart';
+import 'package:smarttrip/screens/interest_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/app_styles.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/utils/validators.dart';
-import 'package:smarttrip/widgets/custom_text_field.dart';
+import 'package:smarttrip/widgets/common/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

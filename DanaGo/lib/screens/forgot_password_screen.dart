@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/utils/validators.dart';
-import 'package:smarttrip/widgets/custom_text_field.dart';
+import 'package:smarttrip/widgets/common/custom_text_field.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
