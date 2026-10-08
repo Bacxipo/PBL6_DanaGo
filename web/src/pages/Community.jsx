@@ -35,7 +35,7 @@ const initialPosts = [
       avatar: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=150&q=80'
     },
     date: '10/08/2026',
-    content: 'Mình vừa đọc câu chuyện văn hóa rất hay: "Làng chiếu Cẩm Nê – Làng nghề truyền thống nổi tiếng Đà Nẵng" trên SoulViet. Cùng khám phá nét đẹp di sản Việt Nam nhé!',
+    content: 'Mình vừa đọc câu chuyện văn hóa rất hay: "Làng chiếu Cẩm Nê – Làng nghề truyền thống nổi tiếng Đà Nẵng".',
     article: {
       title: 'Làng chiếu Cẩm Nê – Làng nghề truyền thống nổi tiếng Đà Nẵng',
       category: 'CÂU CHUYỆN DI SẢN',

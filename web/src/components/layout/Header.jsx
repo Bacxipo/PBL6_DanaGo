@@ -6,7 +6,7 @@ import { User } from 'lucide-react';
 
 export default function Header() {
     const pathname = usePathname();
-
+    
     const getLinkClass = (path) => {
         const isActive = pathname === path;
         return isActive 
@@ -30,10 +30,15 @@ export default function Header() {
                     <Link href="/community" className={getLinkClass('/community')}>
                         Cộng đồng
                     </Link>
-                    <a href="#" className="text-gray-600 hover:text-[#006971] text-sm font-semibold">AI Plan</a>
+                    <Link href="/ai-plan" className={getLinkClass('/ai-plan')}>
+                        AI Plan
+                    </Link>
                 </nav>
                 <Link href="/personal" className="flex items-center gap-2 text-gray-600 hover:text-[#006971] transition-colors">
                     <User className="w-5 h-5 cursor-pointer" />
+                </Link>
+                <Link href="/login">
+                    Đăng nhập
                 </Link>
             </div>
         </header>
