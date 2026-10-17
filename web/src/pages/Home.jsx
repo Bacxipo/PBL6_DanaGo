@@ -62,6 +62,25 @@ export default function Home() {
                     ))}
                 </div>
             </div>
+            {/* Featured Places Section Recommended */}
+            <div className="w-full max-w-7xl mx-auto px-2">
+                <h2 className="text-black font-bold text-2xl md:text-3xl mb-6">Gợi ý cho bạn</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                    {placesData.slice(0, 4).map((place) => (
+                        <PlaceCard
+                            key={place.id}
+                            id={place.id}
+                            name={place.name}
+                            img={place.img}
+                            des={place.des}
+                            stars={place.stars}
+                            price={place.priceDisplay}
+                            category={place.category}
+                            address={place.address}
+                        />
+                    ))}
+                </div>
+            </div>
 
             {/* Banner Lập lịch trình */}
             <div className='flex flex-wrap gap-4 bg-[#006971] rounded-2xl p-8 md:p-10 items-center justify-between shadow-sm'>

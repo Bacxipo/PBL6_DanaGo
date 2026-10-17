@@ -16,7 +16,7 @@ export default function Explore() {
     });
 
     return (
-        <section className="w-full space-y-12 pb-8 flex gap-6">
+        <section className="w-full space-y-12 pb-8 flex gap-6 px-10">
             <aside className="w-1/4 h-fit flex flex-col bg-white rounded-2xl p-5 shadow-xl/20 border border-gray-300 overflow-hidden">
                 <div className="flex items-center justify-between mb-5">
                     <h3 className="font-bold text-gray-800">

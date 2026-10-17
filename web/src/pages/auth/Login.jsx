@@ -25,6 +25,7 @@ export default function Login() {
             fill
             priority
             className="object-cover"
+            sizes="(max-width: 768px) 100vw, 50vw"
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

@@ -197,7 +197,24 @@ const initialItineraryData = {
             img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=600&q=80',
         },
     ],
-    2: [],
+    2: [
+        {
+            id: 103,
+            name: 'Bãi biển Mỹ Khê',
+            location: 'Sơn Trà, Đà Nẵng',
+            time: '08:00',
+            tag: 'Biển',
+            img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+        },
+        {
+            id: 104,
+            name: 'Cầu Rồng',
+            location: 'Hải Châu, Đà Nẵng',
+            time: '14:00',
+            tag: 'Kiến trúc',
+            img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=600&q=80',
+        },
+    ],
 };
 
 const quickSearchPlacesData = [
@@ -378,6 +395,84 @@ const quickSearchCategoriesData = [
     { id: 'sightseeing', label: 'Tham quan' }
 ];
 
+const interestOptions = [
+    { id: 'bien-dao', name: 'Biển & Đảo', icon: 'Waves' },
+    { id: 'am-thuc', name: 'Ẩm thực địa phương', icon: 'Utensils' },
+    { id: 'van-hoa', name: 'Văn hóa & Lịch sử', icon: 'Landmark' },
+    { id: 'cong-vien', name: 'Công viên giải trí', icon: 'FerrisWheel' },
+    { id: 'thien-nhien', name: 'Khám phá thiên nhiên', icon: 'Trees' },
+    { id: 'cafe', name: 'Cafe & Check-in', icon: 'Coffee' },
+];
+
+
+const postTypesData = [
+  { id: 'trai-nghiem', label: 'Trải nghiệm' },
+  { id: 'hoi-dap', label: 'Hỏi đáp' },
+  { id: 'dia-diem-moi', label: 'Địa điểm mới' },
+];
+
+const initialPosts = [
+  // 1. Bài viết Trải nghiệm
+  {
+    id: 1,
+    postType: 'trai-nghiem',
+    user: {
+      name: 'nChuc_',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80'
+    },
+    date: '17/9/2024',
+    content: 'Tôi đã đi theo lịch trình gợi ý của ứng dụng và nó khá thú vị. Đây là 1 số địa điểm tôi cảm thấy thích.',
+    image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80',
+    location: 'Cầu Rồng, Đà Nẵng',
+    likes: 1,
+    commentsCount: 1,
+    isLiked: false
+  },
+  // 2. Bài viết Hỏi đáp (Dùng chung khung với Trải nghiệm, chỉ khác tag góc phải)
+  {
+    id: 2,
+    postType: 'hoi-dap',
+    user: {
+      name: 'Minh Hoàng',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80'
+    },
+    date: '16/9/2024',
+    content: 'Cuối tuần này nhóm mình 4 người vào Đà Nẵng, mọi người cho mình hỏi quanh bãi biển Mỹ Khê có quán hải sản nào ngon, giá hợp lý không ạ?',
+    location: 'Bãi biển Mỹ Khê, Đà Nẵng',
+    likes: 3,
+    commentsCount: 4,
+    isLiked: true
+  },
+  // 3. Bài viết Địa điểm mới (Hộp thông tin chi tiết)
+  {
+    id: 3,
+    postType: 'dia-diem-moi',
+    user: {
+      name: 'Thu Trang',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80'
+    },
+    date: '15/9/2024',
+    placeName: 'Tiệm Cà Phê Rừng Dừa Cẩm Lệ',
+    category: 'Cafe & Check-in',
+    openTime: '07:00',
+    closeTime: '22:30',
+    isFree: false,
+    priceFrom: '25.000',
+    priceTo: '55.000',
+    description: 'Quán cafe không gian xanh mát cạnh rừng dừa nước, view hoàng hôn cực chill.',
+    images: [
+      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80',
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80'
+    ],
+    likes: 8,
+    commentsCount: 2,
+    isLiked: false
+  }
+];
+const currentUser = {
+  name: 'abc_user',
+  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80',
+};
 export { 
     categoriesData, 
     placesData, 
@@ -387,7 +482,11 @@ export {
     initialItineraryData, 
     quickSearchPlacesData,
     quickSearchCategoriesData,
-    sampleItineraries
+    sampleItineraries,
+    interestOptions,
+    postTypesData,
+    initialPosts,
+    currentUser
 };
 
 

@@ -1,17 +1,9 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
-import { Waves, Utensils, Landmark, Wine, Mountain, Coffee } from 'lucide-react';
-import imgHeader from '@/assets/images/hoppy.jpg'; // Hoặc ảnh Đà Nẵng về đêm tương ứng
+import imgHeader from '@/assets/images/hoppy.jpg'; 
+import InterestTags from '@/components/comon/ai-plan/InterestTags';
 
-const INTEREST_OPTIONS = [
-  { id: 'sea', label: 'Biển Mỹ Khê', icon: Waves },
-  { id: 'food', label: 'Ẩm thực', icon: Utensils },
-  { id: 'history', label: 'Di tích lịch sử', icon: Landmark },
-  { id: 'nightlife', label: 'Giải trí ban đêm', icon: Wine },
-  { id: 'hiking', label: 'Leo núi', icon: Mountain },
-  { id: 'cafe', label: 'Cafe check-in', icon: Coffee },
-];
 
 export default function Interests() {
   const [selected, setSelected] = useState([]);
@@ -34,27 +26,10 @@ export default function Interests() {
           </div>
 
           {/* List các nút bấm sở thích */}
-          <div className="space-y-3 mb-8">
-            {INTEREST_OPTIONS.map((item) => {
-              const Icon = item.icon;
-              const isSelected = selected.includes(item.id);
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => toggleInterest(item.id)}
-                  className={`w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-full border text-sm font-semibold transition-all ${
-                    isSelected
-                      ? 'border-[#006971] bg-[#006971]/10 text-[#006971]'
-                      : 'border-transparent text-gray-800 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 text-gray-700" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <InterestTags 
+              selectedInterests={selected}
+              onToggleInterest={toggleInterest}
+          />
 
           {/* Nút Hoàn tất */}
           <button

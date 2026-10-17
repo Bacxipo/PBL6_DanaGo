@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { User, Image as ImageIcon, MapPin, Tag } from 'lucide-react';
+import { User, Image as ImageIcon, MapPin } from 'lucide-react';
 
 export default function CreatePostBox({ onOpenModal }) {
   return (
@@ -37,14 +37,6 @@ export default function CreatePostBox({ onOpenModal }) {
             className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
           >
             <MapPin className="w-4 h-4" />
-          </button>
-          <button 
-            type="button"
-            onClick={onOpenModal}
-            title="Thêm thẻ Vibe Tag"
-            className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-amber-500 hover:bg-amber-50 hover:border-amber-200 transition-colors cursor-pointer"
-          >
-            <Tag className="w-4 h-4" />
           </button>
         </div>
 

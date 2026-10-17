@@ -92,7 +92,7 @@ export default function Register() {
 
         {/* Cột phải: Ảnh Cầu Vàng */}
         <div className="relative w-full md:w-1/2 min-h-[350px] md:min-h-[550px] hidden md:block">
-          <Image src={imgRegister} alt="Đăng ký" fill priority className="object-cover" />
+          <Image src={imgRegister} alt="Đăng ký" fill priority className="object-cover"  sizes="(max-width: 768px) 100vw, 50vw" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <h3 className="absolute bottom-8 left-8 text-white text-2xl font-bold max-w-xs leading-snug">
             Bắt đầu hành trình của bạn
