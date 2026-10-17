@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Calendar, Map, Settings } from 'lucide-react';
+import { User, Calendar, Map, Settings,LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import SettingInfo from '../components/layout/SettingInfo';
 import FavoritePlace from '../components/layout/FavoritePlace';
 import PersonalPage from '../components/layout/PersonalPage';
 import ItineraryDetail from '../components/layout/ItineraryDetail';
 
 export default function Personal() {
+    const router = useRouter();
     const [activeButton, setActiveButton] = useState('personalpage');
 
     const getButtonClass = (key) => {
@@ -19,6 +21,9 @@ export default function Personal() {
         }`;
     };
 
+    const handleLogout = () => {
+        router.push('/login');
+    }
     return (
         <section className='w-full flex gap-8 max-w-7xl mx-auto py-8 px-4'>
             {/* Sidebar Menu */}
@@ -53,6 +58,14 @@ export default function Personal() {
                 >
                     <Settings className='w-5 h-5'/>
                     <span>Cài đặt tài khoản</span>
+                </button>
+                <button 
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full p-3 rounded-xl flex items-center gap-x-3 font-semibold text-sm cursor-pointer text-red-600 bg-red-50/40 hover:bg-red-100/60 hover:text-red-700 transition-all duration-200"
+                >
+                    <LogOut className='w-5 h-5 text-red-500'/>
+                    <span>Đăng xuất</span>
                 </button>
             </div>
 

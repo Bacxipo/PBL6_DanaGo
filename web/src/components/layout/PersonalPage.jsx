@@ -14,7 +14,7 @@ export default function PersonalPage() {
 
             <div className="flex items-center gap-4 px-4 py-6">
                 <div className='rounded-full w-24 h-24 overflow-hidden shrink-0 border-2 border-[#006971]/20'>
-                    <Image src="https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg" alt="avatar" className="w-full h-full rounded-full object-cover"/>
+                    <Image src="https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg" alt="avatar" width={96} height={96} className="w-full h-full rounded-full object-cover"/>
                 </div>
                 <div className="flex flex-col gap-1">
                     <h2 className="text-2xl font-bold text-gray-800">Người dùng Smart Trip</h2>

@@ -12,8 +12,8 @@ export default function Rating({ rating = 0 }) {
             size={12}
             className={
               star <= Math.round(numericRating)
-                ? "fill-orange-400 text-orange-400" // Sao được tô màu
-                : "text-gray-300 fill-gray-100"      // Sao chưa đạt (màu xám)
+                ? "fill-orange-400 text-orange-400"
+                : "text-gray-300 fill-gray-100"
             }
           />
         ))}

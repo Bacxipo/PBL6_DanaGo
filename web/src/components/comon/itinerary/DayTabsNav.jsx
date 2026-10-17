@@ -1,4 +1,3 @@
-
 export default function DayTabsNav({ days = [], activeDay, onSelectDay }) {
     return (
         <div className="flex items-center gap-3 overflow-x-auto pb-2">
