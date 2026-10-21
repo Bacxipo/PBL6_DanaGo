@@ -48,3 +48,13 @@ ios/Runner.xcodeproj/project.xcworkspace/
 
 # Docker local data
 postgres_data/
+
+# Python & AI Service
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
