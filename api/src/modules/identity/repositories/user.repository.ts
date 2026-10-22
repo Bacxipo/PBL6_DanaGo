@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { UserRole, UserStatus } from '@prisma/client';
 import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
@@ -48,6 +49,16 @@ export class UserRepository {
       },
     });
     return this.mapToEntity(created);
+  }
+
+  async findAll(): Promise<UserEntity[]> {
+    const users = await this.prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
+    return users.map((u) => this.mapToEntity(u));
+  }
+
+  async update(id: number, data: { status?: UserStatus; role?: UserRole }): Promise<UserEntity> {
+    const updated = await this.prisma.user.update({ where: { id }, data });
+    return this.mapToEntity(updated);
   }
 
   private mapToEntity(row: any): UserEntity {
