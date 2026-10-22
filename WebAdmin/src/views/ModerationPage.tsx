@@ -130,6 +130,7 @@ export default function ModerationPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {list.map((d) => (
                     <div key={d.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-xs space-y-3">
+                      {d.images?.[0] && <img src={d.images[0]} alt="" className="w-full h-32 object-cover rounded-xl" />}
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700">{d.district}</span>

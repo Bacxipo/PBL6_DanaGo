@@ -65,6 +65,7 @@ export interface Destination {
   status: ContentStatus;
   createdBy?: number;
   createdAt: string;
+  images?: string[]; // backend hiện chưa trả ảnh; chế độ dữ liệu mẫu có
 }
 
 // Backend dùng forbidNonWhitelisted: gửi field ngoài DTO sẽ bị 400

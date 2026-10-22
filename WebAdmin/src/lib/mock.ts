@@ -1,7 +1,9 @@
 // Chế độ DỮ LIỆU MẪU của WebAdmin: bật khi chưa cấu hình NEXT_PUBLIC_API_URL (xem lib/api.ts).
 // Đây là "máy chủ giả" chạy ngay trong trình duyệt, trả đúng định dạng như API thật của backend nên các trang
 // không phải sửa gì. Thao tác thêm/sửa/duyệt hoạt động bình thường, nhưng dữ liệu về lại ban đầu khi tải lại trang.
-// Nội dung lấy theo web du khách (web/src/database/data.js): 8 địa điểm, danh mục, đánh giá, bài đăng.
+// Nội dung đọc THẲNG từ web du khách (web/src/database/data.js): 8 địa điểm + ảnh, danh mục, đánh giá, bài đăng.
+// Nếu web du khách bỏ file đó (khi chuyển sang API), chép dữ liệu cần dùng về đây.
+import { categoriesData, initialPosts, placesData, quickSearchPlacesData, reviews as sampleReviews } from '../../../web/src/database/data';
 import { ApiError, tokenStorage } from './api';
 import { CONTENT_STATUSES, type Category, type ContentStatus, type Destination, type EventItem, type FeedPost, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
 
@@ -33,45 +35,35 @@ const USERS: MockUser[] = [
   user(10, 'phamquangminh', 'Phạm Quang Minh', 'USER', 'PENDING', 0)
 ];
 
+const CATEGORY_ICON: Record<string, string> = { 'Biển': 'waves', 'Văn hóa': 'landmark', 'Ẩm thực': 'utensils', 'Giải trí': 'sparkles' };
 const CATEGORIES: Omit<Category, 'destinationCount'>[] = [
-  { id: 1, name: 'Biển', iconUrl: 'waves' },
-  { id: 2, name: 'Văn hóa', iconUrl: 'landmark' },
-  { id: 3, name: 'Ẩm thực', iconUrl: 'utensils' },
-  { id: 4, name: 'Giải trí', iconUrl: 'sparkles' },
-  { id: 5, name: 'Cafe & Check-in', iconUrl: 'coffee' }
+  ...categoriesData.filter((c) => c.name !== 'Tất cả').map((c) => ({ id: c.id, name: c.name, iconUrl: CATEGORY_ICON[c.name] })),
+  { id: categoriesData.length, name: 'Cafe & Check-in', iconUrl: 'coffee' }
 ];
 
-// [tên, danh mục, quận, giá vé, giờ mở cửa, điểm sao, vĩ độ, kinh độ, mô tả] - 8 địa điểm của web du khách
-const PLACES: [string, string, string, string, string, number, number | null, number | null, string][] = [
-  ["Bà Nà Hills", "Giải trí", "Hòa Vang", "900.000 đ", "08:00 - 18:00", 4.8, 16.07366, 108.14729, "Bà Nà Hills là một trong những khu du lịch nổi tiếng nhất tại Đà Nẵng, nằm trên núi Chúa thuộc huyện Hòa Vang. Nơi đây nổi bật với khí hậu mát mẻ, cảnh quan thiên nhiên tuyệt đẹp và nhiều công trình kiến trúc độc đáo.\n\nĐến với Bà Nà Hills, du khách có thể tham quan Cầu Vàng, Làng Pháp, Fantasy Park và trải nghiệm hệ thống cáp treo giữa núi rừng. Đây là địa điểm phù hợp cho cả gia đình, nhóm bạn và những người yêu thích khám phá."],
-  ["Cầu Vàng (Golden Bridge)", "Giải trí", "Hòa Vang", "Miễn phí", "08:00 - 18:00", 4.9, 16.0611, 108.22512, "Cầu Vàng là một công trình kiến trúc nổi tiếng nằm trong khu du lịch Bà Nà Hills, Đà Nẵng. Cây cầu gây ấn tượng bởi thiết kế độc đáo với đôi bàn tay đá khổng lồ nâng đỡ thân cầu giữa núi rừng.\n\nTừ trên Cầu Vàng, du khách có thể ngắm nhìn toàn cảnh núi rừng và tận hưởng không khí trong lành. Đây cũng là một trong những địa điểm check-in nổi tiếng và được nhiều du khách lựa chọn khi đến Đà Nẵng."],
-  ["Biển Mỹ Khê", "Biển", "Sơn Trà", "Miễn phí", "08:00 - 18:00", 4.7, 16.06194, 108.24202, "Biển Mỹ Khê là một trong những bãi biển nổi tiếng nhất tại thành phố Đà Nẵng. Bãi biển sở hữu bờ cát trắng mịn, làn nước trong xanh và không gian rộng rãi, thích hợp cho các hoạt động vui chơi và nghỉ dưỡng.\n\nDu khách có thể đến Mỹ Khê để tắm biển, ngắm bình minh, đi dạo dọc bờ biển hoặc thưởng thức các món hải sản tại những nhà hàng gần khu vực."],
-  ["Bán đảo Sơn Trà", "Biển", "Sơn Trà", "Miễn phí", "08:00 - 18:00", 4.6, 16.12659, 108.11088, "Bán đảo Sơn Trà nằm cách trung tâm thành phố Đà Nẵng khoảng 10km về phía Đông Bắc. Được mệnh danh là \"viên ngọc xanh\" của thành phố, nơi đây sở hữu hệ sinh thái rừng nguyên sinh phong phú cùng những bãi biển hoang sơ tuyệt đẹp.\n\nĐến với Sơn Trà, du khách không chỉ được hòa mình vào thiên nhiên hùng vĩ mà còn có cơ hội viếng thăm Chùa Linh Ứng, nơi có tượng Phật Bà Quan Âm nổi bật hướng ra biển. Du khách cũng có thể chinh phục Đỉnh Bàn Cờ để ngắm toàn cảnh thành phố từ trên cao."],
-  ["Chợ Đêm Sơn Trà & Ẩm Thực Đà Thành", "Ẩm thực", "Sơn Trà", "Từ 150.000 đ", "08:00 - 18:00", 4.5, 16.12659, 108.11088, "Chợ Đêm Sơn Trà là một trong những địa điểm được nhiều du khách lựa chọn để khám phá không khí về đêm và ẩm thực Đà Nẵng. Khu vực này có nhiều gian hàng bán các món ăn đường phố và đặc sản địa phương.\n\nDu khách có thể thưởng thức nhiều món ăn hấp dẫn như hải sản, mì Quảng, bánh xèo, các món nướng và nhiều món ăn đường phố khác với mức giá phù hợp."],
-  ["Bảo tàng Điêu khắc Chăm", "Văn hóa", "Hải Châu", "60.000 đ", "08:00 - 18:00", 4.4, null, null, "Bảo tàng Điêu khắc Chăm là một trong những địa điểm văn hóa nổi bật tại trung tâm thành phố Đà Nẵng. Bảo tàng lưu giữ nhiều hiện vật và tác phẩm nghệ thuật có giá trị liên quan đến nền văn hóa Champa.\n\nĐến đây, du khách có thể tìm hiểu về lịch sử, văn hóa và nghệ thuật điêu khắc của người Chăm thông qua các tượng đá, phù điêu và hiện vật được trưng bày trong bảo tàng."],
-  ["Danh thắng Ngũ Hành Sơn", "Văn hóa", "Ngũ Hành Sơn", "40.000 đ", "08:00 - 18:00", 4.6, 16.12659, 108.11088, "Ngũ Hành Sơn là quần thể gồm năm ngọn núi đá vôi nổi tiếng nằm ở phía Đông Nam thành phố Đà Nẵng. Mỗi ngọn núi mang một tên gọi gắn với ngũ hành và sở hữu cảnh quan thiên nhiên đặc trưng.\n\nNơi đây nổi bật với hệ thống hang động, chùa cổ và các công trình tâm linh. Du khách có thể khám phá các hang động, tham quan chùa chiền và ngắm nhìn cảnh quan thành phố từ trên cao."],
-  ["Cầu Rồng Phun Lửa & Phun Nước", "Giải trí", "Hải Châu", "Miễn phí", "08:00 - 18:00", 4.8, 16.12659, 108.11088, "Cầu Rồng là một trong những biểu tượng nổi bật của thành phố Đà Nẵng. Cây cầu có thiết kế hình con rồng vươn mình qua sông Hàn, tạo nên một điểm nhấn đặc biệt cho thành phố.\n\nVào các tối cuối tuần, Cầu Rồng có chương trình phun lửa và phun nước thu hút đông đảo người dân và du khách. Đây là một địa điểm thích hợp để tham quan, chụp ảnh và trải nghiệm không khí về đêm của Đà Nẵng."]
-];
-
-// Bài đăng cộng đồng của web du khách: [loại, người đăng, nội dung, mã điểm đến, ảnh]
-const POSTS: [string, number, string, number | null, string[]][] = [
-  ["trai-nghiem", 6, "Tôi đã đi theo lịch trình gợi ý của ứng dụng và nó khá thú vị. Đây là 1 số địa điểm tôi cảm thấy thích.", 8, ["https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80"]],
-  ["hoi-dap", 7, "Cuối tuần này nhóm mình 4 người vào Đà Nẵng, mọi người cho mình hỏi quanh bãi biển Mỹ Khê có quán hải sản nào ngon, giá hợp lý không ạ?", 3, []],
-  ["dia-diem-moi", 8, "Tiệm Cà Phê Rừng Dừa Cẩm Lệ (Cafe & Check-in, 07:00 - 22:30, 25.000-55.000đ): Quán cafe không gian xanh mát cạnh rừng dừa nước, view hoàng hôn cực chill.", null, ["https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80", "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80"]]
-];
+// Ảnh trong data.js do bundler tạo ra (object có .src) hoặc là đường dẫn chuỗi
+const imgUrl = (img: string | { src: string }) => (typeof img === 'string' ? img : img.src);
 
 const buildDestinations = (): Destination[] => {
   const catId = (name: string) => CATEGORIES.find((c) => c.name === name)!.id;
-  const approved = PLACES.map(([name, category, district, ticketPrice, openHours, avgRating, lat, lng, description], i): Destination => ({
-    id: i + 1, name, description, district, ticketPrice, openHours, avgRating,
-    latitude: lat ?? undefined,
-    longitude: lng ?? undefined,
-    addressUrl: lat != null ? `https://www.google.com/maps?q=${lat},${lng}` : undefined,
-    categoryId: catId(category), status: 'APPROVED', createdBy: 1, createdAt: ago((9 - i) * 4000)
-  }));
+  // Link nhúng Google Maps của web du khách chứa tọa độ: ...!2d<kinh độ>!3d<vĩ độ>...
+  const coordsOf = (embedUrl: string) => {
+    const m = /!2d(-?[\d.]+)!3d(-?[\d.]+)/.exec(embedUrl);
+    return m ? { latitude: Number(Number(m[2]).toFixed(5)), longitude: Number(Number(m[1]).toFixed(5)) } : {};
+  };
+  const approved = placesData.map((p, i): Destination => {
+    const c = coordsOf(p.mapUrl);
+    return {
+      id: p.id, name: p.name, description: p.infor, district: p.address, ticketPrice: p.priceDisplay, openHours: p.time, avgRating: p.stars,
+      ...c,
+      addressUrl: 'latitude' in c ? `https://www.google.com/maps?q=${c.latitude},${c.longitude}` : undefined,
+      categoryId: catId(p.category), images: [imgUrl(p.img)], status: 'APPROVED', createdBy: 1, createdAt: ago((9 - i) * 4000)
+    };
+  });
+  const quickImage = (name: string) => quickSearchPlacesData.find((q) => q.name === name)?.img;
   const proposals: Destination[] = [
-    { id: 9, name: 'Mì Quảng Bà Mua', description: 'Món Mì Quảng chính gốc chuẩn vị Đà Thành thơm ngon đậm đà.', district: 'Hải Châu', ticketPrice: 'Từ 45.000 đ', openHours: '06:30 - 22:00', avgRating: 0, categoryId: catId('Ẩm thực'), status: 'PENDING', createdBy: 3, createdAt: ago(120) },
-    { id: 10, name: 'Tiệm Cà Phê Rừng Dừa Cẩm Lệ', description: 'Quán cafe không gian xanh mát cạnh rừng dừa nước, view hoàng hôn cực chill.', district: 'Cẩm Lệ', ticketPrice: '25.000 - 55.000 đ', openHours: '07:00 - 22:30', avgRating: 0, categoryId: catId('Cafe & Check-in'), status: 'PENDING', createdBy: 8, createdAt: ago(600) },
+    { id: 9, name: 'Mì Quảng Bà Mua', description: 'Món Mì Quảng chính gốc chuẩn vị Đà Thành thơm ngon đậm đà.', district: 'Hải Châu', ticketPrice: 'Từ 45.000 đ', openHours: '06:30 - 22:00', avgRating: 0, categoryId: catId('Ẩm thực'), images: [quickImage('Mì Quảng Bà Mua')].filter((x) => !!x).map((x) => imgUrl(x!)), status: 'PENDING', createdBy: 3, createdAt: ago(120) },
+    { id: 10, name: 'Tiệm Cà Phê Rừng Dừa Cẩm Lệ', description: 'Quán cafe không gian xanh mát cạnh rừng dừa nước, view hoàng hôn cực chill.', district: 'Cẩm Lệ', ticketPrice: '25.000 - 55.000 đ', openHours: '07:00 - 22:30', avgRating: 0, categoryId: catId('Cafe & Check-in'), images: ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80'], status: 'PENDING', createdBy: 8, createdAt: ago(600) },
     { id: 11, name: 'Quán nhậu vỉa hè không tên', description: 'Không có địa chỉ cụ thể, ảnh lấy từ internet.', district: 'Thanh Khê', avgRating: 0, categoryId: catId('Ẩm thực'), status: 'REJECTED', createdBy: 9, createdAt: ago(9000) }
   ];
   return [...approved, ...proposals];
@@ -87,15 +79,28 @@ const buildEvents = (): StoredEvent[] => [
 ];
 
 type StoredPost = { id: number; userId: number; destinationId: number | null; content: string; status: ContentStatus; createdAt: string; images: string[]; likes: number; comments: number };
+// Cấu trúc bài đăng của web du khách có nhiều loại (trải nghiệm, hỏi đáp, địa điểm mới) nên khai báo lỏng
+type WebPost = { user: { name: string }; content?: string; placeName?: string; category?: string; openTime?: string; closeTime?: string; priceFrom?: string; priceTo?: string; description?: string; location?: string; image?: string; images?: string[]; likes: number; commentsCount: number };
+const userByName = (name: string) => USERS.find((u) => u.fullName === name)?.id ?? 3;
+const POST_PLACE: Record<string, number> = { 'Cầu Rồng, Đà Nẵng': 8, 'Bãi biển Mỹ Khê, Đà Nẵng': 3 };
 const buildPosts = (): StoredPost[] =>
-  POSTS.map(([, userId, content, destinationId, images], i) => ({ id: i + 1, userId, destinationId, content, status: i === 1 ? 'APPROVED' : 'PENDING', createdAt: ago([120, 1500, 45][i]), images, likes: [1, 3, 8][i], comments: [1, 4, 2][i] }));
+  (initialPosts as WebPost[]).map((p, i) => ({
+    id: i + 1,
+    userId: userByName(p.user.name),
+    destinationId: (p.location && POST_PLACE[p.location]) || null,
+    content: p.content ?? `${p.placeName} (${p.category}, ${p.openTime} - ${p.closeTime}, ${p.priceFrom}-${p.priceTo}đ): ${p.description}`,
+    status: i === 1 ? 'APPROVED' : 'PENDING',
+    createdAt: ago([120, 1500, 45][i] ?? 60),
+    images: p.images ?? (p.image ? [p.image] : []),
+    likes: p.likes,
+    comments: p.commentsCount
+  }));
 
 const buildReviews = (): Review[] => {
   const r = (id: number, userId: number, destinationId: number, rating: number, comment: string, status: ContentStatus, minutesAgo: number, imageUrl?: string): Review => ({ id, userId, destinationId, rating, comment, status, createdAt: ago(minutesAgo), images: imageUrl ? [photo(imageUrl)] : [] });
   return [
-    r(1, 3, 1, 5, 'Địa điểm rất đẹp, không khí mát mẻ và trong lành. Gia đình mình rất thích chuyến đi này!', 'PENDING', 50, 'photo-1590073844006-33379778ae09'),
-    r(2, 4, 2, 4, 'Khung cảnh tuyệt vời để chụp hình check-in. Mọi người nên đi vào buổi sáng để đỡ đông hơn nhé.', 'PENDING', 190),
-    r(3, 5, 6, 4, 'Dịch vụ khá ổn, nhân viên thân thiện. Giá vé hợp lý với trải nghiệm mang lại.', 'PENDING', 700),
+    // 3 đánh giá mẫu của web du khách (Nguyễn Văn A, Trần Thị B, Lê Hoàng C), gán vào Bà Nà Hills, Cầu Vàng, Bảo tàng Chăm
+    ...sampleReviews.map((v, i) => r(i + 1, userByName(v.name), [1, 2, 6][i], Math.round(v.stars), v.comment, 'PENDING', [50, 190, 700][i], i === 0 ? 'photo-1590073844006-33379778ae09' : undefined)),
     r(4, 6, 8, 5, 'Xem cầu phun lửa tối thứ 7, rất đông nhưng đáng đi.', 'APPROVED', 2900, 'photo-1559592413-7cec4d0cae2b'),
     r(5, 7, 3, 4, 'Biển sạch, nước trong, buổi sáng đi dạo rất thích.', 'APPROVED', 4400, 'photo-1507525428034-b723cf961d3e'),
     r(6, 8, 5, 5, 'Đồ ăn đa dạng, giá hợp lý, nên đi vào buổi tối.', 'APPROVED', 20000),

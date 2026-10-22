@@ -212,8 +212,9 @@ export default function DashboardPage() {
                   ) : (
                     <div className="divide-y divide-gray-100">
                       {allDestinations.slice(0, 5).map((d) => (
-                        <div key={d.id} className="py-2.5 flex items-center justify-between gap-3">
-                          <div className="min-w-0">
+                        <div key={d.id} className="py-2.5 flex items-center gap-3">
+                          {d.images?.[0] ? <img src={d.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-200" /> : <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0"><ImageOff className="w-4 h-4 text-gray-300" /></div>}
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-gray-900 line-clamp-1">{d.name}</p>
                             <p className="text-[11px] text-gray-500">{d.district}</p>
                           </div>

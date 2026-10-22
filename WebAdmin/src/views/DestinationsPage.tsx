@@ -6,7 +6,7 @@ import { Modal, Field, ModalActions, inputClass, PageHeading, searchInputClass, 
 import { useApi, upsertById, removeById, orUndefined } from '@/lib/utils';
 import { useAction, usePending } from '@/lib/context';
 import { CONTENT_STATUS_LABEL, CONTENT_STATUSES, DISTRICTS, type ContentStatus, type Destination, type DestinationInput } from '@/lib/types';
-import { Search, MapPin, Edit, Trash2, Star, Compass, CheckCircle2 } from 'lucide-react';
+import { Search, MapPin, Edit, Trash2, Star, Compass, CheckCircle2, ImageOff } from 'lucide-react';
 import { destinationApi } from '@/lib/api';
 
 const emptyForm = { name: '', description: '', district: DISTRICTS[0], addressUrl: '', latitude: '', longitude: '', ticketPrice: 'Miễn phí', openHours: '', status: 'APPROVED' as ContentStatus };
@@ -138,12 +138,21 @@ export default function DestinationsPage() {
                       filtered.map((d) => (
                         <tr key={d.id} className="hover:bg-[#e6f4f2]/70 transition-colors">
                           <td className="py-3 pl-4">
-                            <p className="font-bold text-gray-900 text-sm">{d.name}</p>
-                            {d.addressUrl && (
-                              <a href={d.addressUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[11px] text-[#006971] hover:underline">
-                                <MapPin className="w-3 h-3" /> Xem bản đồ
-                              </a>
-                            )}
+                            <div className="flex items-center gap-3">
+                              {d.images?.[0] ? (
+                                <img src={d.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0 border border-gray-200" />
+                              ) : (
+                                <div className="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0"><ImageOff className="w-4 h-4 text-gray-400" /></div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="font-bold text-gray-900 text-sm">{d.name}</p>
+                                {d.addressUrl && (
+                                  <a href={d.addressUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[11px] text-[#006971] hover:underline">
+                                    <MapPin className="w-3 h-3" /> Xem bản đồ
+                                  </a>
+                                )}
+                              </div>
+                            </div>
                           </td>
                           <td className="py-3 px-3 font-semibold text-gray-700 whitespace-nowrap">{d.district}</td>
                           <td className="py-3 px-3 text-gray-600">{d.openHours ?? '—'}</td>
