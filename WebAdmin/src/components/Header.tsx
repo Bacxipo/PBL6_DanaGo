@@ -4,10 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Bell, Sparkles } from 'lucide-react';
 import { usePending } from '@/lib/context';
-import { USE_MOCK } from '@/lib/api';
 
 export default function Header({ title, breadcrumb }: { title: string; breadcrumb?: string }) {
-  const [lang, setLang] = useState<'VI' | 'EN'>('VI');
   const [open, setOpen] = useState(false);
   const { counts } = usePending();
 
@@ -30,23 +28,6 @@ export default function Header({ title, breadcrumb }: { title: string; breadcrum
       </div>
 
       <div className="flex items-center gap-3">
-        {USE_MOCK && (
-          <span title="Chưa kết nối backend: đang dùng dữ liệu mẫu, tải lại trang sẽ về ban đầu" className="hidden md:inline-flex px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-[11px] font-bold text-amber-700">
-            Dữ liệu mẫu
-          </span>
-        )}
-        <div className="flex items-center bg-[#f1f5f9] border border-[#e2e8f0] rounded-lg p-0.5 text-xs font-bold">
-          {(['VI', 'EN'] as const).map((l) => (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${lang === l ? 'bg-[#006971] text-white shadow-xs' : 'text-gray-500 hover:text-gray-900'}`}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-
         <div className="relative">
           <button
             onClick={() => setOpen(!open)}
