@@ -5,8 +5,8 @@ import Header from '@/components/Header';
 import { AsyncContent } from '@/components/ui';
 import { useApi, avatarFallback, formatDate, timeAgo, todayIso } from '@/lib/utils';
 import { useAction, useAuth, usePending } from '@/lib/context';
-import { Calendar, CheckCircle2, ChevronRight, ImageOff, Inbox, MapPin, MessageSquare, ShieldAlert, Users, type LucideIcon } from 'lucide-react';
-import { destinationApi, eventApi, feedApi, userApi } from '@/lib/api';
+import { Calendar, CheckCircle2, ChevronRight, ImageOff, Inbox, MapPin, MessageSquare, ShieldAlert, Star, Users, type LucideIcon } from 'lucide-react';
+import { destinationApi, eventApi, feedApi, reviewApi, userApi } from '@/lib/api';
 import { getTimeline } from '@/lib/types';
 
 const DAY_MS = 86_400_000;
@@ -26,6 +26,7 @@ function Kpi({ title, value, note, icon: Icon, href, className }: { title: strin
 
 // Loại nội dung trong hàng đợi kiểm duyệt
 const KIND = {
+  review: { label: 'Đánh giá', icon: Star, className: 'bg-cyan-50 text-cyan-700' },
   poi: { label: 'Địa điểm mới', icon: MapPin, className: 'bg-amber-50 text-amber-600' },
   event: { label: 'Sự kiện', icon: Calendar, className: 'bg-orange-50 text-[#a43c12]' },
   post: { label: 'Bài đăng', icon: MessageSquare, className: 'bg-[#e6f4f2] text-[#006971]' }
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const destinations = useApi(destinationApi.listAll);
   const events = useApi(eventApi.listAll);
   const posts = useApi(() => feedApi.listByStatus('PENDING'));
+  const reviews = useApi(() => reviewApi.listByStatus('PENDING')); // lỗi (backend chưa có API) thì bỏ qua, không có mục đánh giá
   // Danh sách tài khoản chỉ ADMIN xem được
   const users = useApi(userApi.list, [], isAdmin);
 
@@ -55,6 +57,7 @@ export default function DashboardPage() {
 
   // Hàng đợi = địa điểm + sự kiện + bài đăng đang chờ duyệt, gửi trước xử lý trước
   const queue = [
+    ...(reviews.data ?? []).map((r) => ({ key: `r${r.id}`, kind: 'review' as const, id: r.id, at: r.createdAt, title: `${r.user?.fullName ?? 'Du khách'} đánh giá ${r.rating}★`, sub: r.destination?.name ?? '', text: r.comment })),
     ...(destinations.data ?? []).filter((d) => d.status === 'PENDING').map((d) => ({ key: `d${d.id}`, kind: 'poi' as const, id: d.id, at: d.createdAt, title: d.name, sub: d.district, text: d.description })),
     ...(events.data ?? []).filter((e) => e.status === 'PENDING').map((e) => ({ key: `e${e.id}`, kind: 'event' as const, id: e.id, at: e.createdAt, title: e.name, sub: `${formatDate(e.startDate)} — ${formatDate(e.endDate)}`, text: e.description })),
     ...(posts.data ?? []).map((p) => ({ key: `p${p.id}`, kind: 'post' as const, id: p.id, at: p.createdAt, title: `${p.user.fullName} đăng bài`, sub: 'Cộng đồng', text: p.content }))
@@ -62,7 +65,8 @@ export default function DashboardPage() {
 
   const approve = async (item: (typeof queue)[number]) => {
     const ok = await run(async () => {
-      if (item.kind === 'poi') await destinationApi.setStatus(item.id, 'APPROVED');
+      if (item.kind === 'review') await reviewApi.setStatus(item.id, 'APPROVED');
+      else if (item.kind === 'poi') await destinationApi.setStatus(item.id, 'APPROVED');
       else if (item.kind === 'event') await eventApi.setStatus(item.id, 'APPROVED');
       else await feedApi.setStatus(item.id, 'APPROVED');
     }, 'Đã duyệt.');
@@ -70,6 +74,7 @@ export default function DashboardPage() {
       destinations.reload();
       events.reload();
       posts.reload();
+      reviews.reload();
       refresh();
     }
   };
@@ -86,7 +91,7 @@ export default function DashboardPage() {
           {() => (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Kpi title="Cần kiểm duyệt" value={pendingTotal} note={`${counts.destinations} địa điểm · ${counts.events} sự kiện · ${counts.feedPosts} bài đăng`} icon={ShieldAlert} href="/moderation" className="bg-amber-50 text-amber-600" />
+                <Kpi title="Cần kiểm duyệt" value={pendingTotal} note={`${counts.reviews} đánh giá · ${counts.destinations} địa điểm · ${counts.events} sự kiện · ${counts.feedPosts} bài đăng`} icon={ShieldAlert} href="/moderation" className="bg-amber-50 text-amber-600" />
                 <Kpi title="Điểm đến đang hiển thị" value={approved.length} note={`${allDestinations.length} điểm đến trong hệ thống`} icon={MapPin} href="/destinations" className="bg-[#e6f4f2] text-[#006971]" />
                 {isAdmin && users.data && <Kpi title="Tài khoản mới (7 ngày)" value={newUsers7d.length} note={`${users.data.filter((u) => u.status === 'PENDING').length} tài khoản chờ kích hoạt`} icon={Users} href="/users" className="bg-purple-50 text-purple-600" />}
                 <Kpi title="Sự kiện đang & sắp diễn ra" value={upcoming.length} note={`${events.data?.length ?? 0} sự kiện trong hệ thống`} icon={Calendar} href="/events" className="bg-orange-50 text-[#a43c12]" />

@@ -1,4 +1,4 @@
-import { CONTENT_STATUSES, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateEventInput, type CreateUserInput, type Destination, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Trends, type User, type UserRole, type UserStatus } from './types';
+import { CONTENT_STATUSES, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateEventInput, type CreateUserInput, type Destination, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
 
 // ───────── Phiên đăng nhập (token + thông tin user) ─────────
 // localStorage có thể bị chặn (chế độ riêng tư...) nên bọc try/catch
@@ -37,7 +37,10 @@ export const tokenStorage = {
 };
 
 // ───────── HTTP client ─────────
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// Chưa cấu hình NEXT_PUBLIC_API_URL -> chạy chế độ DỮ LIỆU MẪU (lib/mock.ts), không cần backend hay database.
+// Muốn dùng backend thật: đặt NEXT_PUBLIC_API_URL=http://localhost:5000 trong WebAdmin/.env.local
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+export const USE_MOCK = !API_BASE_URL;
 
 // Thông báo khi route chưa tồn tại ở backend; các trang dùng isMissingApi để vẫn hiện giao diện
 export const MISSING_API_PREFIX = 'Backend chưa có API này';
@@ -66,6 +69,8 @@ async function readError(res: Response) {
 }
 
 async function request<T>(method: string, path: string, body?: unknown, query?: Query): Promise<T> {
+  if (USE_MOCK) return (await import('./mock')).mockRequest<T>(method, path, body, query);
+
   const url = new URL(path, API_BASE_URL);
   Object.entries(query ?? {}).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, String(v)));
 
@@ -143,6 +148,11 @@ export const categoryApi = {
   create: (input: CategoryInput) => api.post<Category>('/categories', input),
   update: (id: number, input: CategoryInput) => api.put<Category>(`/categories/${id}`, input),
   remove: (id: number) => api.delete(`/categories/${id}`)
+};
+
+export const reviewApi = {
+  listByStatus: (status: ContentStatus) => api.get<Review[]>('/community/reviews/manage', { status }),
+  setStatus: (id: number, status: ContentStatus) => setStatus<Review>('/community/reviews', id, status)
 };
 
 export const statsApi = {

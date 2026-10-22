@@ -157,6 +157,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
 // ───────── Số nội dung chờ duyệt (badge sidebar, chuông thông báo) ─────────
 interface PendingCounts {
+  reviews: number;
   destinations: number;
   feedPosts: number;
   events: number;
@@ -164,7 +165,7 @@ interface PendingCounts {
 
 interface PendingState {
   counts: PendingCounts;
-  moderation: number; // địa điểm + bài đăng chờ duyệt (badge "Kiểm duyệt")
+  moderation: number; // đánh giá + địa điểm + bài đăng chờ duyệt (badge "Kiểm duyệt")
   refresh: () => void; // gọi sau mỗi lần duyệt / từ chối
 }
 
@@ -175,16 +176,17 @@ const countPending = (path: string) =>
 
 export function PendingProvider({ children }: { children: React.ReactNode }) {
   const { data, reload } = useApi<PendingCounts>(async () => {
-    const [destinations, feedPosts, events] = await Promise.all([
+    const [reviews, destinations, feedPosts, events] = await Promise.all([
+      countPending('/community/reviews/manage'),
       countPending('/destinations'),
       countPending('/feed/posts'),
       countPending('/events')
     ]);
-    return { destinations, feedPosts, events };
+    return { reviews, destinations, feedPosts, events };
   });
 
-  const counts = data ?? { destinations: 0, feedPosts: 0, events: 0 };
-  return <PendingContext.Provider value={{ counts, moderation: counts.destinations + counts.feedPosts, refresh: reload }}>{children}</PendingContext.Provider>;
+  const counts = data ?? { reviews: 0, destinations: 0, feedPosts: 0, events: 0 };
+  return <PendingContext.Provider value={{ counts, moderation: counts.reviews + counts.destinations + counts.feedPosts, refresh: reload }}>{children}</PendingContext.Provider>;
 }
 
 export function usePending() {

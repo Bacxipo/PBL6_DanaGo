@@ -145,6 +145,20 @@ export function getTimeline({ startDate, endDate }: Pick<EventItem, 'startDate' 
   return 'HAPPENING';
 }
 
+// ───────── review (đánh giá của du khách) ─────────
+export interface Review {
+  id: number;
+  userId: number;
+  destinationId: number;
+  rating: number;
+  comment?: string;
+  status: ContentStatus;
+  createdAt: string;
+  user?: { id: number; fullName: string; avatarUrl?: string };
+  destination?: { id: number; name: string };
+  images: string[];
+}
+
 // ───────── feed (bài đăng cộng đồng) ─────────
 export interface FeedPost {
   id: number;

@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import { StatusBadge, StatusFilter, AsyncContent, EmptyState } from '@/components/ui';
-import { useApi, removeById, avatarFallback, timeAgo } from '@/lib/utils';
+import { useApi, removeById, avatarFallback, isMissingApi, timeAgo } from '@/lib/utils';
 import { useAction, useAuth, usePending } from '@/lib/context';
 import type { ContentStatus } from '@/lib/types';
-import { CheckCircle2, XCircle, ExternalLink, MapPin, MessageSquare, Heart } from 'lucide-react';
-import { destinationApi, feedApi, userApi } from '@/lib/api';
+import { CheckCircle2, XCircle, ExternalLink, MapPin, MessageSquare, Heart, Star } from 'lucide-react';
+import { destinationApi, feedApi, reviewApi, userApi } from '@/lib/api';
 
-type Tab = 'pois' | 'posts';
+type Tab = 'reviews' | 'pois' | 'posts';
 
 // Nút duyệt / từ chối dùng chung cho cả 2 loại nội dung
 function ReviewButtons({ status, busy, onSet }: { status: ContentStatus; busy: boolean; onSet: (s: ContentStatus) => void }) {
@@ -33,9 +33,11 @@ export default function ModerationPage() {
   const { user } = useAuth();
   const { counts, refresh } = usePending();
   const { run, busy } = useAction();
-  const [tab, setTab] = useState<Tab>('pois');
+  const [tab, setTab] = useState<Tab>('reviews');
   const [status, setStatus] = useState<ContentStatus>('PENDING');
 
+  const reviews = useApi(() => reviewApi.listByStatus(status), [status], tab === 'reviews');
+  const reviewsMissing = isMissingApi(reviews.error); // backend chưa có API duyệt đánh giá
   const pois = useApi(() => destinationApi.listByStatus(status), [status], tab === 'pois');
   const posts = useApi(() => feedApi.listByStatus(status), [status], tab === 'posts');
   // Chỉ ADMIN xem được danh sách tài khoản -> dùng để hiện tên người gửi địa điểm
@@ -45,7 +47,10 @@ export default function ModerationPage() {
   // Đổi trạng thái xong thì bỏ mục khỏi danh sách đang lọc
   const moderate = (kind: Tab, id: number, next: ContentStatus) =>
     run(async () => {
-      if (kind === 'pois') {
+      if (kind === 'reviews') {
+        await reviewApi.setStatus(id, next);
+        reviews.setData((xs) => removeById(xs, id));
+      } else if (kind === 'pois') {
         await destinationApi.setStatus(id, next);
         pois.setData((xs) => removeById(xs, id));
       } else {
@@ -56,6 +61,7 @@ export default function ModerationPage() {
     }, next === 'APPROVED' ? 'Đã phê duyệt.' : 'Đã từ chối.');
 
   const tabs = [
+    { key: 'reviews' as const, label: 'Đánh giá của du khách', icon: Star, count: counts.reviews },
     { key: 'pois' as const, label: 'Địa điểm đề xuất', icon: MapPin, count: counts.destinations },
     { key: 'posts' as const, label: 'Bài đăng cộng đồng', icon: MessageSquare, count: counts.feedPosts }
   ];
@@ -75,6 +81,45 @@ export default function ModerationPage() {
         </div>
 
         <StatusFilter value={status} onChange={setStatus} />
+
+        {tab === 'reviews' && (
+          <AsyncContent loading={reviews.loading} error={reviewsMissing ? null : reviews.error} data={reviewsMissing ? [] : reviews.data} onRetry={reviews.reload}>
+            {(list) =>
+              list.length === 0 ? (
+                <EmptyState icon={Star} title="Không có đánh giá nào trong mục này" />
+              ) : (
+                <div className="space-y-3">
+                  {list.map((r) => (
+                    <div key={r.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-xs hover:border-[#006971]/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4 min-w-0">
+                        <img src={r.user?.avatarUrl || avatarFallback(r.user?.fullName ?? String(r.userId))} alt="" className="w-11 h-11 rounded-full bg-[#e6f4f2] border border-gray-200 shrink-0 object-cover" />
+                        <div className="space-y-1.5 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-gray-900 text-sm">{r.user?.fullName ?? `Tài khoản #${r.userId}`}</span>
+                            <span className="text-xs text-gray-400">• {timeAgo(r.createdAt)}</span>
+                            <span className="text-xs text-gray-500">tại</span>
+                            <span className="text-xs font-bold text-[#006971] bg-[#e6f4f2] px-2 py-0.5 rounded-md">{r.destination?.name ?? `Điểm đến #${r.destinationId}`}</span>
+                          </div>
+                          <div className="flex items-center gap-0.5" aria-label={`${r.rating} trên 5 sao`}>
+                            {[...Array(5)].map((_, i) => <span key={i} className={`text-sm ${i < r.rating ? 'text-amber-400' : 'text-gray-200'}`}>★</span>)}
+                          </div>
+                          {r.comment && <p className="text-gray-700 text-sm leading-relaxed">&ldquo;{r.comment}&rdquo;</p>}
+                          {r.images.length > 0 && (
+                            <div className="flex gap-2 pt-1">{r.images.map((url) => <img key={url} src={url} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />)}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex md:flex-col items-center md:items-end justify-between gap-3 shrink-0">
+                        <StatusBadge status={r.status} />
+                        <ReviewButtons status={r.status} busy={busy} onSet={(s) => moderate('reviews', r.id, s)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            }
+          </AsyncContent>
+        )}
 
         {tab === 'pois' && (
           <AsyncContent loading={pois.loading} error={pois.error} data={pois.data} onRetry={pois.reload}>
