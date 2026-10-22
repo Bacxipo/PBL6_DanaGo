@@ -1,7 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:smarttrip/screens/explore_map_screen.dart';
 import 'package:smarttrip/screens/home_screen.dart';
-import 'package:smarttrip/screens/onboarding_screen.dart';
+import 'package:smarttrip/screens/main_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: HomeScreen(),
+      home: MainScreen(),
     );
   }
 }
