@@ -10,9 +10,13 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { DestinationService } from '../services/destination.service';
-import { DestinationResponseDto } from '../dto/destination-response.dto';
+import { DestinationResponseDto, DestinationImageDto } from '../dto/destination-response.dto';
 import { CreateDestinationDto } from '../dto/create-destination.dto';
 import { UpdateDestinationDto } from '../dto/update-destination.dto';
 import { UpdateDestinationStatusDto } from '../dto/update-destination-status.dto';
@@ -44,7 +48,14 @@ export class DestinationController {
     return this.destinationService.getAllDestinations(targetStatus);
   }
 
+  @Get('categories')
+  async getCategories() {
+    return this.destinationService.getAllCategories();
+  }
+
+
   @Get(':id')
+
   async getById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<DestinationResponseDto> {
@@ -78,5 +89,29 @@ export class DestinationController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ message: string }> {
     return this.destinationService.deleteDestination(id);
+  }
+
+  // --- Upload và quản lý ảnh của điểm đến ---
+  @Post(':id/images')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FilesInterceptor('images', 10))
+  async uploadImages(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser('userId') userId: number,
+  ): Promise<DestinationImageDto[]> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Vui lòng chọn ít nhất 1 ảnh để tải lên (field: images).');
+    }
+    return this.destinationService.uploadImages(id, files, userId);
+  }
+
+  @Delete('images/:imageId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  async deleteImage(
+    @Param('imageId', ParseIntPipe) imageId: number,
+  ): Promise<{ message: string }> {
+    return this.destinationService.deleteImage(imageId);
   }
 }

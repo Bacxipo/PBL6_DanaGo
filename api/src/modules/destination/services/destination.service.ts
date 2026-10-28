@@ -1,16 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DestinationRepository } from '../repositories/destination.repository';
 import { DestinationMapper } from '../mappers/destination.mapper';
-import { DestinationResponseDto } from '../dto/destination-response.dto';
+import { DestinationResponseDto, DestinationImageDto } from '../dto/destination-response.dto';
 import { CreateDestinationDto } from '../dto/create-destination.dto';
 import { UpdateDestinationDto } from '../dto/update-destination.dto';
 import { UpdateDestinationStatusDto } from '../dto/update-destination-status.dto';
 import { DestinationNotFoundException } from '../exceptions/destination-not-found.exception';
+import { SupabaseStorageService } from '../../../shared/storage/supabase-storage.service';
 import { ContentStatus } from '@prisma/client';
 
 @Injectable()
 export class DestinationService {
-  constructor(private readonly destinationRepository: DestinationRepository) {}
+  constructor(
+    private readonly destinationRepository: DestinationRepository,
+    private readonly storageService: SupabaseStorageService,
+  ) {}
 
   async createDestination(dto: CreateDestinationDto, userId?: number): Promise<DestinationResponseDto> {
     const created = await this.destinationRepository.create(dto, userId);
@@ -21,6 +25,11 @@ export class DestinationService {
     const list = await this.destinationRepository.findAll(status);
     return list.map((item) => DestinationMapper.toResponseDto(item));
   }
+
+  async getAllCategories() {
+    return this.destinationRepository.getAllCategories();
+  }
+
 
   async getDestinationById(id: number): Promise<DestinationResponseDto> {
     const entity = await this.destinationRepository.findById(id);
@@ -46,5 +55,48 @@ export class DestinationService {
     await this.getDestinationById(id);
     await this.destinationRepository.delete(id);
     return { message: `Đã xóa điểm đến ID ${id} thành công.` };
+  }
+
+  // --- Upload and manage Destination Images ---
+  async uploadImages(
+    destinationId: number,
+    files: Express.Multer.File[],
+    userId?: number,
+  ): Promise<DestinationImageDto[]> {
+    await this.getDestinationById(destinationId);
+
+    const uploadedResults: DestinationImageDto[] = [];
+    for (const file of files) {
+      // 1. Upload lên Supabase Storage bucket 'destinations'
+      const imageUrl = await this.storageService.uploadFile(
+        file,
+        'destination_image',
+        `dest-${destinationId}`,
+      );
+
+      // 2. Lưu URL vào bảng destination_image
+      const savedImg = await this.destinationRepository.addImage(destinationId, imageUrl, userId);
+      uploadedResults.push({
+        id: savedImg.id,
+        imageUrl: savedImg.imageUrl,
+      });
+    }
+
+    return uploadedResults;
+  }
+
+  async deleteImage(imageId: number): Promise<{ message: string }> {
+    const image = await this.destinationRepository.findImageById(imageId);
+    if (!image) {
+      throw new NotFoundException(`Không tìm thấy ảnh với ID ${imageId}`);
+    }
+
+    // Xóa trên Supabase Storage
+    await this.storageService.deleteFileByUrl(image.imageUrl, 'destination_image');
+
+    // Xóa record trong DB
+    await this.destinationRepository.deleteImage(imageId);
+
+    return { message: `Đã xóa ảnh ID ${imageId} thành công.` };
   }
 }
