@@ -7,10 +7,11 @@ import Image from 'next/image';
 import ContentPost from './ContentPost';
 import NewPlacePost from './NewPlacePost';
 import PostCommentSection from './PostCommentSection';
+import EditPostForm from './EditPostForm';
 
-import { toggleFeedLike, deleteFeedPost } from '@/lib/feed-api';
+import { toggleFeedLike, deleteFeedPost, updateFeedPost, } from '@/lib/feed-api';
 
-export default function StandardPostCard({ post, onDeleted, }) {
+export default function StandardPostCard({ post, currentUserId, onDeleted, onUpdated }) {
   const [isLiked, setIsLiked] = useState(post?.isLiked || false);
   const [likesCount, setLikesCount] = useState(post?.likes || 0);
 
@@ -23,6 +24,12 @@ export default function StandardPostCard({ post, onDeleted, }) {
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [actionError, setActionError] = useState('');
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const isOwner = currentUserId === post.userId;
 
   const [showComments, setShowComments] = useState(false);
 
@@ -124,6 +131,50 @@ export default function StandardPostCard({ post, onDeleted, }) {
     }
   };
 
+  const openEdit = () => {
+    setEditContent(post.content);
+    setActionError('');
+    setIsEditing(true);
+  };
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+
+    const content = editContent.trim();
+
+    if (!content || isSaving || isDeleting) return;
+
+    setActionError('');
+
+    const token = sessionStorage.getItem('accessToken');
+
+    if (!token) {
+      setActionError('Bạn cần đăng nhập để chỉnh sửa bài viết.');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const updatedPost = await updateFeedPost(
+        post.id,
+        content,
+        token
+      );
+
+      onUpdated?.(updatedPost);
+      setIsEditing(false);
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'Không thể cập nhật bài viết.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4 mb-6 transition hover:shadow-md">
 
@@ -162,32 +213,59 @@ export default function StandardPostCard({ post, onDeleted, }) {
             </span>
           )}
 
-          <details className="relative">
-            <summary
-              aria-label="Tùy chọn bài viết"
-              className="list-none cursor-pointer p-1 text-gray-400 hover:text-gray-600"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </summary>
-
-            <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-xl border border-gray-100 bg-white p-1 shadow-lg">
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+          {isOwner && (
+            <details className="relative">
+              <summary
+                aria-label="Tùy chọn bài viết"
+                className="list-none cursor-pointer p-1 text-gray-400 hover:text-gray-600"
               >
-                {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}
-              </button>
-            </div>
-          </details>
+                <MoreVertical className="w-4 h-4" />
+              </summary>
+
+              <div className="absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-gray-100 bg-white p-1 shadow-lg">
+                <button
+                  type="button"
+                  onClick={openEdit}
+                  disabled={isDeleting || isSaving}
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Chỉnh sửa bài viết
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting || isSaving}
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}
+                </button>
+              </div>
+            </details>
+          )}
         </div>
       </div>
 
-      {actionError && (
+      {actionError && !isEditing && (
         <p role="alert" className="text-sm text-red-600">
           {actionError}
         </p>
+      )}
+
+      {isEditing && (
+        <EditPostForm
+          postId={post.id}
+          content={editContent}
+          onContentChange={setEditContent}
+          onSubmit={handleSave}
+          onCancel={() => {
+            setIsEditing(false);
+            setActionError('');
+          }}
+          isSaving={isSaving}
+          isDeleting={isDeleting}
+          error={actionError}
+        />
       )}
 
       {/* ================= 2. NỘI DUNG ================= */}

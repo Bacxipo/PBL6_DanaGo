@@ -5,14 +5,16 @@ import CreatePostBox from '@/components/comon/community/CreatePostBox';
 import CreatePostModal from '@/components/comon/community/CreatePostModal';
 import CommunityFeed from '@/components/comon/community/CommunityFeed';
 
-import { getFeedPosts } from '@/lib/feed-api';
+import { getFeedPosts, getMyProfile } from '@/lib/feed-api';
+import { mapFeedPost, updatePostInList } from '@/lib/feed-utils';
+
 export default function Community() {
   const [posts, setPosts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [feedError, setFeedError] = useState('');
-
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const handleAddPost = () => {
     setNotice('Đăng bài thành công. Bài viết đang chờ duyệt.');
@@ -27,21 +29,7 @@ export default function Community() {
 
         if (!active) return;
 
-        setPosts(
-          data.map((post) => ({
-            ...post,
-            user: {
-              ...post.user,
-              name: post.user.fullName || post.user.username,
-              avatar: post.user.avatarUrl,
-            },
-            images: post.images.map((image) => image.imageUrl),
-            likes: post._count.likes,
-            commentsCount: post._count.comments,
-            location: post.destination?.name,
-            date: new Date(post.createdAt).toLocaleDateString('vi-VN'),
-          })),
-        );
+        setPosts(data.map(mapFeedPost));
       } catch (error) {
         if (active) {
           setFeedError(
@@ -54,9 +42,28 @@ export default function Community() {
         if (active) setLoading(false);
       }
     }
+    async function loadCurrentUser() {
+      const token = sessionStorage.getItem('accessToken');
 
+      if (!token) {
+        if (active) setCurrentUserId(null);
+        return;
+      }
+
+      try {
+        const user = await getMyProfile(token);
+
+        if (active) {
+          setCurrentUserId(user.id);
+        }
+      } catch {
+        if (active) {
+          setCurrentUserId(null);
+        }
+      }
+    }
     loadPosts();
-
+    loadCurrentUser();
     return () => {
       active = false;
     };
@@ -95,7 +102,20 @@ export default function Community() {
             {feedError}
           </p>
         ) : (
-          <CommunityFeed posts={posts} />
+          <CommunityFeed
+            posts={posts}
+            currentUserId={currentUserId}
+            onUpdated={(updatedPost) => {
+              setPosts((previous) =>
+                updatePostInList(previous, updatedPost)
+              );
+            }}
+            onDeleted={(postId) => {
+              setPosts((previous) =>
+                previous.filter((item) => item.id !== postId)
+              );
+            }}
+          />
         )}
 
         {/* Create Post Modal */}

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Grid3X3, Plus, User } from 'lucide-react';
 import { getMyFeedPosts, getMyProfile } from '@/lib/feed-api';
+import { mapFeedPost, updatePostInList } from '@/lib/feed-utils';
 import StandardPostCard from '../comon/community/StandardPostCard';
 
 export default function PersonalPage() {
@@ -34,19 +35,7 @@ export default function PersonalPage() {
                 ]);
                 if (!active) return;
                 setProfile(user);
-                setPosts(data.map((post) => ({
-                    ...post,
-                    user: {
-                        ...post.user,
-                        name: post.user.fullName || post.user.username,
-                        avatar: post.user.avatarUrl,
-                    },
-                    images: post.images.map((image) => image.imageUrl),
-                    likes: post._count.likes,
-                    commentsCount: post._count.comments,
-                    location: post.destination?.name,
-                    date: new Date(post.createdAt).toLocaleDateString('vi-VN'),
-                })));
+                setPosts(data.map(mapFeedPost));
             } catch (cause) {
                 if (active) setError(cause instanceof Error ? cause.message : 'Không thể tải bài viết.');
             } finally {
@@ -99,12 +88,21 @@ export default function PersonalPage() {
                     </div>
                 ) : (
                     posts.map((post) => (
-                        <StandardPostCard key={post.id} post={post}
+                        <StandardPostCard
+                            key={post.id}
+                            post={post}
+                            currentUserId={profile?.id}
                             onDeleted={(postId) => {
                                 setPosts((previous) =>
                                     previous.filter((item) => item.id !== postId)
                                 );
-                            }} />
+                            }}
+                            onUpdated={(updatedPost) => {
+                                setPosts((previous) =>
+                                    updatePostInList(previous, updatedPost)
+                                );
+                            }}
+                        />
                     ))
                 )}
             </div>

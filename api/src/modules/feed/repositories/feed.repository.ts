@@ -312,4 +312,13 @@ export class FeedRepository {
       where: { id },
     });
   }
+
+  async updatePostContent(postId: number, content: string) {
+    await this.prisma.feedPost.update({
+      where: { id: postId },
+      data: { content },
+    });
+
+    return this.findPostById(postId);
+  }
 }

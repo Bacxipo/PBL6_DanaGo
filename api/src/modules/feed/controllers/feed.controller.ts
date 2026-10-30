@@ -8,6 +8,7 @@ import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { UserRole, ContentStatus } from '@prisma/client';
 import { OptionalJwtAuthGuard } from '../../../shared/guards/optional-jwt-auth.guard';
 import { ModerateFeedPostDto } from '../dto/moderate-feed-post.dto';
+import { UpdateFeedPostDto } from '../dto/update-feed-post.dto';
 
 @Controller('feed')
 export class FeedController {
@@ -82,5 +83,15 @@ export class FeedController {
     @CurrentUser('sub') userId: number,
   ) {
     return this.feedService.deletePost(id, userId);
+  }
+
+  @Patch('posts/:id')
+  @UseGuards(JwtAuthGuard)
+  async updatePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @CurrentUser('sub') userId: number,
+    @Body() dto: UpdateFeedPostDto,
+  ) {
+    return this.feedService.updatePost(postId, userId, dto);
   }
 }

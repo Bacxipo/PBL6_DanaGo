@@ -3,7 +3,7 @@ import { FeedRepository } from '../repositories/feed.repository';
 import { CreateFeedPostDto, CreateFeedCommentDto } from '../dto/create-feed-post.dto';
 import { FeedPostNotFoundException } from '../exceptions/feed-post-not-found.exception';
 import { ContentStatus, FeedPostType } from '@prisma/client';
-
+import { UpdateFeedPostDto } from '../dto/update-feed-post.dto';
 import { DestinationService } from '../../destination/services/destination.service';
 
 function extractCoordinates(url: string) {
@@ -153,5 +153,24 @@ export class FeedService {
       message: 'Xóa bài viết thành công.',
       id,
     };
+  }
+
+  async updatePost(
+    postId: number,
+    userId: number,
+    dto: UpdateFeedPostDto,
+  ) {
+    const post = await this.getPostById(postId);
+
+    if (post.userId !== userId) {
+      throw new ForbiddenException(
+        'Bạn chỉ có thể chỉnh sửa bài viết của mình.',
+      );
+    }
+
+    return this.feedRepository.updatePostContent(
+      postId,
+      dto.content.trim(),
+    );
   }
 }

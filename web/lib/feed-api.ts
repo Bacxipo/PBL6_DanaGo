@@ -228,3 +228,15 @@ export function createFeedComment(
         },
     );
 }
+
+export function updateFeedPost(
+    postId: number,
+    content: string,
+    token: string,
+): Promise<FeedPost> {
+    return apiRequest<FeedPost>(`/feed/posts/${postId}`, {
+        method: 'PATCH',
+        body: { content },
+        token,
+    });
+}
