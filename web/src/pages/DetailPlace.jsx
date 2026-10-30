@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import PlaceAction from '../components/comon/place/PlaceAction';
 import PlaceMap from '../components/comon/place/PlaceMap';
 import { reviews } from '../database/data';
@@ -20,6 +20,7 @@ export default function DetailPlace({ id: propId }) {
     const [place, setPlace] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -38,7 +39,15 @@ export default function DetailPlace({ id: propId }) {
                 }
                 const data = await res.json();
 
-                const hasImg = data.images && data.images.length > 0 && data.images[0]?.imageUrl;
+                // Lấy toàn bộ danh sách URL ảnh
+                let imagesList = [];
+                if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+                    imagesList = data.images
+                        .map((img) => (typeof img === 'string' ? img : img?.imageUrl))
+                        .filter(Boolean);
+                } else if (data.img) {
+                    imagesList = [typeof data.img === 'string' ? data.img : data.img?.src].filter(Boolean);
+                }
 
                 // Chuẩn hóa map URL thành embed url nếu cần
                 let embedMap = data.addressUrl;
@@ -58,8 +67,10 @@ export default function DetailPlace({ id: propId }) {
                     priceDisplay: data.ticketPrice || 'Miễn phí',
                     move: 'Xe máy, ô tô, taxi',
                     mapUrl: embedMap,
-                    img: hasImg ? data.images[0].imageUrl : null,
+                    images: imagesList,
+                    img: imagesList[0] || null,
                 });
+                setCurrentImageIndex(0);
             } catch (err) {
                 console.error('Lỗi khi tải chi tiết điểm đến:', err);
                 setError(err.message || 'Không thể tải thông tin điểm đến.');
@@ -70,6 +81,18 @@ export default function DetailPlace({ id: propId }) {
 
         fetchDetail();
     }, [id]);
+
+    const handlePrevImage = (e) => {
+        e.stopPropagation();
+        if (!place?.images?.length) return;
+        setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : place.images.length - 1));
+    };
+
+    const handleNextImage = (e) => {
+        e.stopPropagation();
+        if (!place?.images?.length) return;
+        setCurrentImageIndex((prev) => (prev < place.images.length - 1 ? prev + 1 : 0));
+    };
 
     if (loading) {
         return (
@@ -97,6 +120,9 @@ export default function DetailPlace({ id: propId }) {
         );
     }
 
+    const currentImg = place.images?.[currentImageIndex] || place.img;
+    const hasMultipleImages = place.images && place.images.length > 1;
+
     return (
         <section className="w-full max-w-7xl mx-auto space-y-6 pb-12 flex flex-col">
             <Link
@@ -105,18 +131,64 @@ export default function DetailPlace({ id: propId }) {
             >
                 <ArrowLeft className="w-4 h-4" /> Quay lại
             </Link>
-            <div className="flex w-full">
-                <div className="w-2/3 flex flex-col">
-                    <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-gray-100">
-                        {place.img ? (
-                            <Image
-                                src={place.img}
-                                alt={place.name}
-                                fill
-                                sizes="(max-width: 1200px) 100vw, 800px"
-                                className="object-cover rounded-xl"
-                                priority
-                            />
+
+            <div className="flex flex-col lg:flex-row gap-6 w-full">
+                {/* Khu vực hiển thị Slider hình ảnh */}
+                <div className="w-full lg:w-2/3 flex flex-col">
+                    <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-gray-100 group select-none shadow-xs">
+                        {currentImg ? (
+                            <>
+                                <Image
+                                    src={currentImg}
+                                    alt={`${place.name} - ảnh ${currentImageIndex + 1}`}
+                                    fill
+                                    sizes="(max-width: 1200px) 100vw, 800px"
+                                    className="object-cover rounded-xl transition-all duration-300"
+                                    priority
+                                />
+
+                                {/* Nút điều hướng qua lại (Prev / Next) */}
+                                {hasMultipleImages && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={handlePrevImage}
+                                            aria-label="Ảnh trước"
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all shadow-md cursor-pointer opacity-80 group-hover:opacity-100"
+                                        >
+                                            <ChevronLeft className="w-6 h-6" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleNextImage}
+                                            aria-label="Ảnh tiếp theo"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all shadow-md cursor-pointer opacity-80 group-hover:opacity-100"
+                                        >
+                                            <ChevronRight className="w-6 h-6" />
+                                        </button>
+
+                                        {/* Badge đếm số ảnh: ví dụ 1 / 4 */}
+                                        <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                                            {currentImageIndex + 1} / {place.images.length}
+                                        </div>
+
+                                        {/* Dots điều hướng ở đáy ảnh */}
+                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/30 backdrop-blur-xs px-2.5 py-1 rounded-full">
+                                            {place.images.map((_, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => setCurrentImageIndex(idx)}
+                                                    className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                                                        currentImageIndex === idx ? 'bg-white w-4' : 'bg-white/50 hover:bg-white/80'
+                                                    }`}
+                                                    aria-label={`Xem ảnh ${idx + 1}`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </>
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 border border-gray-200 rounded-xl select-none">
                                 <div className="w-16 h-16 rounded-full bg-gray-200/60 flex items-center justify-center text-gray-400 mb-2">
@@ -126,11 +198,42 @@ export default function DetailPlace({ id: propId }) {
                             </div>
                         )}
                     </div>
+
+                    {/* Dải ảnh nhỏ xem trước (Thumbnail Strip) nếu có từ 2 ảnh trở lên */}
+                    {hasMultipleImages && (
+                        <div className="flex gap-2.5 overflow-x-auto py-3 scrollbar-thin scrollbar-thumb-gray-300">
+                            {place.images.map((imgUrl, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setCurrentImageIndex(idx)}
+                                    className={`relative w-20 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                                        currentImageIndex === idx
+                                            ? 'border-[#006971] ring-2 ring-[#006971]/30 opacity-100 scale-105'
+                                            : 'border-transparent opacity-60 hover:opacity-100'
+                                    }`}
+                                >
+                                    <Image
+                                        src={imgUrl}
+                                        alt={`Thumbnail ${idx + 1}`}
+                                        fill
+                                        sizes="80px"
+                                        className="object-cover"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <p className="text-[#006971] font-bold mt-2 text-sm">{place.category}</p>
                 </div>
-                <PlaceAction time={place.time} price={place.priceDisplay} move={place.move} />
+
+                <div className="w-full lg:w-1/3">
+                    <PlaceAction time={place.time} price={place.priceDisplay} move={place.move} />
+                </div>
             </div>
-            <div className="w-2/3 flex flex-col gap-3">
+
+            <div className="w-full lg:w-2/3 flex flex-col gap-3">
                 <h2 className="text-2xl font-bold text-gray-800">{place.name}</h2>
                 <p className="text-gray-600 mt-2">{place.des}</p>
                 <div className="items-center gap-2 mt-3 p-3 bg-gray-50 rounded-xl">
@@ -138,11 +241,13 @@ export default function DetailPlace({ id: propId }) {
                     <p className="text-gray-600 leading-relaxed">{place.infor}</p>
                 </div>
             </div>
+
             <div>
                 <PlaceMap mapUrl={place.mapUrl} />
             </div>
+
             <div className="w-full flex flex-col gap-3">
-                <div className="w-2/3 flex flex-col gap-6 mt-6">
+                <div className="w-full lg:w-2/3 flex flex-col gap-6 mt-6">
                     <ReviewForm />
                     <h3 className="font-bold">Đánh giá từ du khách</h3>
                     <div className="flex flex-col gap-4 h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">

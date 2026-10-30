@@ -50,6 +50,11 @@ export const ROLE_LABEL: Record<UserRole, string> = {
 export const canAccessAdmin = (role?: UserRole) => role === 'ADMIN' || role === 'STAFF';
 
 // ───────── destination ─────────
+export interface DestinationImage {
+  id: number;
+  imageUrl: string;
+}
+
 export interface Destination {
   id: number;
   name: string;
@@ -59,13 +64,14 @@ export interface Destination {
   longitude?: number;
   addressUrl?: string;
   categoryId?: number;
+  categoryName?: string;
   ticketPrice?: string; // VARCHAR trong DB, vd "Miễn phí", "900.000đ"
   openHours?: string;
   avgRating: number;
   status: ContentStatus;
   createdBy?: number;
   createdAt: string;
-  images?: string[]; // backend hiện chưa trả ảnh; chế độ dữ liệu mẫu có
+  images?: (string | DestinationImage)[];
 }
 
 // Backend dùng forbidNonWhitelisted: gửi field ngoài DTO sẽ bị 400
@@ -76,6 +82,7 @@ export interface DestinationInput {
   latitude?: number;
   longitude?: number;
   addressUrl?: string;
+  categoryId?: number;
   ticketPrice?: string;
   openHours?: string;
 }
@@ -85,7 +92,7 @@ export interface Category {
   id: number;
   name: string;
   iconUrl?: string;
-  destinationCount: number;
+  destinationCount?: number;
 }
 export type CategoryInput = { name: string; iconUrl?: string };
 
@@ -117,7 +124,7 @@ export interface EventItem {
   createdBy: number | null;
   createdAt: string;
   images: { id: number; imageUrl: string }[];
-  destination: { id: number; name: string; district: string } | null;
+  destination?: { id: number; name: string; district: string } | null;
 }
 
 export interface EventInput {
@@ -125,7 +132,7 @@ export interface EventInput {
   description?: string;
   destinationId?: number;
   locationNote?: string;
-  startDate: string;
+  startDate: string; // YYYY-MM-DD
   endDate: string;
   ticketPrice?: number;
 }
@@ -149,15 +156,15 @@ export function getTimeline({ startDate, endDate }: Pick<EventItem, 'startDate' 
 // ───────── review (đánh giá của du khách) ─────────
 export interface Review {
   id: number;
-  userId: number;
   destinationId: number;
+  userId: number;
   rating: number;
-  comment?: string;
+  comment?: string | null;
   status: ContentStatus;
   createdAt: string;
   user?: { id: number; fullName: string; avatarUrl?: string };
   destination?: { id: number; name: string };
-  images: string[];
+  images: (string | { id: number; imageUrl: string })[];
 }
 
 // ───────── feed (bài đăng cộng đồng) ─────────
@@ -168,7 +175,7 @@ export interface FeedPost {
   content: string;
   status: ContentStatus;
   createdAt: string;
-  images: { id: number; imageUrl: string }[];
+  images: (string | { id: number; imageUrl: string })[];
   user: { id: number; username: string; fullName: string; avatarUrl: string | null };
   _count: { likes: number; comments: number };
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import { StatusBadge, StatusFilter, AsyncContent, EmptyState } from '@/components/ui';
-import { useApi, removeById, avatarFallback, isMissingApi, timeAgo } from '@/lib/utils';
+import { useApi, removeById, avatarFallback, isMissingApi, timeAgo, getImageUrl, getImageId } from '@/lib/utils';
 import { useAction, useAuth, usePending } from '@/lib/context';
 import type { ContentStatus } from '@/lib/types';
 import { CheckCircle2, XCircle, ExternalLink, MapPin, MessageSquare, Heart, Star } from 'lucide-react';
@@ -105,7 +105,7 @@ export default function ModerationPage() {
                           </div>
                           {r.comment && <p className="text-gray-700 text-sm leading-relaxed">&ldquo;{r.comment}&rdquo;</p>}
                           {r.images.length > 0 && (
-                            <div className="flex gap-2 pt-1">{r.images.map((url) => <img key={url} src={url} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />)}</div>
+                            <div className="flex gap-2 pt-1">{r.images.map((url, idx) => <img key={getImageId(url) ?? idx} src={getImageUrl(url)} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />)}</div>
                           )}
                         </div>
                       </div>
@@ -130,7 +130,7 @@ export default function ModerationPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {list.map((d) => (
                     <div key={d.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-xs space-y-3">
-                      {d.images?.[0] && <img src={d.images[0]} alt="" className="w-full h-32 object-cover rounded-xl" />}
+                      {d.images?.[0] && <img src={getImageUrl(d.images[0])} alt="" className="w-full h-32 object-cover rounded-xl" />}
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700">{d.district}</span>
@@ -175,7 +175,7 @@ export default function ModerationPage() {
                           <p className="text-sm"><b className="text-gray-900">{p.user.fullName}</b> <span className="text-xs text-gray-400">• {timeAgo(p.createdAt)}</span></p>
                           <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{p.content}</p>
                           {p.images.length > 0 && (
-                            <div className="flex gap-2 pt-1">{p.images.map((im) => <img key={im.id} src={im.imageUrl} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />)}</div>
+                            <div className="flex gap-2 pt-1">{p.images.map((im, idx) => <img key={getImageId(im) ?? idx} src={getImageUrl(im)} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />)}</div>
                           )}
                           <p className="text-[11px] text-gray-400 flex items-center gap-3"><span className="flex items-center gap-1"><Heart className="w-3 h-3" />{p._count.likes}</span><span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{p._count.comments}</span></p>
                         </div>

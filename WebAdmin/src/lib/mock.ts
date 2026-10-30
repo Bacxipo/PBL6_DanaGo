@@ -195,15 +195,15 @@ function trends(days: number): Trends {
   const months = Math.max(1, Math.round(days / 30));
   const buckets = days <= 31
     ? Array.from({ length: weeks }, (_, i) => {
-        const end = new Date(now - (weeks - 1 - i) * 7 * DAY);
-        const start = new Date(end.getTime() - 6 * DAY);
-        return { label: `${start.getDate()}/${start.getMonth() + 1}`, from: start.getTime(), to: end.getTime() + DAY - 1 };
-      })
+      const end = new Date(now - (weeks - 1 - i) * 7 * DAY);
+      const start = new Date(end.getTime() - 6 * DAY);
+      return { label: `${start.getDate()}/${start.getMonth() + 1}`, from: start.getTime(), to: end.getTime() + DAY - 1 };
+    })
     : Array.from({ length: months }, (_, i) => {
-        const d = new Date();
-        const first = new Date(d.getFullYear(), d.getMonth() - (months - 1 - i), 1);
-        return { label: `T${first.getMonth() + 1}`, from: first.getTime(), to: new Date(first.getFullYear(), first.getMonth() + 1, 1).getTime() - 1 };
-      });
+      const d = new Date();
+      const first = new Date(d.getFullYear(), d.getMonth() - (months - 1 - i), 1);
+      return { label: `T${first.getMonth() + 1}`, from: first.getTime(), to: new Date(first.getFullYear(), first.getMonth() + 1, 1).getTime() - 1 };
+    });
 
   return {
     days,
@@ -261,7 +261,7 @@ const ROUTES: [string, RegExp, Handler][] = [
   ['GET', /^\/destinations$/, (_m, c) => db.destinations.filter((d) => d.status === statusOf(c, 'APPROVED')).sort((a, b) => b.createdAt.localeCompare(a.createdAt))],
   ['POST', /^\/destinations$/, (_m, c) => {
     const me = needAuth(c);
-    const created = { id: nextId(db.destinations), avgRating: 0, status: 'PENDING', createdBy: me.id, createdAt: new Date().toISOString(), ...pickDestination(c.body) } as Destination;
+    const created = { id: nextId(db.destinations), avgRating: 0, status: 'PENDING', createdBy: me.id, createdAt: new Date().toISOString(), images: [], ...pickDestination(c.body) } as unknown as Destination;
     db.destinations.push(created);
     return created;
   }],
@@ -273,8 +273,27 @@ const ROUTES: [string, RegExp, Handler][] = [
     db.destinations = db.destinations.filter((x) => x !== d);
     return { message: `Đã xóa điểm đến ID ${d.id} thành công.` };
   }],
+  ['POST', /^\/destinations\/(\d+)\/images$/, (m, c) => {
+    needAuth(c);
+    const d = byId(db.destinations, m[1], 'điểm đến');
+    if (!d.images) d.images = [];
+    const newImgs = [{ id: Date.now(), imageUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800' }];
+    d.images.push(...newImgs);
+    return newImgs;
+  }],
+  ['DELETE', /^\/destinations\/images\/(\d+)$/, (m, c) => {
+    needStaff(c);
+    const imgId = Number(m[1]);
+    for (const d of db.destinations) {
+      if (d.images) {
+        d.images = d.images.filter((img: any) => (typeof img === 'object' && img !== null && 'id' in img ? img.id !== imgId : true));
+      }
+    }
+    return { message: 'Đã xóa ảnh thành công.' };
+  }],
 
   // category
+  ['GET', /^\/destinations\/categories$/, () => db.categories.map(toCategory)],
   ['GET', /^\/categories$/, () => db.categories.map(toCategory)],
   ['POST', /^\/categories$/, (_m, c) => {
     needStaff(c);
@@ -286,7 +305,7 @@ const ROUTES: [string, RegExp, Handler][] = [
   ['DELETE', /^\/categories\/(\d+)$/, (m, c) => {
     needStaff(c);
     const cat = toCategory(byId(db.categories, m[1], 'danh mục'));
-    if (cat.destinationCount > 0) fail(409, `Không thể xóa danh mục "${cat.name}" vì đang có ${cat.destinationCount} điểm đến thuộc danh mục này.`);
+    if ((cat.destinationCount ?? 0) > 0) fail(409, `Không thể xóa danh mục "${cat.name}" vì đang có ${cat.destinationCount} điểm đến thuộc danh mục này.`);
     db.categories = db.categories.filter((x) => x.id !== cat.id);
     return { message: `Đã xóa danh mục "${cat.name}".` };
   }],
