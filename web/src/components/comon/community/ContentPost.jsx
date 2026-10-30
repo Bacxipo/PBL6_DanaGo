@@ -5,8 +5,6 @@ import { MapPin } from 'lucide-react';
 import Image from 'next/image';
 
 export default function ContentPost({ post }) {
-  const imageSrc = post?.image || post?.imageUrl || post?.images?.[0];
-
   return (
     <div className="space-y-3">
       {/* Nội dung bài viết (cảm nghĩ hoặc câu hỏi) */}
@@ -25,15 +23,47 @@ export default function ContentPost({ post }) {
       )}
 
       {/* Ảnh đính kèm nếu có */}
-      {imageSrc && (
-        <div className="relative w-full h-72 md:h-80 rounded-2xl overflow-hidden bg-gray-100 border border-gray-100">
-          <Image
-            src={imageSrc}
-            alt="Post attachment"
-            fill
-            sizes="(max-width: 768px) 100vw, 650px"
-            className="object-cover"
-          />
+      {post.images?.length > 0 && (
+        <div>
+          <div
+            className="flex w-full overflow-x-auto snap-x snap-mandatory rounded-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label="Ảnh bài viết"
+            tabIndex={0}
+          >
+            {post.images.map((url, index) => (
+              <div
+                key={`${url}-${index}`}
+                className="relative w-full shrink-0 snap-center snap-always h-64 sm:h-96 overflow-hidden bg-gray-100"
+              >
+                <Image
+                  src={url}
+                  alt={`Ảnh bài viết ${index + 1}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 650px"
+                  className="object-contain"
+                  draggable={false}
+                />
+
+                {post.images.length > 1 && (
+                  <span
+                    className="
+                absolute right-3 top-3
+                rounded-full bg-black/60
+                px-3 py-1 text-xs font-medium text-white
+              "
+                  >
+                    {index + 1}/{post.images.length}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {post.images.length > 1 && (
+            <p className="mt-2 text-center text-xs text-gray-400">
+              Vuốt ngang để xem thêm ảnh
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -12,6 +12,10 @@ import { ContentStatus } from '@prisma/client';
 export class DestinationService {
   constructor(private readonly destinationRepository: DestinationRepository) {}
 
+  getCategories() {
+    return this.destinationRepository.findCategories();
+  }
+
   async createDestination(dto: CreateDestinationDto, userId?: number): Promise<DestinationResponseDto> {
     const created = await this.destinationRepository.create(dto, userId);
     return DestinationMapper.toResponseDto(created);

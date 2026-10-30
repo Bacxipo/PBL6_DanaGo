@@ -3,14 +3,33 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function Header() {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [authReady, setAuthReady] = useState(false);
+
     const pathname = usePathname();
-    
+
+    useEffect(() => {
+        const syncAuth = () => {
+            setIsLoggedIn(Boolean(sessionStorage.getItem('accessToken')));
+            setAuthReady(true);
+        };
+
+        syncAuth();
+
+        window.addEventListener('auth-changed', syncAuth);
+
+        return () => {
+            window.removeEventListener('auth-changed', syncAuth);
+        };
+    }, [pathname]);
+
     const getLinkClass = (path) => {
         const isActive = pathname === path;
-        return isActive 
-            ? "text-[#006971] font-bold text-sm border-b-2 border-[#006971] pb-1" 
+        return isActive
+            ? "text-[#006971] font-bold text-sm border-b-2 border-[#006971] pb-1"
             : "text-gray-600 hover:text-[#006971] text-sm font-semibold transition-colors";
     };
 
@@ -34,12 +53,26 @@ export default function Header() {
                         AI Plan
                     </Link>
                 </nav>
-                <Link href="/personal" className="flex items-center gap-2 text-gray-600 hover:text-[#006971] transition-colors">
-                    <User className="w-5 h-5 cursor-pointer" />
-                </Link>
-                <Link href="/login">
-                    Đăng nhập
-                </Link>
+                <div className="flex min-w-24 items-center justify-end">
+                    {authReady && (
+                        isLoggedIn ? (
+                            <Link
+                                href="/personal"
+                                aria-label="Trang cá nhân"
+                                className="flex items-center text-gray-600 hover:text-[#006971] transition-colors"
+                            >
+                                <User className="w-6 h-6" />
+                            </Link>
+                        ) : (
+                            <Link
+                                href="/login"
+                                className="text-sm font-semibold text-gray-600 hover:text-[#006971]"
+                            >
+                                Đăng nhập
+                            </Link>
+                        )
+                    )}
+                </div>
             </div>
         </header>
     );

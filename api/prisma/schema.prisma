@@ -5,7 +5,6 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
 }
 
 enum UserRole {
@@ -30,6 +29,14 @@ enum ContentStatus {
   REJECTED
 
   @@map("content_status")
+}
+
+enum FeedPostType {
+  NORMAL
+  QUESTION
+  NEW_DESTINATION
+
+  @@map("feed_post_type")
 }
 
 enum ContactType {
@@ -86,7 +93,8 @@ model Category {
 
   userPreferences UserPreference[]
   destinations    Destination[]
-
+  
+  destinationProposals DestinationProposal[]
   @@map("category")
 }
 
@@ -108,7 +116,7 @@ model Destination {
   district    String        @db.VarChar(50)
   latitude    Decimal?      @db.Decimal(10, 7)
   longitude   Decimal?      @db.Decimal(10, 7)
-  addressUrl  String?       @map("address_url") @db.VarChar(255)
+  addressUrl  String?       @map("address_url") @db.Text
   categoryId  Int?          @map("category_id")
   ticketPrice String?       @default("Miễn phí") @map("ticket_price") @db.VarChar(150)
   openHours   String?       @map("open_hours") @db.VarChar(100)
@@ -116,6 +124,8 @@ model Destination {
   status      ContentStatus @default(PENDING)
   createdBy   Int?          @map("created_by")
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamp()
+  openTime    Int?          @map("open_time")
+  closeTime   Int?          @map("close_time")
 
   category       Category?          @relation(fields: [categoryId], references: [id])
   creator        User?              @relation("CreatedDestinations", fields: [createdBy], references: [id])
@@ -128,6 +138,26 @@ model Destination {
   events         Event[]
 
   @@map("destination")
+}
+
+model DestinationProposal {
+  id          Int      @id @default(autoincrement())
+  postId      Int      @unique @map("post_id")
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  district    String   @db.VarChar(50)
+  latitude    Decimal? @db.Decimal(10, 7)
+  longitude   Decimal? @db.Decimal(10, 7)
+  categoryId  Int?     @map("category_id")
+  addressUrl  String?  @map("address_url") @db.Text
+  ticketPrice String?  @map("ticket_price") @db.VarChar(150)
+  openHours   String?  @map("open_hours") @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  post     FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("destination_proposal")
 }
 
 model ContactInfo {
@@ -225,7 +255,7 @@ model ReviewImage {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp()
 
   review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  uploader User?   @relation(fields: [uploadedBy], references: [id])
+  uploader User?  @relation(fields: [uploadedBy], references: [id])
 
   @@map("review_image")
 }
@@ -262,6 +292,7 @@ model FeedPost {
   userId        Int           @map("user_id")
   destinationId Int?          @map("destination_id")
   content       String        @db.Text
+  postType      FeedPostType  @default(NORMAL) @map("post_type")
   status        ContentStatus @default(PENDING)
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp()
   updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp()
@@ -271,6 +302,8 @@ model FeedPost {
   images      FeedPostImage[]
   comments    FeedComment[]
   likes       FeedLike[]
+
+  proposal DestinationProposal?
 
   @@map("feed_post")
 }

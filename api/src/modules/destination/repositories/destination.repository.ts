@@ -9,6 +9,13 @@ import { ContentStatus } from '@prisma/client';
 export class DestinationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findCategories() {
+    return this.prisma.category.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   private mapToEntity(dest: any): DestinationEntity {
     return {
       id: dest.id,

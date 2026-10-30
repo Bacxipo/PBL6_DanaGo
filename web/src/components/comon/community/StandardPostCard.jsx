@@ -8,21 +8,64 @@ import ContentPost from './ContentPost';
 import NewPlacePost from './NewPlacePost';
 import PostCommentSection from './PostCommentSection';
 
-export default function StandardPostCard({ post }) {
+import { toggleFeedLike, deleteFeedPost } from '@/lib/feed-api';
+
+export default function StandardPostCard({ post, onDeleted, }) {
   const [isLiked, setIsLiked] = useState(post?.isLiked || false);
   const [likesCount, setLikesCount] = useState(post?.likes || 0);
-  
+
+  const [isLiking, setIsLiking] = useState(false);
+  const [likeError, setLikeError] = useState('');
+
+  const [commentsCount, setCommentsCount] = useState(
+    post?.commentsCount ?? 0
+  );
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [actionError, setActionError] = useState('');
+
   const [showComments, setShowComments] = useState(false);
 
-  const postType = post?.postType || post?.type || 'trai-nghiem';
+  const rawPostType = post?.postType || post?.type || 'trai-nghiem';
 
-  const toggleLike = () => {
-    if (isLiked) {
-      setIsLiked(false);
-      setLikesCount((prev) => Math.max(0, prev - 1));
-    } else {
-      setIsLiked(true);
-      setLikesCount((prev) => prev + 1);
+  const postType = {
+    NORMAL: 'trai-nghiem',
+    QUESTION: 'hoi-dap',
+    NEW_DESTINATION: 'dia-diem-moi',
+  }[rawPostType] || rawPostType;
+
+  const toggleLike = async () => {
+    if (isLiking) return;
+
+    setLikeError('');
+
+    const token = sessionStorage.getItem('accessToken');
+
+    if (!token) {
+      setLikeError('Bạn cần đăng nhập để thích bài viết.');
+      return;
+    }
+
+    setIsLiking(true);
+
+    try {
+      const result = await toggleFeedLike(post.id, token);
+
+      if (result.liked !== isLiked) {
+        setLikesCount((previous) =>
+          Math.max(0, previous + (result.liked ? 1 : -1))
+        );
+      }
+
+      setIsLiked(result.liked);
+    } catch (error) {
+      setLikeError(
+        error instanceof Error
+          ? error.message
+          : 'Không thể cập nhật lượt thích.'
+      );
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -47,9 +90,43 @@ export default function StandardPostCard({ post }) {
     );
   };
 
+  const handleDelete = async () => {
+    if (isDeleting) return;
+
+    const confirmed = window.confirm(
+      'Bạn có chắc muốn xóa bài viết này?'
+    );
+
+    if (!confirmed) return;
+
+    setActionError('');
+
+    const token = sessionStorage.getItem('accessToken');
+
+    if (!token) {
+      setActionError('Bạn cần đăng nhập.');
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await deleteFeedPost(post.id, token);
+      onDeleted?.(post.id);
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'Không thể xóa bài viết.'
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4 mb-6 transition hover:shadow-md">
-      
+
       {/* ================= 1. HEADER ================= */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
@@ -67,7 +144,7 @@ export default function StandardPostCard({ post }) {
         <div className="flex items-center gap-2">
           {postType === 'trai-nghiem' && (
             <span className="text-xs font-semibold text-[#006971]">
-              Chia sẻ cảm xúc
+              Trải nghiệm
             </span>
           )}
 
@@ -85,11 +162,33 @@ export default function StandardPostCard({ post }) {
             </span>
           )}
 
-          <button type="button" className="text-gray-400 hover:text-gray-600 p-1 rounded-full cursor-pointer">
-            <MoreVertical className="w-4 h-4" />
-          </button>
+          <details className="relative">
+            <summary
+              aria-label="Tùy chọn bài viết"
+              className="list-none cursor-pointer p-1 text-gray-400 hover:text-gray-600"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </summary>
+
+            <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-xl border border-gray-100 bg-white p-1 shadow-lg">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}
+              </button>
+            </div>
+          </details>
         </div>
       </div>
+
+      {actionError && (
+        <p role="alert" className="text-sm text-red-600">
+          {actionError}
+        </p>
+      )}
 
       {/* ================= 2. NỘI DUNG ================= */}
       {postType === 'dia-diem-moi' ? (
@@ -106,7 +205,7 @@ export default function StandardPostCard({ post }) {
           onClick={() => setShowComments(!showComments)}
           className="hover:underline hover:text-[#006971] cursor-pointer"
         >
-          {post?.commentsCount || 1} bình luận
+          {commentsCount} bình luận
         </button>
       </div>
 
@@ -114,10 +213,11 @@ export default function StandardPostCard({ post }) {
       <div className="border-t border-gray-100 pt-3 flex items-center justify-around text-gray-600 font-semibold text-sm">
         <button
           type="button"
+          disabled={isLiking}
+          aria-pressed={isLiked}
           onClick={toggleLike}
-          className={`flex items-center gap-2 hover:text-rose-500 transition cursor-pointer py-1.5 px-4 rounded-xl hover:bg-rose-50/50 ${
-            isLiked ? 'text-rose-500 font-bold' : ''
-          }`}
+          className={`flex items-center gap-2 hover:text-rose-500 transition cursor-pointer py-1.5 px-4 rounded-xl hover:bg-rose-50/50 ${isLiked ? 'text-rose-500 font-bold' : ''
+            }`}
         >
           <Heart className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
           <span>Thích</span>
@@ -127,20 +227,28 @@ export default function StandardPostCard({ post }) {
         <button
           type="button"
           onClick={() => setShowComments(!showComments)}
-          className={`flex items-center gap-2 transition cursor-pointer py-1.5 px-4 rounded-xl ${
-            showComments 
-              ? 'text-[#006971] bg-teal-50/60 font-bold' 
-              : 'hover:text-[#006971] hover:bg-teal-50/50'
-          }`}
+          className={`flex items-center gap-2 transition cursor-pointer py-1.5 px-4 rounded-xl ${showComments
+            ? 'text-[#006971] bg-teal-50/60 font-bold'
+            : 'hover:text-[#006971] hover:bg-teal-50/50'
+            }`}
         >
           <MessageCircle className="w-5 h-5" />
           <span>Bình luận</span>
         </button>
       </div>
-
+      {likeError && (
+        <p role="alert" className="text-sm text-red-600">
+          {likeError}
+        </p>
+      )}
       {/* ================= 5. KHUNG BÌNH LUẬN HIỂN THỊ PHÍA DƯỚI BÀI VIẾT ================= */}
       {showComments && (
-        <PostCommentSection post={post} />
+        <PostCommentSection
+          post={post}
+          onCommentAdded={() =>
+            setCommentsCount((previous) => previous + 1)
+          }
+        />
       )}
 
     </div>

@@ -44,6 +44,11 @@ export class DestinationController {
     return this.destinationService.getAllDestinations(targetStatus);
   }
 
+  @Get('categories')
+  getCategories() {
+    return this.destinationService.getCategories();
+  }
+
   @Get(':id')
   async getById(
     @Param('id', ParseIntPipe) id: number,
