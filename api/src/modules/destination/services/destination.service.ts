@@ -14,22 +14,26 @@ export class DestinationService {
   constructor(
     private readonly destinationRepository: DestinationRepository,
     private readonly storageService: SupabaseStorageService,
-  ) {}
+  ) { }
 
   async createDestination(dto: CreateDestinationDto, userId?: number): Promise<DestinationResponseDto> {
     const created = await this.destinationRepository.create(dto, userId);
     return DestinationMapper.toResponseDto(created);
   }
 
-  async getAllDestinations(status?: ContentStatus): Promise<DestinationResponseDto[]> {
-    const list = await this.destinationRepository.findAll(status);
+  async getAllDestinations(
+    status?: ContentStatus,
+    search?: string,
+    categoryId?: number,
+    district?: string,
+  ): Promise<DestinationResponseDto[]> {
+    const list = await this.destinationRepository.findAll(status, search, categoryId, district);
     return list.map((item) => DestinationMapper.toResponseDto(item));
   }
 
   async getAllCategories() {
     return this.destinationRepository.getAllCategories();
   }
-
 
   async getDestinationById(id: number): Promise<DestinationResponseDto> {
     const entity = await this.destinationRepository.findById(id);

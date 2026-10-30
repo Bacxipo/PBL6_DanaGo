@@ -7,7 +7,7 @@ import { ContentStatus } from '@prisma/client';
 
 @Injectable()
 export class DestinationRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private mapToEntity(dest: any): DestinationEntity {
     return {
@@ -28,12 +28,12 @@ export class DestinationRepository {
       createdAt: dest.createdAt,
       images: dest.images
         ? dest.images.map((img: any) => ({
-            id: img.id,
-            destinationId: img.destinationId,
-            imageUrl: img.imageUrl,
-            uploadedBy: img.uploadedBy ?? undefined,
-            createdAt: img.createdAt,
-          }))
+          id: img.id,
+          destinationId: img.destinationId,
+          imageUrl: img.imageUrl,
+          uploadedBy: img.uploadedBy ?? undefined,
+          createdAt: img.createdAt,
+        }))
         : undefined,
     };
   }
@@ -61,9 +61,35 @@ export class DestinationRepository {
     return this.mapToEntity(created);
   }
 
-  async findAll(status?: ContentStatus): Promise<DestinationEntity[]> {
+  async findAll(
+    status?: ContentStatus,
+    search?: string,
+    categoryId?: number,
+    district?: string,
+  ): Promise<DestinationEntity[]> {
+    const where: any = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (search && search.trim()) {
+      where.name = {
+        contains: search.trim(),
+        mode: 'insensitive',
+      };
+    }
+
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    if (district && district !== 'Tất cả quận') {
+      where.district = district;
+    }
+
     const destinations = await this.prisma.destination.findMany({
-      where: status ? { status } : undefined,
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         images: true,

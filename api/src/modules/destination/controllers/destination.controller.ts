@@ -42,10 +42,19 @@ export class DestinationController {
   @Get()
   async getAll(
     @Query('status') status?: ContentStatus,
+    @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('district') district?: string,
   ): Promise<DestinationResponseDto[]> {
     // Mặc định khách/User chỉ xem điểm đến đã APPROVED, ngoại trừ khi truyền status khác (nếu cần cho admin)
     const targetStatus = status || ContentStatus.APPROVED;
-    return this.destinationService.getAllDestinations(targetStatus);
+    const parsedCategoryId = categoryId ? parseInt(categoryId, 10) : undefined;
+    return this.destinationService.getAllDestinations(
+      targetStatus,
+      search,
+      parsedCategoryId,
+      district,
+    );
   }
 
   @Get('categories')
@@ -53,9 +62,7 @@ export class DestinationController {
     return this.destinationService.getAllCategories();
   }
 
-
   @Get(':id')
-
   async getById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<DestinationResponseDto> {

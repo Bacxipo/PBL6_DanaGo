@@ -1,22 +1,40 @@
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Rating from '../components/comon/ui/Rating';
 import PlaceList from "../components/comon/place/PlaceList";
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, Search, X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function Explore() {
+    const searchParams = useSearchParams();
+    const initialQuery = searchParams.get('search') || '';
+    const initialCategory = searchParams.get('category') || 'Tất cả';
+
     const [destinations, setDestinations] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     // Bộ lọc
-    const [category, setCategory] = useState("Tất cả");
+    const [searchTerm, setSearchTerm] = useState(initialQuery);
+    const [category, setCategory] = useState(initialCategory);
     const [address, setAddress] = useState("Tất cả quận");
     const [minRating, setMinRating] = useState(0);
+
+    // Cập nhật searchTerm khi URL query param thay đổi (ví dụ navigate từ trang Home)
+    useEffect(() => {
+        const queryFromUrl = searchParams.get('search');
+        if (queryFromUrl !== null) {
+            setSearchTerm(queryFromUrl);
+        }
+        const categoryFromUrl = searchParams.get('category');
+        if (categoryFromUrl !== null) {
+            setCategory(categoryFromUrl);
+        }
+    }, [searchParams]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -81,15 +99,27 @@ export default function Explore() {
         });
     }, [destinations]);
 
-    // Áp dụng bộ lọc
+    // Áp dụng bộ lọc (bao gồm tìm kiếm theo tên địa điểm)
     const filteredPlaces = useMemo(() => {
+        const query = searchTerm.toLowerCase().trim();
         return mappedPlaces.filter((item) => {
+            const matchSearch =
+                !query ||
+                item.name.toLowerCase().includes(query) ||
+                (item.address && item.address.toLowerCase().includes(query));
             const matchCategory = category === "Tất cả" || item.category === category;
             const matchAddress = address === "Tất cả quận" || item.address === address;
             const matchRating = minRating === 0 || item.stars >= minRating;
-            return matchCategory && matchAddress && matchRating;
+            return matchSearch && matchCategory && matchAddress && matchRating;
         });
-    }, [mappedPlaces, category, address, minRating]);
+    }, [mappedPlaces, searchTerm, category, address, minRating]);
+
+    const handleClearFilter = () => {
+        setSearchTerm("");
+        setCategory("Tất cả");
+        setAddress("Tất cả quận");
+        setMinRating(0);
+    };
 
     return (
         <section className="w-full flex flex-col lg:flex-row gap-6 px-4 sm:px-6 lg:px-8 py-6">
@@ -99,11 +129,7 @@ export default function Explore() {
                     <h3 className="font-bold text-gray-800">Bộ lọc</h3>
                     <button
                         type="button"
-                        onClick={() => {
-                            setCategory("Tất cả");
-                            setAddress("Tất cả quận");
-                            setMinRating(0);
-                        }}
+                        onClick={handleClearFilter}
                         className="text-sm text-[#006971] font-bold hover:text-orange-500 cursor-pointer transition-colors"
                     >
                         Xóa lọc
@@ -117,11 +143,10 @@ export default function Explore() {
                         <button
                             type="button"
                             onClick={() => setCategory("Tất cả")}
-                            className={`cursor-pointer px-3 py-2 rounded-xl text-xs text-center transition-all ${
-                                category === "Tất cả"
-                                    ? "bg-[#007C83] text-white font-bold shadow-sm"
-                                    : "bg-[#E2F5F6] text-[#007C83] hover:bg-[#d0f0f2]"
-                            }`}
+                            className={`cursor-pointer px-3 py-2 rounded-xl text-xs text-center transition-all ${category === "Tất cả"
+                                ? "bg-[#007C83] text-white font-bold shadow-sm"
+                                : "bg-[#E2F5F6] text-[#007C83] hover:bg-[#d0f0f2]"
+                                }`}
                         >
                             Tất cả
                         </button>
@@ -130,11 +155,10 @@ export default function Explore() {
                                 key={cat.id}
                                 type="button"
                                 onClick={() => setCategory(cat.name)}
-                                className={`cursor-pointer px-3 py-2 rounded-xl text-xs text-center transition-all truncate ${
-                                    category === cat.name
-                                        ? "bg-[#007C83] text-white font-bold shadow-sm"
-                                        : "bg-[#E2F5F6] text-[#007C83] hover:bg-[#d0f0f2]"
-                                }`}
+                                className={`cursor-pointer px-3 py-2 rounded-xl text-xs text-center transition-all truncate ${category === cat.name
+                                    ? "bg-[#007C83] text-white font-bold shadow-sm"
+                                    : "bg-[#E2F5F6] text-[#007C83] hover:bg-[#d0f0f2]"
+                                    }`}
                                 title={cat.name}
                             >
                                 {cat.name}
@@ -197,17 +221,42 @@ export default function Explore() {
                 </div>
             </aside>
 
-            {/* Cột Danh Sách Địa Điểm Bên Phải - Mở rộng hết chiều ngang trang */}
+            {/* Cột Danh Sách Địa Điểm Bên Phải */}
             <div className="flex-1 min-w-0 flex flex-col">
-                <div className="flex items-center justify-between pb-4 shrink-0">
-                    <span className="text-gray-800 font-bold text-base">
-                        {loading ? 'Đang tải dữ liệu...' : `Tìm thấy ${filteredPlaces.length} điểm đến`}
-                    </span>
-                    {category !== "Tất cả" && (
-                        <span className="text-xs font-semibold px-3 py-1 bg-[#E2F5F6] text-[#007C83] rounded-full border border-[#007C83]/20">
-                            Danh mục: {category}
+                {/* Thanh tìm kiếm theo tên và số lượng kết quả */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 shrink-0">
+                    {/* Ô tìm kiếm theo tên địa điểm */}
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Tìm kiếm theo tên địa điểm (Bà Nà, Mỹ Khê, Sơn Trà...)..."
+                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/20 transition-all shadow-xs"
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer p-0.5 rounded-full hover:bg-gray-100 transition-colors"
+                                title="Xóa từ khóa tìm kiếm"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-gray-800 font-bold text-sm whitespace-nowrap">
+                            {loading ? 'Đang tải dữ liệu...' : `Tìm thấy ${filteredPlaces.length} điểm đến`}
                         </span>
-                    )}
+                        {category !== "Tất cả" && (
+                            <span className="text-xs font-semibold px-3 py-1 bg-[#E2F5F6] text-[#007C83] rounded-full border border-[#007C83]/20 whitespace-nowrap">
+                                Danh mục: {category}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 <div className="w-full flex flex-col">
