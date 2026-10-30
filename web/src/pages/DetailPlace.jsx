@@ -202,9 +202,8 @@ export default function DetailPlace({ id: propId }) {
                                     alt={`${place.name} - ảnh ${currentImageIndex + 1}`}
                                     fill
                                     sizes="(max-width: 1200px) 100vw, 800px"
-                                    className={`${
-                                        fitMode === 'contain' ? 'object-contain' : 'object-cover'
-                                    } relative z-2 transition-all duration-300`}
+                                    className={`${fitMode === 'contain' ? 'object-contain' : 'object-cover'
+                                        } relative z-2 transition-all duration-300`}
                                     priority
                                 />
 
@@ -277,11 +276,10 @@ export default function DetailPlace({ id: propId }) {
                                                         e.stopPropagation();
                                                         setCurrentImageIndex(idx);
                                                     }}
-                                                    className={`h-2 rounded-full transition-all cursor-pointer ${
-                                                        currentImageIndex === idx
-                                                            ? 'bg-white w-4'
-                                                            : 'bg-white/50 w-2 hover:bg-white/80'
-                                                    }`}
+                                                    className={`h-2 rounded-full transition-all cursor-pointer ${currentImageIndex === idx
+                                                        ? 'bg-white w-4'
+                                                        : 'bg-white/50 w-2 hover:bg-white/80'
+                                                        }`}
                                                     aria-label={`Xem ảnh ${idx + 1}`}
                                                 />
                                             ))}
@@ -307,11 +305,10 @@ export default function DetailPlace({ id: propId }) {
                                     key={idx}
                                     type="button"
                                     onClick={() => setCurrentImageIndex(idx)}
-                                    className={`relative w-20 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                                        currentImageIndex === idx
-                                            ? 'border-[#006971] ring-2 ring-[#006971]/30 opacity-100 scale-105'
-                                            : 'border-transparent opacity-60 hover:opacity-100'
-                                    }`}
+                                    className={`relative w-20 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${currentImageIndex === idx
+                                        ? 'border-[#006971] ring-2 ring-[#006971]/30 opacity-100 scale-105'
+                                        : 'border-transparent opacity-60 hover:opacity-100'
+                                        }`}
                                 >
                                     <Image
                                         src={imgUrl}
@@ -444,11 +441,10 @@ export default function DetailPlace({ id: propId }) {
                                     key={idx}
                                     type="button"
                                     onClick={() => setCurrentImageIndex(idx)}
-                                    className={`relative w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                                        currentImageIndex === idx
-                                            ? 'border-[#006971] ring-2 ring-[#006971]/60 scale-105 opacity-100'
-                                            : 'border-transparent opacity-50 hover:opacity-90'
-                                    }`}
+                                    className={`relative w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${currentImageIndex === idx
+                                        ? 'border-[#006971] ring-2 ring-[#006971]/60 scale-105 opacity-100'
+                                        : 'border-transparent opacity-50 hover:opacity-90'
+                                        }`}
                                 >
                                     <Image
                                         src={imgUrl}
