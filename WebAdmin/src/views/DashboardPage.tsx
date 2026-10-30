@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { AsyncContent } from '@/components/ui';
-import { useApi, avatarFallback, formatDate, timeAgo, todayIso } from '@/lib/utils';
+import { useApi, avatarFallback, formatDate, timeAgo, todayIso, getImageUrl } from '@/lib/utils';
 import { useAction, useAuth, usePending } from '@/lib/context';
 import { Calendar, CheckCircle2, ChevronRight, ImageOff, Inbox, MapPin, MessageSquare, ShieldAlert, Star, Users, type LucideIcon } from 'lucide-react';
 import { destinationApi, eventApi, feedApi, reviewApi, userApi } from '@/lib/api';
@@ -213,7 +213,7 @@ export default function DashboardPage() {
                     <div className="divide-y divide-gray-100">
                       {allDestinations.slice(0, 5).map((d) => (
                         <div key={d.id} className="py-2.5 flex items-center gap-3">
-                          {d.images?.[0] ? <img src={d.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-200" /> : <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0"><ImageOff className="w-4 h-4 text-gray-300" /></div>}
+                          {d.images?.[0] ? <img src={getImageUrl(d.images[0])} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-200" /> : <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0"><ImageOff className="w-4 h-4 text-gray-300" /></div>}
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-gray-900 line-clamp-1">{d.name}</p>
                             <p className="text-[11px] text-gray-500">{d.district}</p>

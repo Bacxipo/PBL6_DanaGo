@@ -1,4 +1,4 @@
-import { CONTENT_STATUSES, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateEventInput, type CreateUserInput, type Destination, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
+import { CONTENT_STATUSES, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateEventInput, type CreateUserInput, type Destination, type DestinationImage, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
 
 // Chưa cấu hình NEXT_PUBLIC_API_URL -> chạy chế độ DỮ LIỆU MẪU (lib/mock.ts), không cần backend hay database.
 // Muốn dùng backend thật: đặt NEXT_PUBLIC_API_URL=http://localhost:5000 trong WebAdmin/.env.local
@@ -33,13 +33,13 @@ export const tokenStorage = {
     try {
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
-    } catch {}
+    } catch { }
   },
   clear: () => {
     try {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
-    } catch {}
+    } catch { }
   }
 };
 
@@ -67,7 +67,7 @@ async function readError(res: Response) {
   try {
     const { message } = await res.json();
     if (message) return Array.isArray(message) ? message.join('\n') : String(message);
-  } catch {}
+  } catch { }
   return `Lỗi ${res.status}: ${res.statusText || 'không xác định'}`;
 }
 
@@ -85,12 +85,16 @@ async function request<T>(method: string, path: string, body?: unknown, query?: 
   Object.entries(query ?? {}).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, String(v)));
 
   const token = tokenStorage.get();
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   let res: Response;
   try {
     res = await fetch(url, {
       method,
-      headers: { ...(body !== undefined && { 'Content-Type': 'application/json' }), ...(token && { Authorization: `Bearer ${token}` }) },
-      body: body !== undefined ? JSON.stringify(body) : undefined
+      headers: {
+        ...(!isFormData && body !== undefined && { 'Content-Type': 'application/json' }),
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: isFormData ? (body as FormData) : (body !== undefined ? JSON.stringify(body) : undefined)
     });
   } catch {
     throw new ApiError(0, `Không kết nối được máy chủ API (${API_BASE_URL}). Kiểm tra backend đã chạy chưa.`);
@@ -139,10 +143,19 @@ export const userApi = {
 export const destinationApi = {
   listAll: () => listAll<Destination>('/destinations'),
   listByStatus: (status: ContentStatus) => api.get<Destination[]>('/destinations', { status }),
+  getById: (id: number) => api.get<Destination>(`/destinations/${id}`),
   create: (input: DestinationInput) => createApproved<Destination>('/destinations', input),
   update: (id: number, input: DestinationInput) => api.put<Destination>(`/destinations/${id}`, input),
   setStatus: (id: number, status: ContentStatus) => setStatus<Destination>('/destinations', id, status),
-  remove: (id: number) => api.delete(`/destinations/${id}`)
+  remove: (id: number) => api.delete(`/destinations/${id}`),
+  // Upload danh sách file ảnh lên backend (POST /destinations/:id/images)
+  uploadImages: (destinationId: number, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('images', file));
+    return api.post<DestinationImage[]>(`/destinations/${destinationId}/images`, formData);
+  },
+  // Xóa ảnh của điểm đến (DELETE /destinations/images/:imageId)
+  deleteImage: (imageId: number) => api.delete<{ message: string }>(`/destinations/images/${imageId}`)
 };
 
 export const eventApi = {
@@ -154,7 +167,13 @@ export const eventApi = {
 };
 
 export const categoryApi = {
-  list: () => api.get<Category[]>('/categories'),
+  list: async () => {
+    try {
+      return await api.get<Category[]>('/destinations/categories');
+    } catch {
+      return api.get<Category[]>('/categories');
+    }
+  },
   create: (input: CategoryInput) => api.post<Category>('/categories', input),
   update: (id: number, input: CategoryInput) => api.put<Category>(`/categories/${id}`, input),
   remove: (id: number) => api.delete(`/categories/${id}`)

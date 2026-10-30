@@ -34,6 +34,24 @@ export const orUndefined = (v: string) => v.trim() || undefined;
 
 export const avatarFallback = (seed: string) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
+// Trích xuất an toàn URL của ảnh từ chuỗi string hoặc object { imageUrl }
+export const getImageUrl = (img: unknown): string => {
+  if (!img) return '';
+  if (typeof img === 'string') return img;
+  if (typeof img === 'object' && img !== null && 'imageUrl' in img) {
+    return String((img as { imageUrl: string }).imageUrl);
+  }
+  return '';
+};
+
+// Trích xuất ID ảnh nếu là object { id, imageUrl }
+export const getImageId = (img: unknown): number | undefined => {
+  if (typeof img === 'object' && img !== null && 'id' in img) {
+    return Number((img as { id: number }).id);
+  }
+  return undefined;
+};
+
 // ───────── Tải dữ liệu từ API ─────────
 // Tải dữ liệu từ API: tự gọi lại khi deps đổi và bỏ kết quả của request cũ.
 export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = [], enabled = true) {
