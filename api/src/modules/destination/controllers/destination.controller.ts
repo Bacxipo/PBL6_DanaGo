@@ -32,7 +32,7 @@ export class DestinationController {
   @UseGuards(JwtAuthGuard)
   async create(
     @Body() dto: CreateDestinationDto,
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') userId: number,
   ): Promise<DestinationResponseDto> {
     return this.destinationService.createDestination(dto, userId);
   }

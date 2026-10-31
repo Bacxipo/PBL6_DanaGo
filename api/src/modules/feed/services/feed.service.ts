@@ -2,27 +2,10 @@ import { BadRequestException, Injectable, ForbiddenException, } from '@nestjs/co
 import { FeedRepository } from '../repositories/feed.repository';
 import { CreateFeedPostDto, CreateFeedCommentDto } from '../dto/create-feed-post.dto';
 import { FeedPostNotFoundException } from '../exceptions/feed-post-not-found.exception';
-import { ContentStatus, FeedPostType } from '@prisma/client';
+import { ContentStatus, FeedPostType, UserRole } from '@prisma/client';
 import { UpdateFeedPostDto } from '../dto/update-feed-post.dto';
 import { DestinationService } from '../../destination/services/destination.service';
-
-function extractCoordinates(url: string) {
-  const match = url.match(
-    /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
-  );
-
-  if (!match) return null;
-
-  const latitude = Number(match[1]);
-  const longitude = Number(match[2]);
-
-  if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
-    return null;
-  }
-
-  return { latitude, longitude };
-}
-
+import { extractCoordinates } from '../../../shared/utils/map.utils';
 
 @Injectable()
 export class FeedService {
@@ -105,8 +88,36 @@ export class FeedService {
       : null;
     return this.feedRepository.createPost(userId, dto, coordinates);
   }
-  async getAllPosts(status?: ContentStatus, currentUserId?: number) {
-    return this.feedRepository.findAllPosts(status || ContentStatus.APPROVED, currentUserId);
+  async getAllPosts(
+    status?: ContentStatus,
+    currentUserId?: number,
+    role?: UserRole,
+  ) {
+    const canModerate =
+      role === UserRole.ADMIN ||
+      role === UserRole.STAFF;
+
+    if (
+      status !== undefined &&
+      !Object.values(ContentStatus).includes(status)
+    ) {
+      throw new BadRequestException('Trạng thái không hợp lệ.');
+    }
+
+    if (
+      status !== undefined &&
+      status !== ContentStatus.APPROVED &&
+      !canModerate
+    ) {
+      throw new ForbiddenException(
+        'Bạn không có quyền xem danh sách bài chưa công khai.',
+      );
+    }
+
+    return this.feedRepository.findAllPosts(
+      status ?? ContentStatus.APPROVED,
+      currentUserId,
+    );
   }
 
   async getMyPosts(userId: number) {
@@ -125,17 +136,23 @@ export class FeedService {
     return this.feedRepository.moderatePost(id, status);
   }
   async toggleLike(postId: number, userId: number) {
-    await this.getPostById(postId);
+    await this.getApprovedPost(postId);
     return this.feedRepository.toggleLike(postId, userId);
   }
 
   async addComment(postId: number, userId: number, dto: CreateFeedCommentDto) {
-    await this.getPostById(postId);
-    return this.feedRepository.addComment(postId, userId, dto);
+    await this.getApprovedPost(postId);
+    const content = dto.content.trim();
+    if (!content) {
+      throw new BadRequestException(
+        'Bình luận không được để trống.',
+      );
+    }
+    return this.feedRepository.addComment(postId, userId, { content });
   }
 
   async getComments(postId: number) {
-    await this.getPostById(postId);
+    await this.getApprovedPost(postId);
     return this.feedRepository.getCommentsByPostId(postId);
   }
   async deletePost(id: number, userId: number) {
@@ -172,5 +189,38 @@ export class FeedService {
       postId,
       dto.content.trim(),
     );
+  }
+
+  async getVisiblePostById(
+    id: number,
+    currentUserId?: number,
+    role?: UserRole,
+  ) {
+    const post = await this.getPostById(id);
+
+    const canModerate =
+      role === UserRole.ADMIN ||
+      role === UserRole.STAFF;
+
+    const canView =
+      post.status === ContentStatus.APPROVED ||
+      post.userId === currentUserId ||
+      canModerate;
+
+    if (!canView) {
+      throw new FeedPostNotFoundException(id);
+    }
+
+    return post;
+  }
+
+  private async getApprovedPost(postId: number) {
+    const post = await this.getPostById(postId);
+
+    if (post.status !== ContentStatus.APPROVED) {
+      throw new FeedPostNotFoundException(postId);
+    }
+
+    return post;
   }
 }

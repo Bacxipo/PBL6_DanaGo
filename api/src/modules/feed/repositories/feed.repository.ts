@@ -1,15 +1,18 @@
+import { timeToMinutes } from '../../../shared/utils/time.utils';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateFeedPostDto, CreateFeedCommentDto } from '../dto/create-feed-post.dto';
-import { ContentStatus, FeedPostType } from '@prisma/client';
+import { ContentStatus, FeedPostType, Prisma } from '@prisma/client';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
-function timeToMinutes(value?: string): number | null {
-  const match = value?.trim().match(/^([01]\d|2[0-3]):([0-5]\d)$/);
-  if (!match) return null;
-
-  return Number(match[1]) * 60 + Number(match[2]);
-}
+const feedPostInclude = {
+  images: true,
+  user: {
+    select: { id: true, username: true, fullName: true, avatarUrl: true },
+  },
+  destination: { include: { category: true } },
+  _count: { select: { likes: true, comments: true } },
+} satisfies Prisma.FeedPostInclude;
 
 @Injectable()
 export class FeedRepository {
@@ -60,12 +63,7 @@ export class FeedRepository {
           status: ContentStatus.PENDING,
           images: { create: (dto.images ?? []).map((imageUrl) => ({ imageUrl })) },
         },
-        include: {
-          images: true,
-          user: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
-          destination: { include: { category: true } },
-          _count: { select: { likes: true, comments: true } },
-        },
+        include: feedPostInclude,
       });
     });
   }
@@ -83,10 +81,7 @@ export class FeedRepository {
     return this.prisma.$transaction(async (tx) => {
       const post = await tx.feedPost.findUnique({
         where: { id },
-        include: {
-          images: true,
-          destination: true,
-        },
+        include: feedPostInclude,
       });
 
       if (!post) {
@@ -125,20 +120,9 @@ export class FeedRepository {
           'Bài viết vừa được người khác xử lý. Vui lòng tải lại.',
         );
       }
-
-      if (isNewDestination) {
-        await tx.destination.update({
-          where: { id: post.destinationId! },
-          data: { status },
-        });
-      }
-
       return tx.feedPost.findUniqueOrThrow({
         where: { id },
-        include: {
-          images: true,
-          destination: true,
-        },
+        include: feedPostInclude,
       });
     });
   }
@@ -151,11 +135,8 @@ export class FeedRepository {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        images: true,
-        user: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
-        destination: { include: { category: true } },
+        ...feedPostInclude,
         likes: currentUserId ? { where: { userId: currentUserId } } : false,
-        _count: { select: { likes: true, comments: true } },
       },
     });
 
@@ -168,19 +149,7 @@ export class FeedRepository {
   async findPostById(id: number) {
     return this.prisma.feedPost.findUnique({
       where: { id },
-      include: {
-        images: true,
-        user: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
-        destination: { include: { category: true } },
-        _count: { select: { likes: true, comments: true } },
-      },
-    });
-  }
-
-  async updatePostStatus(id: number, status: ContentStatus) {
-    return this.prisma.feedPost.update({
-      where: { id },
-      data: { status },
+      include: feedPostInclude,
     });
   }
 
@@ -233,9 +202,11 @@ export class FeedRepository {
   async updatePostContent(postId: number, content: string) {
     await this.prisma.feedPost.update({
       where: { id: postId },
-      data: { content },
+      data: {
+        content,
+        status: ContentStatus.PENDING,
+      },
     });
-
     return this.findPostById(postId);
   }
 }

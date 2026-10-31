@@ -28,8 +28,13 @@ export class FeedController {
   async getAllPosts(
     @Query('status') status?: ContentStatus,
     @CurrentUser('sub') currentUserId?: number,
+    @CurrentUser('role') role?: UserRole,
   ) {
-    return this.feedService.getAllPosts(status, currentUserId);
+    return this.feedService.getAllPosts(
+      status,
+      currentUserId,
+      role,
+    );
   }
 
   @Get('posts/mine')
@@ -39,8 +44,17 @@ export class FeedController {
   }
 
   @Get('posts/:id')
-  async getPostById(@Param('id', ParseIntPipe) id: number) {
-    return this.feedService.getPostById(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  async getPostById(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser('sub') currentUserId?: number,
+    @CurrentUser('role') role?: UserRole,
+  ) {
+    return this.feedService.getVisiblePostById(
+      id,
+      currentUserId,
+      role,
+    );
   }
 
   @Patch('posts/:id/status')

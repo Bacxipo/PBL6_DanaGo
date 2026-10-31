@@ -30,6 +30,12 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
   const [isSaving, setIsSaving] = useState(false);
 
   const isOwner = currentUserId === post.userId;
+  const canInteract = post.status === 'APPROVED';
+  const statusBadge = {
+    PENDING: { label: 'Chờ duyệt', color: 'bg-amber-50 text-amber-700' },
+    APPROVED: { label: 'Đã duyệt', color: 'bg-emerald-50 text-emerald-700' },
+    REJECTED: { label: 'Bị từ chối', color: 'bg-red-50 text-red-700' },
+  }[post.status];
 
   const [showComments, setShowComments] = useState(false);
 
@@ -42,7 +48,7 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
   }[rawPostType] || rawPostType;
 
   const toggleLike = async () => {
-    if (isLiking) return;
+    if (isLiking || !canInteract) return;
 
     setLikeError('');
 
@@ -193,6 +199,11 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
         </div>
 
         <div className="flex items-center gap-2">
+          {isOwner && statusBadge && (
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadge.color}`}>
+              {statusBadge.label}
+            </span>
+          )}
           {postType === 'trai-nghiem' && (
             <span className="text-xs font-semibold text-[#006971]">
               Trải nghiệm
@@ -281,6 +292,7 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
         <button
           type="button"
           onClick={() => setShowComments(!showComments)}
+          disabled={!canInteract}
           className="hover:underline hover:text-[#006971] cursor-pointer"
         >
           {commentsCount} bình luận
@@ -291,7 +303,7 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
       <div className="border-t border-gray-100 pt-3 flex items-center justify-around text-gray-600 font-semibold text-sm">
         <button
           type="button"
-          disabled={isLiking}
+          disabled={isLiking || !canInteract}
           aria-pressed={isLiked}
           onClick={toggleLike}
           className={`flex items-center gap-2 hover:text-rose-500 transition cursor-pointer py-1.5 px-4 rounded-xl hover:bg-rose-50/50 ${isLiked ? 'text-rose-500 font-bold' : ''
@@ -304,6 +316,7 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
         {/*3. Bấm nút Bình luận sẽ toggle ẩn/hiện bình luận bên dưới */}
         <button
           type="button"
+          disabled={!canInteract}
           onClick={() => setShowComments(!showComments)}
           className={`flex items-center gap-2 transition cursor-pointer py-1.5 px-4 rounded-xl ${showComments
             ? 'text-[#006971] bg-teal-50/60 font-bold'
@@ -314,13 +327,18 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
           <span>Bình luận</span>
         </button>
       </div>
-      {likeError && (
+      {!canInteract && (
+        <p className="text-sm text-gray-500">
+          Chỉ có thể thích và bình luận khi bài viết được duyệt.
+        </p>
+      )}
+      {canInteract && likeError && (
         <p role="alert" className="text-sm text-red-600">
           {likeError}
         </p>
       )}
       {/* ================= 5. KHUNG BÌNH LUẬN HIỂN THỊ PHÍA DƯỚI BÀI VIẾT ================= */}
-      {showComments && (
+      {canInteract && showComments && (
         <PostCommentSection
           post={post}
           onCommentAdded={() =>

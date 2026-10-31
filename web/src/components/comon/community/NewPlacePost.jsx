@@ -21,7 +21,12 @@ export default function NewPlacePost({ post }) {
         : 'Chưa cung cấp'
   );
   const displayPrice = ticketPrice.replace(/^(?:Khoảng giá|Giá)\s*:\s*/i, '').trim();
-  const description = destination?.description ?? post?.description ?? post?.content;
+  const description = post?.content;
+  const verification = {
+    PENDING: { label: 'Địa điểm chờ xác minh', color: 'bg-amber-50 text-amber-700' },
+    APPROVED: { label: 'Địa điểm đã được xác minh', color: 'bg-emerald-50 text-emerald-700' },
+    REJECTED: { label: 'Địa điểm chưa được chấp thuận', color: 'bg-red-50 text-red-700' },
+  }[destination?.status];
 
   return (
     <div className="space-y-3.5 bg-gray-50/70 p-4 rounded-2xl border border-gray-200/70">
@@ -39,6 +44,12 @@ export default function NewPlacePost({ post }) {
           </span>
         )}
       </div>
+
+      {verification && (
+        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${verification.color}`}>
+          {verification.label}
+        </span>
+      )}
 
       {/* Giờ mở cửa & Khoảng giá */}
       <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600 bg-white p-2.5 rounded-xl border border-gray-100">
@@ -71,23 +82,23 @@ export default function NewPlacePost({ post }) {
             aria-label={`Ảnh địa điểm ${name}`}
             tabIndex={0}
           >
-          {post.images.map((imgUrl, idx) => (
-            <div key={`${imgUrl}-${idx}`} className="relative w-full shrink-0 snap-center snap-always h-64 sm:h-96 overflow-hidden bg-gray-100">
-              <Image
-                src={imgUrl}
-                alt={`${name} - ảnh ${idx + 1}`}
-                fill
-                sizes="(max-width: 768px) 100vw, 650px"
-                className="object-contain"
-                draggable={false}
-              />
-              {post.images.length > 1 && (
-                <span className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
-                  {idx + 1}/{post.images.length}
-                </span>
-              )}
-            </div>
-          ))}
+            {post.images.map((imgUrl, idx) => (
+              <div key={`${imgUrl}-${idx}`} className="relative w-full shrink-0 snap-center snap-always h-64 sm:h-96 overflow-hidden bg-gray-100">
+                <Image
+                  src={imgUrl}
+                  alt={`${name} - ảnh ${idx + 1}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 650px"
+                  className="object-contain"
+                  draggable={false}
+                />
+                {post.images.length > 1 && (
+                  <span className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
+                    {idx + 1}/{post.images.length}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
           {post.images.length > 1 && (
             <p className="mt-2 text-center text-xs text-gray-400">

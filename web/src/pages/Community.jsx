@@ -108,7 +108,9 @@ export default function Community() {
             onUpdated={(updatedPost) => {
               setPosts((previous) =>
                 updatePostInList(previous, updatedPost)
+                  .filter((post) => post.status === 'APPROVED')
               );
+              setNotice('Đã cập nhật bài viết. Bài đang chờ duyệt lại.');
             }}
             onDeleted={(postId) => {
               setPosts((previous) =>

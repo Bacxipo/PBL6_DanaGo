@@ -20,6 +20,7 @@ export function updatePostInList(posts, updatedPost) {
       ? {
         ...post,
         content: updatedPost.content,
+        status: updatedPost.status,
         updatedAt: updatedPost.updatedAt,
       }
       : post
