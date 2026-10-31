@@ -36,20 +36,18 @@ export interface FeedPost {
     destination: {
         id: number;
         name: string;
-        district: string | null;
+        district: string;
+        description: string | null;
+        openHours: string | null;
+        ticketPrice: string | null;
+        status: 'PENDING' | 'APPROVED' | 'REJECTED';
+        category: FeedCategory | null;
     } | null;
     _count: {
         likes: number;
         comments: number;
     };
     isLiked?: boolean;
-    proposal?: (
-        DestinationProposalInput & {
-            id: number;
-            postId: number;
-            createdAt: string;
-        }
-    ) | null;
 }
 
 export interface FeedComment {

@@ -25,64 +25,48 @@ export class FeedRepository {
   }
 
   async createPost(userId: number, dto: CreateFeedPostDto, coordinates: { latitude: number; longitude: number } | null = null,) {
-    return this.prisma.feedPost.create({
-      data: {
-        userId,
-        content: dto.content.trim(),
-        destinationId: dto.destinationId,
-        postType: dto.postType ?? FeedPostType.NORMAL,
-        status: ContentStatus.PENDING,
-
-        images: dto.images?.length
-          ? {
-            create: dto.images.map((imageUrl) => ({
-              imageUrl,
-            })),
-          }
-          : undefined,
-
-        proposal: dto.proposal
-          ? {
-            create: {
-              name: dto.proposal.name.trim(),
-              description: dto.proposal.description?.trim(),
-              district: dto.proposal.district.trim(),
-              categoryId: dto.proposal.categoryId,
-              addressUrl: dto.proposal.addressUrl,
-              latitude: coordinates?.latitude,
-              longitude: coordinates?.longitude,
-              ticketPrice: dto.proposal.ticketPrice,
-              openHours: dto.proposal.openHours,
-            },
-          }
-          : undefined,
-      },
-
-      include: {
-        proposal: true,
-        images: true,
-        user: {
-          select: {
-            id: true,
-            username: true,
-            fullName: true,
-            avatarUrl: true,
+    return this.prisma.$transaction(async (tx) => {
+      let destinationId = dto.destinationId;
+      if (dto.postType === FeedPostType.NEW_DESTINATION) {
+        if (!dto.proposal) throw new BadRequestException('Missing destination information.');
+        const input = dto.proposal;
+        const [opening, closing] = (input.openHours ?? '').split(' - ');
+        const destination = await tx.destination.create({
+          data: {
+            name: input.name.trim(),
+            description: input.description?.trim(),
+            district: input.district.trim(),
+            categoryId: input.categoryId,
+            addressUrl: input.addressUrl,
+            latitude: coordinates?.latitude,
+            longitude: coordinates?.longitude,
+            ticketPrice: input.ticketPrice,
+            openHours: input.openHours,
+            openTime: timeToMinutes(opening),
+            closeTime: timeToMinutes(closing),
+            status: ContentStatus.PENDING,
+            createdBy: userId,
+            images: { create: (dto.images ?? []).map((imageUrl) => ({ imageUrl, uploadedBy: userId })) },
           },
+        });
+        destinationId = destination.id;
+      }
+      return tx.feedPost.create({
+        data: {
+          userId,
+          content: dto.content.trim(),
+          destinationId,
+          postType: dto.postType ?? FeedPostType.NORMAL,
+          status: ContentStatus.PENDING,
+          images: { create: (dto.images ?? []).map((imageUrl) => ({ imageUrl })) },
         },
-        destination: {
-          select: {
-            id: true,
-            name: true,
-            district: true,
-          },
+        include: {
+          images: true,
+          user: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+          destination: { include: { category: true } },
+          _count: { select: { likes: true, comments: true } },
         },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-      },
+      });
     });
   }
 
@@ -100,7 +84,6 @@ export class FeedRepository {
       const post = await tx.feedPost.findUnique({
         where: { id },
         include: {
-          proposal: true,
           images: true,
           destination: true,
         },
@@ -124,27 +107,8 @@ export class FeedRepository {
       const isNewDestination =
         post.postType === FeedPostType.NEW_DESTINATION;
 
-      if (
-        status === ContentStatus.APPROVED &&
-        isNewDestination
-      ) {
-        if (!post.proposal) {
-          throw new BadRequestException(
-            'Bài viết chưa có thông tin đề xuất.',
-          );
-        }
-
-        if (post.destinationId !== null) {
-          throw new ConflictException(
-            'Bài đề xuất đã có địa điểm liên kết.',
-          );
-        }
-
-        if (post.images.length === 0) {
-          throw new BadRequestException(
-            'Đề xuất phải có ít nhất một ảnh.',
-          );
-        }
+      if (isNewDestination && post.destinationId === null) {
+        throw new BadRequestException('Post has no linked destination.');
       }
 
       // Chỉ một transaction được chuyển bài khỏi PENDING.
@@ -162,49 +126,16 @@ export class FeedRepository {
         );
       }
 
-      if (
-        status === ContentStatus.APPROVED &&
-        isNewDestination
-      ) {
-        const proposal = post.proposal!;
-        const [opening, closing] = (proposal.openHours ?? '').split(' - ');
-        const destination = await tx.destination.create({
-          data: {
-            name: proposal.name,
-            description: proposal.description,
-            district: proposal.district,
-            categoryId: proposal.categoryId,
-            addressUrl: proposal.addressUrl,
-            latitude: proposal.latitude,
-            longitude: proposal.longitude,
-            ticketPrice: proposal.ticketPrice,
-            openHours: proposal.openHours,
-            openTime: timeToMinutes(opening),
-            closeTime: timeToMinutes(closing),
-            status: ContentStatus.APPROVED,
-            createdBy: post.userId,
-
-            images: {
-              create: post.images.map((image) => ({
-                imageUrl: image.imageUrl,
-                uploadedBy: post.userId,
-              })),
-            },
-          },
-        });
-
-        await tx.feedPost.update({
-          where: { id },
-          data: {
-            destinationId: destination.id,
-          },
+      if (isNewDestination) {
+        await tx.destination.update({
+          where: { id: post.destinationId! },
+          data: { status },
         });
       }
 
       return tx.feedPost.findUniqueOrThrow({
         where: { id },
         include: {
-          proposal: true,
           images: true,
           destination: true,
         },
@@ -222,14 +153,7 @@ export class FeedRepository {
       include: {
         images: true,
         user: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
-        destination: {
-          select: { id: true, name: true, district: true },
-        },
-        proposal: {
-          include: {
-            category: true,
-          },
-        },
+        destination: { include: { category: true } },
         likes: currentUserId ? { where: { userId: currentUserId } } : false,
         _count: { select: { likes: true, comments: true } },
       },
@@ -247,14 +171,7 @@ export class FeedRepository {
       include: {
         images: true,
         user: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
-        destination: {
-          select: { id: true, name: true, district: true },
-        },
-        proposal: {
-          include: {
-            category: true,
-          },
-        },
+        destination: { include: { category: true } },
         _count: { select: { likes: true, comments: true } },
       },
     });

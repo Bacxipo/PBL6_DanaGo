@@ -10,12 +10,14 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import { DestinationService } from '../services/destination.service';
 import { DestinationResponseDto } from '../dto/destination-response.dto';
 import { CreateDestinationDto } from '../dto/create-destination.dto';
 import { UpdateDestinationDto } from '../dto/update-destination.dto';
 import { UpdateDestinationStatusDto } from '../dto/update-destination-status.dto';
+import { OptionalJwtAuthGuard } from '../../../shared/guards/optional-jwt-auth.guard';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
@@ -36,11 +38,14 @@ export class DestinationController {
   }
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   async getAll(
     @Query('status') status?: ContentStatus,
+    @CurrentUser('role') role?: UserRole,
   ): Promise<DestinationResponseDto[]> {
     // Mặc định khách/User chỉ xem điểm đến đã APPROVED, ngoại trừ khi truyền status khác (nếu cần cho admin)
-    const targetStatus = status || ContentStatus.APPROVED;
+    const canModerate = role === UserRole.ADMIN || role === UserRole.STAFF;
+    const targetStatus = canModerate ? (status || ContentStatus.APPROVED) : ContentStatus.APPROVED;
     return this.destinationService.getAllDestinations(targetStatus);
   }
 
@@ -50,10 +55,16 @@ export class DestinationController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   async getById(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser('role') role?: UserRole,
   ): Promise<DestinationResponseDto> {
-    return this.destinationService.getDestinationById(id);
+    const destination = await this.destinationService.getDestinationById(id);
+    if (destination.status !== ContentStatus.APPROVED && role !== UserRole.ADMIN && role !== UserRole.STAFF) {
+      throw new NotFoundException('Destination not found.');
+    }
+    return destination;
   }
 
   @Put(':id')

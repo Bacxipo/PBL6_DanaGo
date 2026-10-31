@@ -5,15 +5,15 @@ import { Store, Clock, Banknote } from 'lucide-react';
 import Image from 'next/image';
 
 export default function NewPlacePost({ post }) {
-  const proposal = post?.proposal;
-  const name = proposal?.name ?? post?.placeName ?? post?.name ?? 'Địa điểm mới';
-  const category = proposal?.category?.name ?? post?.category;
-  const openHours = proposal?.openHours ?? post?.destination?.openHours ?? (
+  const destination = post?.destination;
+  const name = destination?.name ?? post?.placeName ?? post?.name ?? 'Địa điểm mới';
+  const category = destination?.category?.name ?? post?.category;
+  const openHours = destination?.openHours ?? (
     post?.openTime && post?.closeTime
       ? `${post.openTime} - ${post.closeTime}`
       : 'Chưa cung cấp'
   );
-  const ticketPrice = proposal?.ticketPrice ?? post?.destination?.ticketPrice ?? (
+  const ticketPrice = destination?.ticketPrice ?? (
     post?.isFree
       ? 'Miễn phí vé'
       : post?.priceFrom != null && post?.priceTo != null
@@ -21,7 +21,7 @@ export default function NewPlacePost({ post }) {
         : 'Chưa cung cấp'
   );
   const displayPrice = ticketPrice.replace(/^(?:Khoảng giá|Giá)\s*:\s*/i, '').trim();
-  const description = proposal?.description ?? post?.description ?? post?.content;
+  const description = destination?.description ?? post?.description ?? post?.content;
 
   return (
     <div className="space-y-3.5 bg-gray-50/70 p-4 rounded-2xl border border-gray-200/70">

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { DestinationEntity } from '../entities/destination.entity';
 import { CreateDestinationDto } from '../dto/create-destination.dto';
@@ -88,9 +88,22 @@ export class DestinationRepository {
   }
 
   async updateStatus(id: number, status: ContentStatus): Promise<DestinationEntity> {
-    const updated = await this.prisma.destination.update({
-      where: { id },
-      data: { status },
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const sourcePosts = await tx.feedPost.findMany({
+        where: { destinationId: id, postType: 'NEW_DESTINATION' },
+      });
+      for (const post of sourcePosts) {
+        if (post.status === status) continue;
+        if (post.status !== ContentStatus.PENDING || status === ContentStatus.PENDING) {
+          throw new ConflictException('Source post has already been moderated.');
+        }
+        const claimed = await tx.feedPost.updateMany({
+          where: { id: post.id, status: ContentStatus.PENDING },
+          data: { status },
+        });
+        if (claimed.count !== 1) throw new ConflictException('Post was moderated concurrently.');
+      }
+      return tx.destination.update({ where: { id }, data: { status } });
     });
     return this.mapToEntity(updated);
   }
