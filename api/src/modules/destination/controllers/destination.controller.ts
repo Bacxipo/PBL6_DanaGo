@@ -46,18 +46,23 @@ export class DestinationController {
   async getAll(
     @Query('status') status?: ContentStatus,
     @CurrentUser('role') role?: UserRole,
-  ): Promise<DestinationResponseDto[]> {
-    // Mặc định khách/User chỉ xem điểm đến đã APPROVED, ngoại trừ khi truyền status khác (nếu cần cho admin)
-    const canModerate = role === UserRole.ADMIN || role === UserRole.STAFF;
-    const targetStatus = canModerate ? (status || ContentStatus.APPROVED) : ContentStatus.APPROVED;
-    return this.destinationService.getAllDestinations(targetStatus);
     @Query('search') search?: string,
     @Query('categoryId') categoryId?: string,
     @Query('district') district?: string,
   ): Promise<DestinationResponseDto[]> {
-    // Mặc định khách/User chỉ xem điểm đến đã APPROVED, ngoại trừ khi truyền status khác (nếu cần cho admin)
-    const targetStatus = status || ContentStatus.APPROVED;
-    const parsedCategoryId = categoryId ? parseInt(categoryId, 10) : undefined;
+    const canModerate = role === UserRole.ADMIN || role === UserRole.STAFF;
+    const targetStatus = canModerate
+      ? (status || ContentStatus.APPROVED)
+      : ContentStatus.APPROVED;
+    const parsedCategoryId = categoryId ? Number(categoryId) : undefined;
+
+    if (
+      parsedCategoryId !== undefined &&
+      (!Number.isInteger(parsedCategoryId) || parsedCategoryId <= 0)
+    ) {
+      throw new BadRequestException('categoryId must be a positive integer.');
+    }
+
     return this.destinationService.getAllDestinations(
       targetStatus,
       search,
@@ -69,11 +74,6 @@ export class DestinationController {
   @Get('categories')
   async getCategories() {
     return this.destinationService.getAllCategories();
-  }
-
-  @Get('categories')
-  getCategories() {
-    return this.destinationService.getCategories();
   }
 
   @Get(':id')
@@ -125,7 +125,7 @@ export class DestinationController {
   async uploadImages(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFiles() files: Express.Multer.File[],
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') userId: number,
   ): Promise<DestinationImageDto[]> {
     if (!files || files.length === 0) {
       throw new BadRequestException('Vui lòng chọn ít nhất 1 ảnh để tải lên (field: images).');

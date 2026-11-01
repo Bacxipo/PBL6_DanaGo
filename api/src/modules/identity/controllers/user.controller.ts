@@ -17,6 +17,8 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async getMyProfile(@CurrentUser('sub') userId: number): Promise<UserResponseDto> {
     return this.userService.getUserProfile(userId);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

@@ -175,9 +175,9 @@ export default function DetailPlace({ id: propId }) {
                 <ArrowLeft className="w-4 h-4" /> Quay lại
             </Link>
 
-            <div className="flex flex-col lg:flex-row gap-6 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-6 w-full">
                 {/* Khu vực hiển thị Slider hình ảnh */}
-                <div className="w-full lg:w-2/3 flex flex-col">
+                <div className="min-w-0 lg:col-span-2 flex flex-col">
                     <div
                         className="relative w-full h-[420px] sm:h-[480px] lg:h-[520px] rounded-2xl overflow-hidden bg-neutral-900 group select-none shadow-md cursor-pointer"
                         onClick={() => currentImg && setIsLightboxOpen(true)}
@@ -325,7 +325,7 @@ export default function DetailPlace({ id: propId }) {
                     <p className="text-[#006971] font-bold mt-2 text-sm">{place.category}</p>
                 </div>
 
-                <div className="w-full lg:w-1/3">
+                <div className="min-w-0 w-full">
                     <PlaceAction time={place.time} price={place.priceDisplay} move={place.move} />
                 </div>
             </div>

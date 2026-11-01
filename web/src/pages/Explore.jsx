@@ -8,6 +8,14 @@ import { Loader2, RefreshCw, AlertCircle, Search, X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+const normalizePlaceName = (value = '') => value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ');
+
 export default function Explore() {
     const searchParams = useSearchParams();
     const initialQuery = searchParams.get('search') || '';
@@ -101,12 +109,11 @@ export default function Explore() {
 
     // Áp dụng bộ lọc (bao gồm tìm kiếm theo tên địa điểm)
     const filteredPlaces = useMemo(() => {
-        const query = searchTerm.toLowerCase().trim();
+        const query = normalizePlaceName(searchTerm);
         return mappedPlaces.filter((item) => {
             const matchSearch =
                 !query ||
-                item.name.toLowerCase().includes(query) ||
-                (item.address && item.address.toLowerCase().includes(query));
+                normalizePlaceName(item.name).includes(query);
             const matchCategory = category === "Tất cả" || item.category === category;
             const matchAddress = address === "Tất cả quận" || item.address === address;
             const matchRating = minRating === 0 || item.stars >= minRating;
@@ -226,29 +233,37 @@ export default function Explore() {
                 {/* Thanh tìm kiếm theo tên và số lượng kết quả */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 shrink-0">
                     {/* Ô tìm kiếm theo tên địa điểm */}
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <div className="w-full sm:flex-1 sm:max-w-xl">
+                        <label htmlFor="destination-search" className="block mb-2 text-sm font-semibold text-gray-800">
+                            Tìm kiếm địa điểm
+                        </label>
+                        <div className="relative">
+                        <Search aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#006971] pointer-events-none" />
                         <input
+                            id="destination-search"
                             type="text"
+                            autoComplete="off"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Tìm kiếm theo tên địa điểm (Bà Nà, Mỹ Khê, Sơn Trà...)..."
-                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/20 transition-all shadow-xs"
+                            className="w-full pl-11 pr-11 py-3 bg-white border border-gray-300 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/20 transition-all shadow-xs"
                         />
                         {searchTerm && (
                             <button
                                 type="button"
                                 onClick={() => setSearchTerm("")}
+                                aria-label="Xóa từ khóa tìm kiếm"
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer p-0.5 rounded-full hover:bg-gray-100 transition-colors"
                                 title="Xóa từ khóa tìm kiếm"
                             >
                                 <X className="w-4 h-4" />
                             </button>
                         )}
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-gray-800 font-bold text-sm whitespace-nowrap">
+                        <span role="status" className="text-gray-800 font-bold text-sm whitespace-nowrap">
                             {loading ? 'Đang tải dữ liệu...' : `Tìm thấy ${filteredPlaces.length} điểm đến`}
                         </span>
                         {category !== "Tất cả" && (
