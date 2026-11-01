@@ -12,12 +12,16 @@ export class DestinationMapper {
       longitude: entity.longitude ? Number(entity.longitude) : undefined,
       addressUrl: entity.addressUrl ?? undefined,
       categoryId: entity.categoryId ?? undefined,
+      categoryName: entity.categoryName ?? undefined,
       ticketPrice: entity.ticketPrice ?? undefined,
       openHours: entity.openHours ?? undefined,
       avgRating: entity.avgRating ? Number(entity.avgRating) : 0,
       status: entity.status,
       createdBy: entity.createdBy ?? undefined,
       createdAt: entity.createdAt,
+      images: entity.images
+        ? entity.images.map((img) => ({ id: img.id, imageUrl: img.imageUrl }))
+        : undefined,
     };
   }
 }

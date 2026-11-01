@@ -12,11 +12,11 @@ class NavItemData {
   });
 }
 
-class CustomButtomNavBar extends StatelessWidget {
+class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const CustomButtomNavBar({
+  const CustomBottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
@@ -25,7 +25,7 @@ class CustomButtomNavBar extends StatelessWidget {
     NavItemData(
       icon: Icons.home_outlined,
       activeIcon: Icons.home_rounded,
-      label: 'Home',
+      label: 'Trang chủ',
     ),
     NavItemData(
       icon: Icons.explore_outlined,
@@ -38,9 +38,9 @@ class CustomButtomNavBar extends StatelessWidget {
       label: 'Lịch trình',
     ),
     NavItemData(
-      icon: Icons.favorite_border_rounded,
-      activeIcon: Icons.favorite_rounded,
-      label: 'Yêu thích',
+      icon: Icons.message_outlined,
+      activeIcon: Icons.message_outlined,
+      label: 'Bảng tin',
     ),
     NavItemData(
       icon: Icons.person_outline_rounded,
@@ -52,7 +52,6 @@ class CustomButtomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Margin giúp thanh nổi lơ lửng trên màn hình
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(

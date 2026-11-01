@@ -11,9 +11,13 @@ import {
   ParseIntPipe,
   UseGuards,
   NotFoundException,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { DestinationService } from '../services/destination.service';
-import { DestinationResponseDto } from '../dto/destination-response.dto';
+import { DestinationResponseDto, DestinationImageDto } from '../dto/destination-response.dto';
 import { CreateDestinationDto } from '../dto/create-destination.dto';
 import { UpdateDestinationDto } from '../dto/update-destination.dto';
 import { UpdateDestinationStatusDto } from '../dto/update-destination-status.dto';
@@ -47,6 +51,24 @@ export class DestinationController {
     const canModerate = role === UserRole.ADMIN || role === UserRole.STAFF;
     const targetStatus = canModerate ? (status || ContentStatus.APPROVED) : ContentStatus.APPROVED;
     return this.destinationService.getAllDestinations(targetStatus);
+    @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('district') district?: string,
+  ): Promise<DestinationResponseDto[]> {
+    // Mặc định khách/User chỉ xem điểm đến đã APPROVED, ngoại trừ khi truyền status khác (nếu cần cho admin)
+    const targetStatus = status || ContentStatus.APPROVED;
+    const parsedCategoryId = categoryId ? parseInt(categoryId, 10) : undefined;
+    return this.destinationService.getAllDestinations(
+      targetStatus,
+      search,
+      parsedCategoryId,
+      district,
+    );
+  }
+
+  @Get('categories')
+  async getCategories() {
+    return this.destinationService.getAllCategories();
   }
 
   @Get('categories')
@@ -94,5 +116,29 @@ export class DestinationController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ message: string }> {
     return this.destinationService.deleteDestination(id);
+  }
+
+  // --- Upload và quản lý ảnh của điểm đến ---
+  @Post(':id/images')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FilesInterceptor('images', 10))
+  async uploadImages(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser('userId') userId: number,
+  ): Promise<DestinationImageDto[]> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Vui lòng chọn ít nhất 1 ảnh để tải lên (field: images).');
+    }
+    return this.destinationService.uploadImages(id, files, userId);
+  }
+
+  @Delete('images/:imageId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  async deleteImage(
+    @Param('imageId', ParseIntPipe) imageId: number,
+  ): Promise<{ message: string }> {
+    return this.destinationService.deleteImage(imageId);
   }
 }

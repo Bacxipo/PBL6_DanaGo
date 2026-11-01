@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Catalog from '../components/comon/place/Catalog';
 import PlaceCard from '../components/comon/place/PlaceCard';
 
@@ -7,6 +11,17 @@ import { categoriesData, placesData } from '../database/data';
 
 export default function Home() {
     const bgUrl = typeof heroImg === 'string' ? heroImg : heroImg.src || heroImg;
+    const [searchQuery, setSearchQuery] = useState('');
+    const router = useRouter();
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            router.push(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
+        } else {
+            router.push('/explore');
+        }
+    };
 
     return (
         <section className="w-full space-y-12 pb-8">
@@ -17,9 +32,11 @@ export default function Home() {
             >
                 <div className="bg-black/50 p-8 md:p-12 rounded-2xl text-center mx-4 backdrop-blur-xs">
                     <h1 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">Khám Phá Đà Nẵng Cùng DanaGo</h1>
-                    <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
+                    <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row justify-center items-center gap-3">
                         <input
                             type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Bạn muốn đến đâu ở Đà Nẵng?"
                             className="w-full sm:w-[320px] bg-white text-gray-800 placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
                         />
@@ -29,7 +46,7 @@ export default function Home() {
                         >
                             Tìm kiếm
                         </button>
-                    </div>
+                    </form>
                 </div>
             </div>
 

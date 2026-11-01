@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/destination_item.dart';
 import 'package:smarttrip/screens/Detail_place_screen.dart';
+import 'package:smarttrip/screens/search_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/home/category_selector.dart';
 import 'package:smarttrip/widgets/home/custom_bottom_nav_bar.dart';
@@ -55,7 +56,16 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const HomeSearchBar(),
+              HomeSearchBar(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SearchScreen(),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 20),
               CategorySelector(
                 categories: _categories,
@@ -152,14 +162,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: CustomButtomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
       ),
     );
   }
