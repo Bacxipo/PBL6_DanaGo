@@ -2,21 +2,17 @@
 
 import React from 'react';
 import { Store, Layers, Clock, Moon, Camera, ChevronDown } from 'lucide-react';
-import Image from 'next/image';
-import { categoriesData } from '@/database/data';
-export default function NewPlacePostForm({ placeData, onChangeField }) {
+export default function NewPlacePostForm({ placeData, onChangeField, categories = [], }) {
   const {
-    placeName,
-    category,
-    openTime,
-    closeTime,
-    isFree,
-    priceFrom,
-    priceTo,
-    description
+    placeName = '',
+    openTime = '',
+    closeTime = '',
+    isFree = false,
+    priceFrom = '',
+    priceTo = '',
+    description = '',
   } = placeData;
 
-  const availableCategories = (categoriesData || []).filter(c => c.name !== 'Tất cả');
   return (
     <div className="space-y-4 pt-1">
       {/* Tên địa điểm */}
@@ -43,13 +39,17 @@ export default function NewPlacePostForm({ placeData, onChangeField }) {
         </label>
         <div className="relative">
           <select
-            value={category}
-            onChange={(e) => onChangeField('category', e.target.value)}
+            value={placeData.categoryId ?? ''}
+            onChange={(e) =>
+              onChangeField('categoryId', e.target.value)
+            }
             className="w-full appearance-none px-3.5 py-2.5 text-xs rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:border-[#006971] focus:bg-white transition cursor-pointer"
           >
-            {availableCategories.map((cat) => (
-              <option key={cat.id} value={cat.name}>
-                {cat.name}
+            <option value="">Chưa chọn danh mục</option>
+
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
               </option>
             ))}
           </select>
@@ -69,7 +69,7 @@ export default function NewPlacePostForm({ placeData, onChangeField }) {
             <span className="text-[11px] text-gray-500 block mb-1">Mở cửa</span>
             <div className="relative">
               <input
-                type="text"
+                type="time"
                 value={openTime}
                 onChange={(e) => onChangeField('openTime', e.target.value)}
                 className="w-full px-3 py-2 text-xs rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:border-[#006971]"
@@ -82,7 +82,7 @@ export default function NewPlacePostForm({ placeData, onChangeField }) {
             <span className="text-[11px] text-gray-500 block mb-1">Đóng cửa</span>
             <div className="relative">
               <input
-                type="text"
+                type="time"
                 value={closeTime}
                 onChange={(e) => onChangeField('closeTime', e.target.value)}
                 className="w-full px-3 py-2 text-xs rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:border-[#006971]"
@@ -141,6 +141,38 @@ export default function NewPlacePostForm({ placeData, onChangeField }) {
         />
       </div>
 
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Quận/Huyện *
+        </label>
+
+        <input
+          type="text"
+          value={placeData.district}
+          onChange={(e) =>
+            onChangeField('district', e.target.value)
+          }
+          placeholder="VD: Hải Châu"
+          className="w-full rounded-xl border p-3"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Đường dẫn bản đồ
+        </label>
+
+        <input
+          type="url"
+          maxLength={4096}
+          value={placeData.addressUrl}
+          onChange={(e) =>
+            onChangeField('addressUrl', e.target.value)
+          }
+          placeholder="https://..."
+          className="w-full rounded-xl border p-3"
+        />
+      </div>
       {/* Ảnh thực tế */}
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -154,13 +186,9 @@ export default function NewPlacePostForm({ placeData, onChangeField }) {
 
         <div className="flex items-center gap-3">
           <div className="relative w-24 h-16 rounded-xl overflow-hidden border border-gray-200">
-            <Image
-              src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=300&q=80"
-              alt="preview"
-              fill
-              className="object-cover"
-              size ="96px"
-            />
+            <p className="text-xs text-gray-500">
+              Nhấn nút hình ảnh bên dưới để chọn từ 1 đến 5 ảnh thực tế.
+            </p>
           </div>
         </div>
       </div>

@@ -13,6 +13,10 @@ import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getMyProfile(@CurrentUser('sub') userId: number): Promise<UserResponseDto> {
+    return this.userService.getUserProfile(userId);
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

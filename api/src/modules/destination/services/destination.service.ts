@@ -16,6 +16,10 @@ export class DestinationService {
     private readonly storageService: SupabaseStorageService,
   ) { }
 
+  getCategories() {
+    return this.destinationRepository.findCategories();
+  }
+
   async createDestination(dto: CreateDestinationDto, userId?: number): Promise<DestinationResponseDto> {
     const created = await this.destinationRepository.create(dto, userId);
     return DestinationMapper.toResponseDto(created);

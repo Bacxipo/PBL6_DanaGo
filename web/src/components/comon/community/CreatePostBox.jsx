@@ -7,7 +7,7 @@ export default function CreatePostBox({ onOpenModal }) {
   return (
     <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100 flex flex-col gap-4 mb-6">
       {/* Top row: Avatar & Placeholder input */}
-      <div 
+      <div
         onClick={onOpenModal}
         className="flex items-center gap-3 cursor-pointer group"
       >
@@ -22,21 +22,13 @@ export default function CreatePostBox({ onOpenModal }) {
       {/* Bottom row: Action Icons & Post Button */}
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-2">
-          <button 
+          <button
             type="button"
             onClick={onOpenModal}
             title="Thêm ảnh"
             className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-colors cursor-pointer"
           >
             <ImageIcon className="w-4 h-4" />
-          </button>
-          <button 
-            type="button"
-            onClick={onOpenModal}
-            title="Thêm địa điểm"
-            className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
-          >
-            <MapPin className="w-4 h-4" />
           </button>
         </div>
 

@@ -1,17 +1,74 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CreatePostBox from '@/components/comon/community/CreatePostBox';
 import CreatePostModal from '@/components/comon/community/CreatePostModal';
 import CommunityFeed from '@/components/comon/community/CommunityFeed';
-import { initialPosts } from '@/database/data';
-export default function Community() {
-  const [posts, setPosts] = useState(initialPosts);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleAddPost = (newPost) => {
-    setPosts([newPost, ...posts]);
+import { getFeedPosts, getMyProfile } from '@/lib/feed-api';
+import { mapFeedPost, updatePostInList } from '@/lib/feed-utils';
+
+export default function Community() {
+  const [posts, setPosts] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [feedError, setFeedError] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  const handleAddPost = () => {
+    setNotice('Đăng bài thành công. Bài viết đang chờ duyệt.');
   };
+  useEffect(() => {
+    let active = true;
+
+    async function loadPosts() {
+      try {
+        const token = sessionStorage.getItem('accessToken');
+        const data = await getFeedPosts(token);
+
+        if (!active) return;
+
+        setPosts(data.map(mapFeedPost));
+      } catch (error) {
+        if (active) {
+          setFeedError(
+            error instanceof Error
+              ? error.message
+              : 'Không thể tải bài viết.',
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    async function loadCurrentUser() {
+      const token = sessionStorage.getItem('accessToken');
+
+      if (!token) {
+        if (active) setCurrentUserId(null);
+        return;
+      }
+
+      try {
+        const user = await getMyProfile(token);
+
+        if (active) {
+          setCurrentUserId(user.id);
+        }
+      } catch {
+        if (active) {
+          setCurrentUserId(null);
+        }
+      }
+    }
+    loadPosts();
+    loadCurrentUser();
+    return () => {
+      active = false;
+    };
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6">
@@ -29,8 +86,39 @@ export default function Community() {
         {/* Create Post Inline Box */}
         <CreatePostBox onOpenModal={() => setIsModalOpen(true)} />
 
+        {notice && (
+          <p
+            role="status"
+            className="rounded-xl bg-teal-50 p-3 text-teal-800"
+          >
+            {notice}
+          </p>
+        )}
         {/* Feed List */}
-        <CommunityFeed posts={posts} />
+        {loading ? (
+          <p>Đang tải bài viết...</p>
+        ) : feedError ? (
+          <p role="alert" className="text-red-600">
+            {feedError}
+          </p>
+        ) : (
+          <CommunityFeed
+            posts={posts}
+            currentUserId={currentUserId}
+            onUpdated={(updatedPost) => {
+              setPosts((previous) =>
+                updatePostInList(previous, updatedPost)
+                  .filter((post) => post.status === 'APPROVED')
+              );
+              setNotice('Đã cập nhật bài viết. Bài đang chờ duyệt lại.');
+            }}
+            onDeleted={(postId) => {
+              setPosts((previous) =>
+                previous.filter((item) => item.id !== postId)
+              );
+            }}
+          />
+        )}
 
         {/* Create Post Modal */}
         <CreatePostModal
