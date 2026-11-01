@@ -43,7 +43,7 @@ class DetailReviewsSection extends StatelessWidget {
                   onTap: onSeeAll,
                   child: const Text(
                     'Xem tất cả',
-                    style: TextStyle(color: Color(0xff6b7280), fontSize: 13),
+                    style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
                   ),
                 ),
               ],
@@ -95,7 +95,7 @@ class DetailReviewsSection extends StatelessWidget {
                             Text(
                               review.timeAgo,
                               style: const TextStyle(
-                                color: Color(0xff9ca3af),
+                                color: AppColors.textHint,
                                 fontSize: 12,
                               ),
                             ),
@@ -104,7 +104,7 @@ class DetailReviewsSection extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const Icon(Icons.star, color: AppColors.starActive, size: 16),
                           const SizedBox(width: 4),
                           Text(
                             review.rating.toStringAsFixed(1),
@@ -122,7 +122,7 @@ class DetailReviewsSection extends StatelessWidget {
                     review.comment,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xff374151),
+                      color: AppColors.textSecondary,
                       height: 1.4,
                     ),
                   ),

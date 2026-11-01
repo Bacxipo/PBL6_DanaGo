@@ -35,50 +35,25 @@ class SearchResultCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    item.imageUrl,
-                    width: 90,
-                    height: 90,
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, _) => Container(
-                      width: 90,
-                      height: 90,
-                      color: const Color(0xFFF3F4F6),
-                      child: const Icon(
-                        Icons.broken_image,
-                        color: Color(0xFF9CA3AF),
-                        size: 28,
-                      ),
-                    ),
+            // Ảnh điểm đến sạch sẽ, không còn badge đè lên góc ảnh
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                item.imageUrl,
+                width: 95,
+                height: 95,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, err, _) => Container(
+                  width: 95,
+                  height: 95,
+                  color: AppColors.bgSecondary,
+                  child: const Icon(
+                    Icons.broken_image,
+                    color: AppColors.textHint,
+                    size: 28,
                   ),
                 ),
-                Positioned(
-                  top: 6,
-                  left: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: item.badgeColor,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      item.badge,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -96,7 +71,7 @@ class SearchResultCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF111827),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -108,7 +83,7 @@ class SearchResultCard extends StatelessWidget {
                               : Icons.favorite_border_rounded,
                           color: item.isFavorite
                               ? Colors.red
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.textHint,
                           size: 18,
                         ),
                       ),
@@ -119,7 +94,7 @@ class SearchResultCard extends StatelessWidget {
                     children: [
                       const Icon(
                         Icons.location_on_outlined,
-                        color: Color(0xFF9CA3AF),
+                        color: AppColors.textHint,
                         size: 13,
                       ),
                       const SizedBox(width: 2),
@@ -130,7 +105,7 @@ class SearchResultCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ),
@@ -141,7 +116,7 @@ class SearchResultCard extends StatelessWidget {
                     children: [
                       const Icon(
                         Icons.star_rounded,
-                        color: Colors.amber,
+                        color: AppColors.starActive,
                         size: 15,
                       ),
                       const SizedBox(width: 3),
@@ -150,20 +125,20 @@ class SearchResultCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF111827),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       Text(
                         ' (${_formatReviewCount(item.reviewCount)})',
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF6B7280),
+                          color: AppColors.textTertiary,
                         ),
                       ),
                       const SizedBox(width: 8),
                       const Icon(
                         Icons.near_me_rounded,
-                        color: Color(0xFF9CA3AF),
+                        color: AppColors.textHint,
                         size: 13,
                       ),
                       const SizedBox(width: 2),
@@ -171,11 +146,12 @@ class SearchResultCard extends StatelessWidget {
                         item.distance,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF6B7280),
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
                   ),
+                  // Thời gian mở cửa / Trạng thái
                   if (item.tagLabel != null) ...[
                     const SizedBox(height: 6),
                     Container(
@@ -184,7 +160,7 @@ class SearchResultCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE0F7F8),
+                        color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -193,6 +169,28 @@ class SearchResultCard extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                  // Thẻ danh mục (Hải sản tươi, Biển & Đảo, View Vịnh Biển...) đẩy xuống dưới Thời gian mở cửa
+                  if (item.badge.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: item.badgeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        item.badge,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: item.badgeColor,
                         ),
                       ),
                     ),

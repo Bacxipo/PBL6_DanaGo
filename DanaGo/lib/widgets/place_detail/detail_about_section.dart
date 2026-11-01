@@ -27,7 +27,7 @@ class _DetailAboutSectionState extends State<DetailAboutSection> {
           overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 14,
-            color: Color(0xff4b5563),
+            color: AppColors.textSecondary,
             height: 1.5,
           ),
         ),

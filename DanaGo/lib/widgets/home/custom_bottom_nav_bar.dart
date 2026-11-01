@@ -21,6 +21,7 @@ class CustomBottomNavBar extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
   });
+
   static const List<NavItemData> _items = [
     NavItemData(
       icon: Icons.home_outlined,
@@ -56,7 +57,7 @@ class CustomBottomNavBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30), // Bo tròn dạng viên thuốc lớn
+        borderRadius: BorderRadius.circular(30), // Bo tròn
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),

@@ -54,7 +54,7 @@ class MapSearchHeader extends StatelessWidget {
                       decoration: const InputDecoration(
                         hintText: 'Bạn muốn đi đâu ở Đà Nẵng?',
                         hintStyle: TextStyle(
-                          color: Color(0xFF9CA3AF),
+                          color: AppColors.textHint,
                           fontSize: 14,
                         ),
                         border: InputBorder.none,
@@ -64,14 +64,14 @@ class MapSearchHeader extends StatelessWidget {
                   Container(
                     height: 20,
                     width: 1,
-                    color: const Color(0xFFE5E7EB),
+                    color: AppColors.divider,
                   ),
                   const SizedBox(width: 6),
                   IconButton(
                     onPressed: onFilterTap,
                     icon: const Icon(
                       Icons.tune_rounded,
-                      color: Color(0xFF6B7280),
+                      color: AppColors.textSecondary,
                       size: 20,
                     ),
                     padding: EdgeInsets.zero,

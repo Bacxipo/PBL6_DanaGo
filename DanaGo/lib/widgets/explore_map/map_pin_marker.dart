@@ -33,13 +33,13 @@ class MapPinMarker extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : const Color(0xFF111827),
+              color: isSelected ? Colors.white : AppColors.textPrimary,
             ),
           ),
         ),
         Icon(
           Icons.location_on,
-          color: isSelected ? AppColors.primary : const Color(0xFFEF4444),
+          color: isSelected ? AppColors.primary : AppColors.error,
           size: isSelected ? 30 : 26,
         ),
       ],

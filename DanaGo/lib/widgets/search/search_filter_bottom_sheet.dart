@@ -61,7 +61,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xffe5e7eb),
+                color: AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -83,7 +83,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xfff3f4f6),
+                    color: AppColors.bgSecondary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.close, size: 18, color: Colors.black),
@@ -117,7 +117,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary
-                        : const Color(0xffe0f7f8),
+                        : AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -168,9 +168,9 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             decoration: BoxDecoration(
-              color: Color(0xfff9fafb),
+              color: AppColors.bgCard,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xffe5e7eb)),
+              border: Border.all(color: AppColors.border),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
@@ -188,7 +188,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
                           area,
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Color(0xff374151),
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ),
@@ -280,7 +280,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      style: const TextStyle(fontSize: 14, color: Color(0xff374151)),
+      style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: const Padding(
@@ -296,18 +296,18 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         filled: true,
-        fillColor: const Color(0xfff9fafb),
+        fillColor: AppColors.bgCard,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xffe5e7eb)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -325,10 +325,10 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE0F7F8) : Colors.white,
+          color: isSelected ? AppColors.primaryLight : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : const Color(0xFFE5E7EB),
+            color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -337,7 +337,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.bold,
-            color: isSelected ? AppColors.primary : const Color(0xFF4B5563),
+            color: isSelected ? AppColors.primary : AppColors.textSecondary,
           ),
         ),
       ),
