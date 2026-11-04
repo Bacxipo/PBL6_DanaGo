@@ -136,7 +136,6 @@ export interface EventInput {
   endDate: string;
   ticketPrice?: number;
 }
-export type CreateEventInput = EventInput & { images?: string[] }; // backend chỉ nhận ảnh khi tạo
 
 export type EventTimeline = 'HAPPENING' | 'UPCOMING' | 'ENDED';
 export const TIMELINE_LABEL: Record<EventTimeline, string> = {

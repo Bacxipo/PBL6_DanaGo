@@ -1,13 +1,18 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import Header from '@/components/Header';
 import { Modal, Field, ModalActions, inputClass, PageHeading, searchInputClass, selectClass, StatusBadge, AsyncContent, EmptyState } from '@/components/ui';
-import { useApi, upsertById, removeById, formatDate, orUndefined, splitLines, todayIso } from '@/lib/utils';
+import { useApi, upsertById, removeById, formatDate, orUndefined, getImageUrl, getImageId, todayIso } from '@/lib/utils';
 import { useAction, usePending } from '@/lib/context';
-import { CONTENT_STATUS_LABEL, CONTENT_STATUSES, getTimeline, TIMELINE_LABEL, type ContentStatus, type EventItem, type EventTimeline } from '@/lib/types';
-import { Calendar, Search, MapPin, Edit, Trash2, ImageOff, Ticket, CheckCircle2, XCircle } from 'lucide-react';
+import { CONTENT_STATUS_LABEL, CONTENT_STATUSES, getTimeline, TIMELINE_LABEL, type ContentStatus, type EventItem, type EventTimeline, type DestinationImage } from '@/lib/types';
+import { Calendar, Search, MapPin, Edit, Trash2, ImageOff, Ticket, CheckCircle2, XCircle, Upload, X } from 'lucide-react';
 import { destinationApi, eventApi } from '@/lib/api';
+
+interface PendingUploadFile {
+  file: File;
+  previewUrl: string;
+}
 
 const TIMELINE_STYLE: Record<EventTimeline, string> = {
   HAPPENING: 'bg-emerald-500 text-white',
@@ -16,7 +21,7 @@ const TIMELINE_STYLE: Record<EventTimeline, string> = {
 };
 const TIMELINE_ORDER: Record<EventTimeline, number> = { HAPPENING: 0, UPCOMING: 1, ENDED: 2 };
 
-const emptyForm = () => ({ name: '', description: '', destinationId: '', locationNote: '', startDate: todayIso(), endDate: todayIso(), ticketPrice: '0', imageUrls: '' });
+const emptyForm = () => ({ name: '', description: '', destinationId: '', locationNote: '', startDate: todayIso(), endDate: todayIso(), ticketPrice: '0' });
 type FormState = ReturnType<typeof emptyForm>;
 
 export default function EventsPage() {
@@ -31,6 +36,11 @@ export default function EventsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
 
+  // Quản lý ảnh trong form (giống DestinationsPage)
+  const [existingImages, setExistingImages] = useState<DestinationImage[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<PendingUploadFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const approvedDestinations = useMemo(() => (destinations ?? []).filter((d) => d.status === 'APPROVED'), [destinations]);
 
   const rows = useMemo(() => {
@@ -43,14 +53,74 @@ export default function EventsPage() {
 
   const upsert = (saved: EventItem) => setData((xs) => upsertById(xs, saved));
 
+  const cleanupPendingFiles = () => {
+    pendingFiles.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    setPendingFiles([]);
+  };
+
   const openForm = (ev: EventItem | null) => {
+    cleanupPendingFiles();
     setEditing(ev);
+    setExistingImages(ev?.images ?? []);
     setForm(
       ev
-        ? { name: ev.name, description: ev.description ?? '', destinationId: ev.destinationId?.toString() ?? '', locationNote: ev.locationNote ?? '', startDate: ev.startDate.slice(0, 10), endDate: ev.endDate.slice(0, 10), ticketPrice: String(Number(ev.ticketPrice)), imageUrls: '' }
+        ? { name: ev.name, description: ev.description ?? '', destinationId: ev.destinationId?.toString() ?? '', locationNote: ev.locationNote ?? '', startDate: ev.startDate.slice(0, 10), endDate: ev.endDate.slice(0, 10), ticketPrice: String(Number(ev.ticketPrice)) }
         : emptyForm()
     );
     setFormOpen(true);
+  };
+
+  const closeForm = () => {
+    cleanupPendingFiles();
+    setFormOpen(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    const validFiles: PendingUploadFile[] = [];
+
+    const totalAllowed = 10 - (existingImages.length + pendingFiles.length);
+    if (files.length > totalAllowed) {
+      alert(`Bạn chỉ có thể chọn thêm tối đa ${Math.max(0, totalAllowed)} ảnh (tối đa 10 ảnh cho mỗi sự kiện).`);
+    }
+
+    for (const file of files.slice(0, Math.max(0, totalAllowed))) {
+      if (!allowedTypes.includes(file.type)) {
+        alert(`File "${file.name}" không đúng định dạng. Chỉ chấp nhận ảnh JPG, PNG, WebP.`);
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB.`);
+        continue;
+      }
+      validFiles.push({ file, previewUrl: URL.createObjectURL(file) });
+    }
+
+    setPendingFiles((prev) => [...prev, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles((prev) => {
+      URL.revokeObjectURL(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const deleteExistingImage = (img: DestinationImage) => {
+    if (!window.confirm('Bạn có chắc muốn xóa ảnh này khỏi sự kiện?')) return;
+    run(async () => {
+      await eventApi.deleteImage(img.id);
+      setExistingImages((prev) => prev.filter((x) => x.id !== img.id));
+      if (editing) {
+        const updatedImages = editing.images.filter((x) => x.id !== img.id);
+        setEditing({ ...editing, images: updatedImages });
+        upsert({ ...editing, images: updatedImages });
+      }
+    }, 'Đã xóa ảnh thành công.');
   };
 
   const setEventStatus = (ev: EventItem, next: ContentStatus) =>
@@ -85,11 +155,18 @@ export default function EventsPage() {
       ticketPrice: Number(form.ticketPrice) || 0
     };
     const ok = await run(async () => {
-      // Backend chỉ nhận ảnh khi tạo mới
-      upsert(editing ? await eventApi.update(editing.id, input) : await eventApi.create({ ...input, images: splitLines(form.imageUrls) }));
+      let saved: EventItem = editing ? await eventApi.update(editing.id, input) : await eventApi.create(input);
+
+      // Upload ảnh mới nếu có
+      if (pendingFiles.length > 0) {
+        const uploadedImages = await eventApi.uploadImages(saved.id, pendingFiles.map((p) => p.file));
+        saved = { ...saved, images: [...saved.images, ...uploadedImages] };
+      }
+
+      upsert(saved);
       refresh();
-    }, editing ? 'Đã cập nhật sự kiện.' : 'Đã thêm sự kiện.');
-    if (ok) setFormOpen(false);
+    }, editing ? 'Đã cập nhật sự kiện và hình ảnh.' : 'Đã thêm sự kiện và tải ảnh lên thành công.');
+    if (ok) closeForm();
   };
 
   const set = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
@@ -164,7 +241,7 @@ export default function EventsPage() {
       </div>
 
       {formOpen && (
-        <Modal title={editing ? 'Chỉnh Sửa Sự Kiện' : 'Thêm Sự Kiện Mới'} icon={Calendar} maxWidth="max-w-xl" onClose={() => setFormOpen(false)}>
+        <Modal title={editing ? 'Chỉnh Sửa Sự Kiện' : 'Thêm Sự Kiện Mới'} icon={Calendar} maxWidth="max-w-xl" onClose={closeForm}>
           <form onSubmit={submit} className="space-y-3">
             <Field label="Tên sự kiện / lễ hội" required>
               <input type="text" required maxLength={150} value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="VD: Lễ hội Pháo hoa Quốc tế Đà Nẵng" className={inputClass} />
@@ -187,11 +264,80 @@ export default function EventsPage() {
               {noLocation && <p className="text-[11px] text-rose-600">Cần chọn điểm đến hoặc nhập ghi chú địa điểm.</p>}
             </div>
             <Field label="Giá vé (VNĐ, 0 = miễn phí)"><input type="number" min={0} value={form.ticketPrice} onChange={(e) => set({ ticketPrice: e.target.value })} className={inputClass} /></Field>
-            {!editing && (
-              <Field label="Ảnh (mỗi dòng 1 URL, ảnh đầu là ảnh bìa)"><textarea rows={2} value={form.imageUrls} onChange={(e) => set({ imageUrls: e.target.value })} placeholder="https://images.unsplash.com/..." className={`${inputClass} font-mono`} /></Field>
-            )}
             <Field label="Mô tả chi tiết"><textarea rows={3} value={form.description} onChange={(e) => set({ description: e.target.value })} className={inputClass} /></Field>
-            <ModalActions onCancel={() => setFormOpen(false)} submitLabel={editing ? 'Cập Nhật' : 'Tạo Sự Kiện'} busy={busy} />
+
+            {/* Ảnh sự kiện (giống DestinationsPage) */}
+            <div className="space-y-3">
+              {existingImages.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-bold text-gray-700 mb-2">Ảnh đã lưu:</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {existingImages.map((img) => (
+                      <div key={img.id} className="group relative aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-xs">
+                        <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => deleteExistingImage(img)}
+                          className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-black/60 text-white hover:bg-red-600 transition-colors cursor-pointer"
+                          title="Xóa ảnh này"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {pendingFiles.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-bold text-emerald-700 mb-2">Ảnh mới chuẩn bị tải lên:</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {pendingFiles.map((p, idx) => (
+                      <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border-2 border-emerald-500/50 bg-emerald-50/20 shadow-xs">
+                        <img src={p.previewUrl} alt="" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-1 left-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded truncate">{p.file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removePendingFile(idx)}
+                          className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-black/60 text-white hover:bg-rose-600 transition-colors cursor-pointer"
+                          title="Hủy ảnh này"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {existingImages.length + pendingFiles.length < 10 && (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-[#006971]/30 hover:border-[#006971] bg-[#e6f4f2]/30 hover:bg-[#e6f4f2]/60 rounded-2xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#006971]/10 text-[#006971] flex items-center justify-center">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-800">
+                      Bấm để chọn ảnh từ máy tính <span className="text-[#006971]">hoặc kéo thả vào đây</span>
+                    </p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Định dạng JPG, PNG, WebP (Tối đa 10MB mỗi ảnh)</p>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </div>
+              )}
+            </div>
+
+            <ModalActions onCancel={closeForm} submitLabel={editing ? 'Lưu Thay Đổi & Tải Ảnh' : 'Tạo Sự Kiện & Tải Ảnh'} busy={busy} />
           </form>
         </Modal>
       )}

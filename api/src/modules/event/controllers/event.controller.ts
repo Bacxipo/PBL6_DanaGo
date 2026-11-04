@@ -10,7 +10,11 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { EventService } from '../services/event.service';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
@@ -84,5 +88,27 @@ export class EventController {
     @CurrentUser('userId') userId: number,
   ) {
     return this.eventService.toggleFavorite(eventId, userId);
+  }
+
+  // --- Upload và quản lý ảnh của sự kiện (giống destination.controller.ts) ---
+  @Post(':id/images')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FilesInterceptor('images', 10))
+  async uploadImages(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser('sub') userId: number,
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Vui lòng chọn ít nhất 1 ảnh để tải lên (field: images).');
+    }
+    return this.eventService.uploadImages(id, files, userId);
+  }
+
+  @Delete('images/:imageId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  async deleteImage(@Param('imageId', ParseIntPipe) imageId: number) {
+    return this.eventService.deleteImage(imageId);
   }
 }
