@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsUrl, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsUrl, Min, Max, MaxLength, } from 'class-validator';
 
 export class CreateDestinationDto {
   @IsString({ message: 'Tên địa điểm phải là chuỗi ký tự.' })
@@ -23,6 +23,7 @@ export class CreateDestinationDto {
 
   @IsUrl({}, { message: 'Địa chỉ đường dẫn Google Map/URL không hợp lệ.' })
   @IsOptional()
+  @MaxLength(4096)
   addressUrl?: string;
 
   @IsNumber({}, { message: 'Mã danh mục (categoryId) phải là số.' })

@@ -8,7 +8,10 @@ export class SupabaseStorageService {
 
   constructor() {
     const supabaseUrl = process.env.SUPABASE_URL || 'https://jmwoffnpyqqglvvzgzah.supabase.co';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      || process.env.SUPABASE_SERVICE_KEY
+      || process.env.SUPABASE_KEY
+      || '';
 
     if (!supabaseKey) {
       this.logger.warn('SUPABASE_SERVICE_ROLE_KEY chưa được cấu hình trong .env. Việc upload ảnh có thể gặp lỗi!');

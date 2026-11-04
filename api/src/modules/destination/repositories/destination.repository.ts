@@ -9,6 +9,13 @@ import { ContentStatus } from '@prisma/client';
 export class DestinationRepository {
   constructor(private readonly prisma: PrismaService) { }
 
+  findCategories() {
+    return this.prisma.category.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   private mapToEntity(dest: any): DestinationEntity {
     return {
       id: dest.id,
@@ -132,7 +139,10 @@ export class DestinationRepository {
     return this.mapToEntity(updated);
   }
 
-  async updateStatus(id: number, status: ContentStatus): Promise<DestinationEntity> {
+  async updateStatus(
+    id: number,
+    status: ContentStatus,
+  ): Promise<DestinationEntity> {
     const updated = await this.prisma.destination.update({
       where: { id },
       data: { status },
@@ -141,6 +151,7 @@ export class DestinationRepository {
         category: true,
       },
     });
+
     return this.mapToEntity(updated);
   }
 
