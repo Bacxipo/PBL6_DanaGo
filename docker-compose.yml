@@ -1,24 +1,5 @@
 services:
-  # 1. PostgreSQL Database Container (Dùng tạm thời trước khi chuyển sang NeonConsole)
-  postgres:
-    image: postgres:16-alpine
-    container_name: danago_postgres
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_DB: danago_db
-    ports:
-      - '5432:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d danago_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # 2. NestJS API Service
+  # 1. NestJS API Service (Nối với Supabase qua DATABASE_URL trong api/.env)
   api:
     image: danago_api:latest
     build:
@@ -28,20 +9,21 @@ services:
     restart: always
     ports:
       - '5000:5000'
+    env_file:
+      - ./api/.env
     environment:
       NODE_ENV: production
       PORT: 5000
-      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/danago_db?schema=public
-    depends_on:
-      postgres:
-        condition: service_healthy
 
-  # 3. Next.js Web Service
+  # 2. Web du khách (Next.js) - http://localhost:3000
   web:
     image: danago_web:latest
     build:
       context: ./web
       dockerfile: Dockerfile
+      args:
+        # Trình duyệt gọi API trực tiếp nên dùng localhost (không phải tên service)
+        NEXT_PUBLIC_API_URL: http://localhost:5000
     container_name: danago_web
     restart: always
     ports:
@@ -49,9 +31,24 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      NEXT_PUBLIC_API_URL: http://localhost:5000
     depends_on:
       - api
 
-volumes:
-  postgres_data:
+  # 3. Web quản trị (Next.js) - http://localhost:3001
+  admin:
+    image: danago_admin:latest
+    build:
+      context: ./WebAdmin
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
+        NEXT_PUBLIC_WEB_USER_URL: http://localhost:3000
+    container_name: danago_admin
+    restart: always
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+    depends_on:
+      - api

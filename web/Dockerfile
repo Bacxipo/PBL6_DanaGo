@@ -2,6 +2,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 RUN npm install -g pnpm
+RUN pnpm config set fetch-retries 5 && pnpm config set fetch-retry-maxtimeout 120000 && pnpm config set fetch-timeout 300000
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --config.ignore-scripts=true
 
@@ -11,6 +12,9 @@ WORKDIR /app
 RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# NEXT_PUBLIC_* được Next.js nhúng vào lúc build -> phải truyền qua build args
+ARG NEXT_PUBLIC_API_URL=http://localhost:5000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 
