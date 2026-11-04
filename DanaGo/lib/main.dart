@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:smarttrip/screens/home_screen.dart';
-import 'package:smarttrip/screens/onboarding_screen.dart';
+import 'package:smarttrip/screens/main_screen.dart';
+import 'package:smarttrip/theme/app_colors.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,9 +18,18 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       scrollBehavior: MyCustomScrollBehavior(),
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+        scaffoldBackgroundColor: AppColors.bgPrimary,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          surface: AppColors.bgPrimary,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: AppColors.bgPrimary,
+          elevation: 0,
+        ),
       ),
-      home: HomeScreen(),
+      home: const MainScreen(),
     );
   }
 }

@@ -23,10 +23,10 @@ class InterestCard extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xffe0f7f8) : Colors.white,
+          color: isSelected ? AppColors.primaryLight : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : const Color(0xffe5f7eb),
+            color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 1.8 : 1.0,
           ),
           boxShadow: [
@@ -42,7 +42,7 @@ class InterestCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : const Color(0xff6b7280),
+              color: isSelected ? AppColors.primary : AppColors.textTertiary,
               size: 22,
             ),
             const SizedBox(width: 14),
@@ -54,7 +54,7 @@ class InterestCard extends StatelessWidget {
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   color: isSelected
                       ? AppColors.primary
-                      : const Color(0xff111827),
+                      : AppColors.textPrimary,
                 ),
               ),
             ),

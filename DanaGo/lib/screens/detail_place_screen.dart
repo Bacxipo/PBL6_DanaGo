@@ -145,7 +145,7 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8fafc),
+      backgroundColor: AppColors.bgCard,
       bottomNavigationBar: DetailBotttomActionBar(
         onAddtoItinerary: () {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -219,7 +219,7 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
                       const Text(
                         '( 1.2B đánh giá )',
                         style: TextStyle(
-                          color: Color(0xff9ca3af),
+                          color: AppColors.textTertiary,
                           fontSize: 13,
                         ),
                       ),

@@ -121,4 +121,20 @@ export class EventRepository {
       return { favorited: true };
     }
   }
+
+  // --- Quản lý ảnh của sự kiện (giống destination.repository.ts) ---
+  async addImage(eventId: number, imageUrl: string, uploadedBy?: number) {
+    return this.prisma.eventImage.create({
+      data: { eventId, imageUrl, uploadedBy },
+    });
+  }
+
+  async findImageById(imageId: number) {
+    return this.prisma.eventImage.findUnique({ where: { id: imageId } });
+  }
+
+  async deleteImage(imageId: number) {
+    await this.prisma.eventImage.delete({ where: { id: imageId } });
+    return true;
+  }
 }

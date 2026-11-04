@@ -2,6 +2,7 @@ packages:
   - 'web'
   - 'api'
   - 'WebUser'
+  - 'WebAdmin'
 allowBuilds:
   '@parcel/watcher': true
   '@prisma/client': true
