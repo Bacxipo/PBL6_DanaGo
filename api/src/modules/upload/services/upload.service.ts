@@ -7,6 +7,12 @@ export type UploadFolder = 'feed' | 'review' | 'event' | 'avatar';
 export class UploadService {
     private supabase: SupabaseClient;
     private bucket: string;
+    private getBucket(folder: UploadFolder): string {
+        if (folder === 'review') {
+            return process.env.SUPABASE_BUCKET_REVIEWS || 'review_image';
+        }
+        return process.env.SUPABASE_BUCKET || 'destination_image';
+    }   
 
     constructor() {
         this.supabase = createClient(
@@ -31,10 +37,11 @@ export class UploadService {
 
         const ext = file.originalname.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const filePath = `${folder}/${fileName}`;
+        const targetBucket = this.getBucket(folder);
+        const filePath = folder === 'review' ? fileName : `${folder}/${fileName}`;
 
         const { error } = await this.supabase.storage
-            .from(this.bucket)
+            .from(targetBucket)
             .upload(filePath, file.buffer, {
                 contentType: file.mimetype,
                 upsert: false,
@@ -49,7 +56,7 @@ export class UploadService {
         }
 
         const { data } = this.supabase.storage
-            .from(this.bucket)
+            .from(targetBucket)
             .getPublicUrl(filePath);
 
         return data.publicUrl;

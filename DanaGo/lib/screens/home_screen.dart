@@ -4,7 +4,6 @@ import 'package:smarttrip/screens/Detail_place_screen.dart';
 import 'package:smarttrip/screens/search_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/home/category_selector.dart';
-import 'package:smarttrip/widgets/home/custom_bottom_nav_bar.dart';
 import 'package:smarttrip/widgets/home/destination_tile.dart';
 import 'package:smarttrip/widgets/home/featured_card.dart';
 import 'package:smarttrip/widgets/home/home_search_bar.dart';
@@ -17,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
   int _selectCatagoryIndex = 0;
   final List<String> _categories = [
     "Tất cả",

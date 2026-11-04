@@ -20,6 +20,7 @@ import PlaceReview from '../components/comon/review/PlaceReview';
 import ReviewForm from '../components/comon/review/ReviewForm';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { getDestinationReviews } from '@/lib/review-api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 export default function DetailPlace({ id: propId }) {
@@ -39,14 +40,11 @@ export default function DetailPlace({ id: propId }) {
         if (!id) return;
         setReviewsLoading(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/community/reviews/destination/${id}`);
-            if (res.ok) {
-                const data = await res.json();
-                setReviewList(Array.isArray(data) ? data : []);
-            }
-        } catch (err) {
-            console.error('Lỗi khi tải danh sách reviews:', err);
-        } finally {
+            const data = await getDestinationReviews(id);
+            setReviewList(data);
+        }catch(err){
+            console.error(err);
+        }finally{
             setReviewsLoading(false);
         }
     };

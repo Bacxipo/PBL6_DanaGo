@@ -1,7 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:smarttrip/screens/explore_map_screen.dart';
-import 'package:smarttrip/screens/home_screen.dart';
 import 'package:smarttrip/screens/main_screen.dart';
 
 void main() {
