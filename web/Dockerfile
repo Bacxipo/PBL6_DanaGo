@@ -12,6 +12,9 @@ WORKDIR /app
 RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# NEXT_PUBLIC_* được Next.js nhúng vào lúc build -> phải truyền qua build args
+ARG NEXT_PUBLIC_API_URL=http://localhost:5000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 

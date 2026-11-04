@@ -1,16 +1,12 @@
 import { CONTENT_STATUSES, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateEventInput, type CreateUserInput, type Destination, type DestinationImage, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
 
-// Chưa cấu hình NEXT_PUBLIC_API_URL -> chạy chế độ DỮ LIỆU MẪU (lib/mock.ts), không cần backend hay database.
-// Muốn dùng backend thật: đặt NEXT_PUBLIC_API_URL=http://localhost:5000 trong WebAdmin/.env.local
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
-export const USE_MOCK = !API_BASE_URL;
+// Luôn gọi backend thật; đặt NEXT_PUBLIC_API_URL khi cần trỏ sang host khác (mặc định localhost:5000).
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // ───────── Phiên đăng nhập (token + thông tin user) ─────────
 // localStorage có thể bị chặn (chế độ riêng tư...) nên bọc try/catch.
-// Khóa lưu phiên tách theo chế độ để token của backend thật không lẫn sang dữ liệu mẫu (và ngược lại).
-const MODE = USE_MOCK ? 'mock' : 'api';
-const TOKEN_KEY = `danago_admin_token_${MODE}`;
-const USER_KEY = `danago_admin_user_${MODE}`;
+const TOKEN_KEY = 'danago_admin_token';
+const USER_KEY = 'danago_admin_user';
 
 const read = (key: string) => {
   try {
@@ -72,15 +68,6 @@ async function readError(res: Response) {
 }
 
 async function request<T>(method: string, path: string, body?: unknown, query?: Query): Promise<T> {
-  if (USE_MOCK) {
-    try {
-      return await (await import('./mock')).mockRequest<T>(method, path, body, query);
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401 && tokenStorage.get()) onUnauthorized?.();
-      throw e;
-    }
-  }
-
   const url = new URL(path, API_BASE_URL);
   Object.entries(query ?? {}).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, String(v)));
 
