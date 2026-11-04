@@ -1,4 +1,4 @@
-import { CONTENT_STATUSES, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateEventInput, type CreateUserInput, type Destination, type DestinationImage, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
+import { CONTENT_STATUSES, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateUserInput, type Destination, type DestinationImage, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
 
 // Luôn gọi backend thật; đặt NEXT_PUBLIC_API_URL khi cần trỏ sang host khác (mặc định localhost:5000).
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -147,10 +147,18 @@ export const destinationApi = {
 
 export const eventApi = {
   listAll: () => listAll<EventItem>('/events'),
-  create: (input: CreateEventInput) => createApproved<EventItem>('/events', input),
+  create: (input: EventInput) => createApproved<EventItem>('/events', input),
   update: (id: number, input: EventInput) => api.put<EventItem>(`/events/${id}`, input),
   setStatus: (id: number, status: ContentStatus) => setStatus<EventItem>('/events', id, status),
-  remove: (id: number) => api.delete(`/events/${id}`)
+  remove: (id: number) => api.delete(`/events/${id}`),
+  // Upload danh sách file ảnh lên backend (POST /events/:id/images)
+  uploadImages: (eventId: number, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('images', file));
+    return api.post<DestinationImage[]>(`/events/${eventId}/images`, formData);
+  },
+  // Xóa ảnh của sự kiện (DELETE /events/images/:imageId)
+  deleteImage: (imageId: number) => api.delete<{ message: string }>(`/events/images/${imageId}`)
 };
 
 export const categoryApi = {
