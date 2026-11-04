@@ -11,7 +11,8 @@ export class UploadService {
     constructor() {
         this.supabase = createClient(
             process.env.SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_KEY!,
+            // .env.example dùng SUPABASE_SERVICE_ROLE_KEY; giữ SUPABASE_SERVICE_KEY cho máy đã cấu hình theo tên cũ
+            (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY)!,
         );
         this.bucket = process.env.SUPABASE_BUCKET || 'destination_image';
     }
