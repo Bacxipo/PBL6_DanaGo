@@ -11,7 +11,6 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { AiModule } from './modules/ai/ai.module';
 import { EventModule } from './modules/event/event.module';
-import { UploadModule } from './modules/upload/upload.module';
 @Module({
   imports: [
     DatabaseModule,
@@ -24,7 +23,6 @@ import { UploadModule } from './modules/upload/upload.module';
     FeedModule,
     AiModule,
     EventModule,
-    UploadModule
   ],
   controllers: [AppController],
   providers: [AppService],

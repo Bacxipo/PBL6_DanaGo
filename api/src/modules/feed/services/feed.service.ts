@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, ForbiddenException, } from '@nestjs/common';
+import { BadRequestException, Injectable, ForbiddenException, Logger } from '@nestjs/common';
 import { FeedRepository } from '../repositories/feed.repository';
 import { CreateFeedPostDto, CreateFeedCommentDto } from '../dto/create-feed-post.dto';
 import { FeedPostNotFoundException } from '../exceptions/feed-post-not-found.exception';
@@ -6,23 +6,52 @@ import { ContentStatus, FeedPostType, UserRole } from '@prisma/client';
 import { UpdateFeedPostDto } from '../dto/update-feed-post.dto';
 import { DestinationService } from '../../destination/services/destination.service';
 import { extractCoordinates } from '../../../shared/utils/map.utils';
-
+import { SupabaseStorageService } from '../../../shared/storage/supabase-storage.service';
 @Injectable()
 export class FeedService {
+  private readonly logger = new Logger(FeedService.name);
   constructor(
     private readonly feedRepository: FeedRepository,
-
+    private readonly storageService: SupabaseStorageService,
     private readonly destinationService: DestinationService
   ) { }
 
-  async createPost(userId: number, dto: CreateFeedPostDto) {
+  async createPostWithImages(userId: number, dto: CreateFeedPostDto, files: Express.Multer.File[]) {
+    await this.validatePostInput(dto, files.length);
+    const coordinates = dto.proposal?.addressUrl
+      ? extractCoordinates(dto.proposal.addressUrl)
+      : null;
+    const bucket = process.env.SUPABASE_BUCKET_FEED || 'feeds_image';
+    const post = await this.feedRepository.createPost(userId, { ...dto, images: [] }, coordinates);
+    const destinationId = dto.postType === FeedPostType.NEW_DESTINATION ? post.destinationId : null;
+    const urls: string[] = [];
+    try {
+      for (const file of files) {
+        urls.push(await this.storageService.uploadFile(file, bucket, `feed_${post.id}`));
+      }
+      return await this.feedRepository.attachImages(post.id, userId, destinationId, urls);
+    } catch (error) {
+      const cleanup = await Promise.allSettled([
+        ...urls.map((url) => this.storageService.deleteFileByUrl(url, bucket)),
+        this.feedRepository.rollbackCreatedPost(post.id, destinationId),
+      ]);
+      cleanup.forEach((result) => {
+        if (result.status === 'rejected' || result.value === false) {
+          this.logger.error(`Cleanup failed for feed_${post.id}`, result.status === 'rejected' ? result.reason : 'Storage deletion failed');
+        }
+      });
+      throw error;
+    }
+  }
+
+  private async validatePostInput(dto: CreateFeedPostDto, imageCount: number) {
     if (!dto.content.trim()) {
       throw new BadRequestException(
         'Nội dung bài viết không được để trống.',
       );
     }
 
-    if (dto.images && dto.images.length > 5) {
+    if (imageCount > 5) {
       throw new BadRequestException(
         'Chỉ được đăng tối đa 5 ảnh.',
       );
@@ -53,7 +82,7 @@ export class FeedService {
         );
       }
 
-      if (!dto.images?.length) {
+      if (!imageCount) {
         throw new BadRequestException(
           'Vui lòng cung cấp ít nhất một ảnh thực tế.',
         );
@@ -83,10 +112,6 @@ export class FeedService {
         );
       }
     }
-    const coordinates = dto.proposal?.addressUrl
-      ? extractCoordinates(dto.proposal.addressUrl)
-      : null;
-    return this.feedRepository.createPost(userId, dto, coordinates);
   }
   async getAllPosts(
     status?: ContentStatus,
