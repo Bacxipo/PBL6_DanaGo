@@ -3,21 +3,47 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Mail, Lock } from 'lucide-react';
 import imgLogin from '@/assets/images/imgLogin.jpg';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { apiRequest } from '@/lib/feed-api';
 export default function Login() {
+
   const router = useRouter();
 
-  const handleSumit = (e) => {
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSumit = async (e) => {
     e.preventDefault();
-    // Add login logic here
-    router.push('/interests');
-  }
+    if (isSubmitting) return;
+
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const result = await apiRequest('/identity/auth/login', {
+        method: 'POST',
+        body: { emailOrUsername, password },
+      });
+
+      sessionStorage.setItem('accessToken', result.accessToken);
+      window.dispatchEvent(new Event('auth-changed'));
+
+      router.push('/community');
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
 
 
   return (
     <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4 bg-gray-50">
-      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden border border-gray-100">        
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden border border-gray-100">
         <div className="relative w-full md:w-1/2 min-h-[350px] md:min-h-[550px] hidden md:block">
           <Image
             src={imgLogin}
@@ -29,7 +55,7 @@ export default function Login() {
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          
+
           <h3 className="absolute bottom-8 left-8 text-white text-2xl font-bold max-w-xs leading-snug">
             Khám phá vẻ đẹp đích thực
           </h3>
@@ -42,7 +68,7 @@ export default function Login() {
             <p className="text-sm text-gray-500 mt-1">Chào mừng bạn đến với DanaGO</p>
           </div>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSumit}>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1.5 ml-1">
                 Tên đăng nhập hoặc email
@@ -53,6 +79,8 @@ export default function Login() {
                   type="text"
                   placeholder="Nhập email hoặc tên đăng nhập"
                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971] focus:border-transparent transition-all"
+                  value={emailOrUsername}
+                  onChange={(e) => setEmailOrUsername(e.target.value)}
                 />
               </div>
             </div>
@@ -67,6 +95,8 @@ export default function Login() {
                   type="password"
                   placeholder="Nhập mật khẩu"
                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971] focus:border-transparent transition-all"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>
@@ -78,12 +108,13 @@ export default function Login() {
             </div>
 
             <button
-              onClick={handleSumit}
+              disabled={isSubmitting}
               type="submit"
               className="w-full bg-[#006971] hover:bg-[#00555a] text-white font-semibold py-3 rounded-full text-sm transition-colors shadow-md mt-2"
             >
               Đăng nhập
             </button>
+            {error && <p role="alert" className="text-red-600">{error}</p>}
           </form>
 
           <div className="text-center my-6">
