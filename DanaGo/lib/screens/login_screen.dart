@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _isObscure
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: const Color(0xff9ca3af),
+                    color: AppColors.textHint,
                   ),
                 ),
               ),
@@ -198,20 +198,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Row(
+              Row(
                 children: [
                   Expanded(
                     child: Divider(
-                      color: Color.fromARGB(255, 184, 191, 203),
+                      color: AppColors.divider,
                       thickness: 1,
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'Hoặc',
                       style: TextStyle(
-                        color: Color(0xFF9CA3AF),
+                        color: AppColors.textHint,
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
                       ),
@@ -219,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   Expanded(
                     child: Divider(
-                      color: Color.fromARGB(255, 184, 191, 201),
+                      color: AppColors.divider,
                       thickness: 1,
                     ),
                   ),
@@ -232,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0xffe5e7eb)),
+                    side: const BorderSide(color: AppColors.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -252,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Text(
                         'Đăng nhập bằng Google',
                         style: TextStyle(
-                          color: Color(0xFF111827),
+                          color: AppColors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),

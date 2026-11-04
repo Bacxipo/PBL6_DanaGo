@@ -50,7 +50,7 @@ class OnboardingCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: currentPage == index
                         ? AppColors.primary
-                        : const Color(0xffe5e7eb),
+                        : AppColors.border,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),

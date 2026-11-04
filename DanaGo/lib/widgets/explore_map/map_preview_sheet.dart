@@ -37,7 +37,7 @@ class MapPreviewSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFD1D5DB),
+              color: AppColors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),

@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/theme/app_colors.dart';
 
 class HomeSearchBar extends StatelessWidget {
   final VoidCallback? onTap;
+  final VoidCallback? onAvatarTap;
 
-  const HomeSearchBar({super.key, this.onTap});
+  const HomeSearchBar({
+    super.key,
+    this.onTap,
+    this.onAvatarTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +34,16 @@ class HomeSearchBar extends StatelessWidget {
               ),
               child: Row(
                 children: const [
-                  Icon(Icons.search, color: Color(0xFF6B7280), size: 22),
+                  Icon(Icons.search, color: AppColors.textTertiary, size: 22),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Bạn muốn đi đâu?',
-                      style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                      style: TextStyle(
+                        fontFamily: 'Be Vietnam Pro',
+                        color: AppColors.textHint,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],
@@ -42,27 +52,30 @@ class HomeSearchBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ClipOval(
-            child: Image.network(
-              'https://i.postimg.cc/tC24nW4N/avt1.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (ctx, err, _) => Container(
-                color: const Color(0xFFE5E7EB),
-                child: const Icon(Icons.person, color: Color(0xFF9CA3AF)),
+        GestureDetector(
+          onTap: onAvatarTap,
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.network(
+                'https://i.postimg.cc/tC24nW4N/avt1.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, err, _) => Container(
+                  color: AppColors.border,
+                  child: const Icon(Icons.person, color: AppColors.textHint),
+                ),
               ),
             ),
           ),

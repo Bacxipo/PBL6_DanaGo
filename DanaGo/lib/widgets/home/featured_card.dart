@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/destination_item.dart';
+import 'package:smarttrip/theme/app_colors.dart';
 // Card điểm nổi bật
 
 class FeaturedCard extends StatelessWidget {
@@ -65,7 +66,7 @@ class FeaturedCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xff006b73),
+                      color: AppColors.primary,
                     ),
                   ),
                 ),

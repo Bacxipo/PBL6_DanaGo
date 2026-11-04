@@ -32,7 +32,7 @@ class CustomTextField extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Color(0xff111827),
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -43,8 +43,8 @@ class CustomTextField extends StatelessWidget {
           keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: const TextStyle(color: Color(0xff9ca3af), fontSize: 14),
-            prefixIcon: Icon(prefixIcon, color: const Color(0xff9ca3af)),
+            hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
+            prefixIcon: Icon(prefixIcon, color: AppColors.textHint),
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.white,
@@ -54,11 +54,11 @@ class CustomTextField extends StatelessWidget {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xffe5e7eb)),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xffe5e7eb)),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

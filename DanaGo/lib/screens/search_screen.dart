@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/search/search_filter_bottom_sheet.dart';
 import 'package:smarttrip/widgets/search/search_filter_chip.dart';
 import 'package:smarttrip/widgets/search/search_result_card.dart';
@@ -126,12 +127,12 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bgCard,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF374151)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textSecondary),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -141,7 +142,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Container(
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: AppColors.bgSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextField(
@@ -151,14 +152,14 @@ class _SearchScreenState extends State<SearchScreen> {
                   decoration: InputDecoration(
                     prefixIcon: const Icon(
                       Icons.search,
-                      color: Color(0xFF9CA3AF),
+                      color: AppColors.textHint,
                       size: 20,
                     ),
                     suffixIcon: _searchCtrl.text.isNotEmpty
-                        ? IconButton(
+                         ? IconButton(
                             icon: const Icon(
                               Icons.cancel,
-                              color: Color(0xFF9CA3AF),
+                              color: AppColors.textHint,
                               size: 18,
                             ),
                             onPressed: () {
@@ -169,7 +170,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         : null,
                     hintText: 'Bãi biển Mỹ Khê',
                     hintStyle: const TextStyle(
-                      color: Color(0xFF9CA3AF),
+                      color: AppColors.textHint,
                       fontSize: 14,
                     ),
                     border: InputBorder.none,
@@ -185,13 +186,13 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
+                    color: AppColors.bgSecondary,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
                     icon: const Icon(
                       Icons.tune_rounded,
-                      color: Color(0xFF374151),
+                      color: AppColors.textSecondary,
                       size: 22,
                     ),
                     onPressed: _openFilterBottomSheet,
@@ -205,7 +206,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       width: 18,
                       height: 18,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFEA580C),
+                        color: AppColors.accent,
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -239,14 +240,14 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 14, color: AppColors.textTertiary),
                 children: [
                   const TextSpan(text: 'Tìm thấy '),
                   TextSpan(
                     text: '${_displayedResults.length}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F766E),
+                      color: AppColors.primary,
                     ),
                   ),
                   const TextSpan(text: ' địa điểm'),
@@ -264,13 +265,13 @@ class _SearchScreenState extends State<SearchScreen> {
                         Icon(
                           Icons.search_off_rounded,
                           size: 64,
-                          color: Color(0xFFD1D5DB),
+                          color: AppColors.border,
                         ),
                         SizedBox(height: 12),
                         Text(
                           'Không tìm thấy địa điểm phù hợp',
                           style: TextStyle(
-                            color: Color(0xFF6B7280),
+                            color: AppColors.textTertiary,
                             fontSize: 15,
                           ),
                         ),
