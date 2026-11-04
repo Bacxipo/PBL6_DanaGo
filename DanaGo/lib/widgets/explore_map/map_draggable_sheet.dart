@@ -39,7 +39,7 @@ class MapDraggableSheet extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD1D5DB),
+                    color: AppColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -56,7 +56,7 @@ class MapDraggableSheet extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF111827),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       SizedBox(height: 2),
@@ -64,7 +64,7 @@ class MapDraggableSheet extends StatelessWidget {
                         'Hiển thị các địa điểm xung quanh bạn',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF6B7280),
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],

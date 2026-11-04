@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/destination_item.dart';
+import 'package:smarttrip/theme/app_colors.dart';
 
 class SearchResultItem {
   final String id;
@@ -46,13 +47,13 @@ class SearchResultItem {
       title: json['name'] ?? json['title'] ?? '',
       imageUrl: json['image_url'] ?? json['imageUrl'] ?? '',
       badge: json['category'] ?? json['badge'] ?? 'Địa điểm',
-      badgeColor: const Color(0xFF0D9488),
+      badgeColor: AppColors.primary,
       address: json['address'] ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
       reviewCount: json['review_count'] ?? json['reviewCount'] ?? 0,
       distance: json['distance'] ?? '1.0 km',
       tagLabel: json['status_label'] ?? json['tagLabel'],
-      tagColor: const Color(0xFF059669),
+      tagColor: AppColors.success,
       isFavorite: json['is_favorite'] ?? false,
     );
   }
@@ -79,13 +80,13 @@ class SearchResultItem {
       imageUrl:
           'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500',
       badge: 'Biển & Đảo',
-      badgeColor: Color(0xFF0D9488),
+      badgeColor: AppColors.primary,
       address: 'Võ Nguyên Giáp, P. Phước Mỹ',
       rating: 4.8,
       reviewCount: 1200,
       distance: '1.2 km',
       tagLabel: 'Vé: Miễn phí',
-      tagColor: Color(0xFF0D9488),
+      tagColor: AppColors.primary,
       isFavorite: true,
     ),
     const SearchResultItem(
@@ -94,13 +95,13 @@ class SearchResultItem {
       imageUrl:
           'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500',
       badge: 'Hải sản tươi',
-      badgeColor: Color(0xFFEA580C),
+      badgeColor: AppColors.accent,
       address: 'Lô 11 Võ Nguyên Giáp, Mân Thái',
       rating: 4.6,
       reviewCount: 850,
       distance: '1.8 km',
       tagLabel: 'Mở 09:00 - 23:00',
-      tagColor: Color(0xFF059669),
+      tagColor: AppColors.success,
       isFavorite: false,
     ),
     const SearchResultItem(
@@ -109,13 +110,13 @@ class SearchResultItem {
       imageUrl:
           'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500',
       badge: 'View Vịnh Biển',
-      badgeColor: Color(0xFF0284C7),
+      badgeColor: AppColors.info,
       address: 'Bến du thuyền Sơn Trà, Bán đảo Sơn Trà',
       rating: 4.7,
       reviewCount: 420,
       distance: '4.5 km',
       tagLabel: 'Đang mở cửa',
-      tagColor: Color(0xFF059669),
+      tagColor: AppColors.success,
       isFavorite: false,
     ),
   ];

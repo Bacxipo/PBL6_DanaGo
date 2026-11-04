@@ -49,7 +49,7 @@ class SearchFilterChips extends StatelessWidget {
                   border: Border.all(
                     color: isActive
                         ? AppColors.primary
-                        : const Color(0xFFE5E7EB),
+                        : AppColors.border,
                   ),
                 ),
                 child: Row(
@@ -62,8 +62,8 @@ class SearchFilterChips extends StatelessWidget {
                         color: isActive
                             ? Colors.white
                             : (label.contains('Đánh giá')
-                                  ? Colors.amber
-                                  : const Color(0xFF6B7280)),
+                                  ? AppColors.starActive
+                                  : AppColors.textTertiary),
                       ),
                       const SizedBox(width: 5),
                     ],
@@ -74,7 +74,7 @@ class SearchFilterChips extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: isActive
                             ? Colors.white
-                            : const Color(0xFF374151),
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],

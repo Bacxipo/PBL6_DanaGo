@@ -21,6 +21,7 @@ class ExploreMapScreen extends StatefulWidget {
 }
 
 class _ExploreMapScreenState extends State<ExploreMapScreen> {
+
   final TextEditingController _searchCtrl = TextEditingController();
   final MapController _mapController = MapController();
   SearchFilterModel _currentFilter = const SearchFilterModel();
@@ -34,7 +35,6 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
     setState(() => _isLoadingLocation = true); // Bật trạng thái đang lấy GPS
 
     try {
-      // 1. Kiểm tra xem điện thoại có đang bật định vị (GPS) không
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (mounted) {
@@ -108,7 +108,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
         imageUrl:
             'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500',
         badge: 'Nhà hàng địa phương',
-        badgeColor: Color(0xFFE0F2F1),
+        badgeColor: AppColors.primaryLight,
         address: 'Lô 11 Võ Nguyên Giáp, Mân Thái',
         rating: 4.6,
         reviewCount: 128,
@@ -126,7 +126,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
         imageUrl:
             'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500',
         badge: 'Quán Cafe',
-        badgeColor: Color(0xFFE0F2F1),
+        badgeColor: AppColors.primaryLight,
         address: 'Trần Hưng Đạo, Sơn Trà',
         rating: 4.9,
         reviewCount: 84,
@@ -144,7 +144,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
         imageUrl:
             'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500',
         badge: 'Biển',
-        badgeColor: Color(0xFFE0F2F1),
+        badgeColor: AppColors.primaryLight,
         address: 'Võ Nguyên Giáp, Phước Mỹ',
         rating: 4.8,
         reviewCount: 1200,
@@ -220,7 +220,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bgCard,
       body: Stack(
         children: [
           // Nút bấm định vị nổi trên bản đồ
@@ -252,9 +252,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                             width: 22,
                             height: 22,
                             decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF0284C7,
-                              ), // Xanh dương GPS chuẩn Google Maps
+                              color: AppColors.info, // Xanh dương GPS chuẩn Google Maps
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: Colors.white,
@@ -262,9 +260,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                               ), // Viền trắng nổi
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(
-                                    0xFF0284C7,
-                                  ).withValues(alpha: 0.4),
+                                  color: AppColors.info.withValues(alpha: 0.4),
                                   blurRadius: 10,
                                   spreadRadius:
                                       4, // Vòng hào quang phát sáng lan tỏa

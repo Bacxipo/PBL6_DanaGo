@@ -55,7 +55,7 @@ class _SignupScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffe0f7f8),
+      backgroundColor: AppColors.primaryLight,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -142,7 +142,7 @@ class _SignupScreenState extends State<RegisterScreen> {
                     _isObscurePassword
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: const Color(0xff9ca3af),
+                    color: AppColors.textHint,
                   ),
                 ),
               ),
@@ -162,7 +162,7 @@ class _SignupScreenState extends State<RegisterScreen> {
                     _isObscureConfirmPass
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: const Color(0xff9ca3af),
+                    color: AppColors.textHint,
                   ),
                 ),
               ),
@@ -260,7 +260,7 @@ class _SignupScreenState extends State<RegisterScreen> {
                 children: [
                   const Text(
                     'Đã có tài khoản?',
-                    style: TextStyle(color: Color(0xff6b7280), fontSize: 14),
+                    style: TextStyle(color: AppColors.textTertiary, fontSize: 14),
                   ),
                   GestureDetector(
                     onTap: () {

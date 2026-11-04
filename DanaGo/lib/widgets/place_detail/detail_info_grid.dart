@@ -93,7 +93,7 @@ class DetailInfoGrid extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xff9ca3af),
+                    color: AppColors.textHint,
                     letterSpacing: 0.5,
                   ),
                 ),

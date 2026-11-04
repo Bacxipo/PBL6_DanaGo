@@ -45,7 +45,7 @@ class DurationSlider extends StatelessWidget {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: AppColors.primary,
-            inactiveTrackColor: const Color(0xFFE5E7EB),
+            inactiveTrackColor: AppColors.border,
             thumbColor: AppColors.primary,
             overlayColor: AppColors.primary.withValues(alpha: 0.12),
             trackHeight: 6,
@@ -67,7 +67,7 @@ class DurationSlider extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: isCurrent ? AppColors.primary : const Color(0xFF9CA3AF),
+                color: isCurrent ? AppColors.primary : AppColors.textHint,
               ),
             );
           }),
