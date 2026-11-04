@@ -6,7 +6,7 @@ import { User, X, Image as ImageIcon, MapPin, Store, Sparkles, HelpCircle } from
 import ExperiencePostForm from './ExperiencePostForm';
 import NewPlacePostForm from './NewPlacePostForm';
 
-import { createFeedPost, getFeedCategories, uploadFeedImage } from '@/lib/feed-api';
+import { createFeedPost, getFeedCategories } from '@/lib/feed-api';
 
 const INITIAL_PLACE_DATA = {
   placeName: '',
@@ -113,16 +113,9 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
     setIsSubmitting(true);
 
     try {
-      const images = [];
-
-      for (const file of files) {
-        images.push(await uploadFeedImage(file, token));
-      }
-
       const post = await createFeedPost(
         {
           content: postContent,
-          images,
           postType: isNewDestination
             ? 'NEW_DESTINATION'
             : postType === 'hoi-dap'
@@ -149,6 +142,7 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
             }
             : {}),
         },
+        files,
         token,
       );
 
