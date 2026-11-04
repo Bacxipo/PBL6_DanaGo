@@ -20,20 +20,34 @@ import PlaceReview from '../components/comon/review/PlaceReview';
 import ReviewForm from '../components/comon/review/ReviewForm';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { getDestinationReviews } from '@/lib/review-api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
 export default function DetailPlace({ id: propId }) {
     const params = useParams();
     const id = propId || params?.id;
-
+    
     const [place, setPlace] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [fitMode, setFitMode] = useState('contain'); // 'contain' (xem trọn vẹn không bị cắt) | 'cover' (tràn khung)
     const [isLightboxOpen, setIsLightboxOpen] = useState(false); // Modal xem ảnh toàn màn hình
-
+    
+    const [reviewList, setReviewList] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+    const fetchReviews = async () => {
+        if (!id) return;
+        setReviewsLoading(true);
+        try {
+            const data = await getDestinationReviews(id);
+            setReviewList(data);
+        }catch(err){
+            console.error(err);
+        }finally{
+            setReviewsLoading(false);
+        }
+    };
     useEffect(() => {
         if (typeof window !== 'undefined') {
             window.scrollTo(0, 0);
@@ -112,6 +126,9 @@ export default function DetailPlace({ id: propId }) {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isLightboxOpen, place]);
+    useEffect(() => {
+        fetchReviews();
+    }, [id]);
 
     // Khóa cuộn trang khi mở modal xem ảnh
     useEffect(() => {
@@ -345,20 +362,31 @@ export default function DetailPlace({ id: propId }) {
 
             <div className="w-full flex flex-col gap-3">
                 <div className="w-full lg:w-2/3 flex flex-col gap-6 mt-6">
-                    <ReviewForm />
-                    <h3 className="font-bold">Đánh giá từ du khách</h3>
-                    <div className="flex flex-col gap-4 h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                        {reviews.map((review) => (
+                    <ReviewForm destinationId={place.id} onSuccess={fetchReviews}/>
+                    <h3 className="font-bold">Đánh giá từ du khách ({reviewList.length})</h3>
+                    {reviewsLoading ? (
+                        <div className='flex items-center justify-center py-8 text-gray-400'>
+                            <Loader2 className="w-6 h-6 animate-spin text-[#006971]"/>
+                        </div>
+                    ): reviewList.length > 0 ? (
+                    <div className="flex flex-col gap-4 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300">
+                         {reviewList.map((review) => (
                             <PlaceReview
-                                key={review.id}
-                                avataUrl={review.avataUrl}
-                                name={review.name}
-                                stars={review.stars}
-                                comment={review.comment}
-                                createdAt={review.createdAt}
+                                 key={review.id}
+                                 avataUrl={review.user?.avatarUrl}
+                                 name={review.user?.fullName || 'Người dùng ẩn danh'}
+                                 stars={review.rating}
+                                 comment={review.comment}
+                                 createdAt={review.createdAt}
+                                 images={review.images}
                             />
                         ))}
                     </div>
+                ) : (
+                    <p className="text-sm text-gray-500 italic py-4">
+                        Chưa có đánh giá nào được duyệt cho địa điểm này. Hãy là người đầu tiên chia sẻ trải nghiệm!
+                    </p>
+                 )}
                 </div>
             </div>
 

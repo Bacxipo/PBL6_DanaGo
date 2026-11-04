@@ -3,7 +3,7 @@ import { IsString, IsNotEmpty, IsOptional, IsNumber, IsUrl, Min, Max, MaxLength,
 export class CreateDestinationDto {
   @IsString({ message: 'Tên địa điểm phải là chuỗi ký tự.' })
   @IsNotEmpty({ message: 'Tên địa điểm không được để trống.' })
-  name: string;
+  name: string | undefined;
 
   @IsString({ message: 'Mô tả phải là chuỗi ký tự.' })
   @IsOptional()
@@ -11,7 +11,7 @@ export class CreateDestinationDto {
 
   @IsString({ message: 'Quận/Huyện phải là chuỗi ký tự.' })
   @IsNotEmpty({ message: 'Quận/Huyện không được để trống.' })
-  district: string;
+  district: string | undefined;
 
   @IsNumber({}, { message: 'Vĩ độ (latitude) phải là số.' })
   @IsOptional()

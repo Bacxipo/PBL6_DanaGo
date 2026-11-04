@@ -6,7 +6,6 @@ import 'package:smarttrip/models/search_filter_model.dart';
 import 'package:smarttrip/models/search_result_item.dart';
 import 'package:smarttrip/screens/detail_place_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
-import 'package:smarttrip/widgets/home/custom_bottom_nav_bar.dart';
 import 'package:smarttrip/widgets/search/search_filter_bottom_sheet.dart';
 import 'package:smarttrip/widgets/explore_map/map_pin_marker.dart';
 import 'package:smarttrip/widgets/explore_map/map_search_header.dart';
@@ -22,7 +21,6 @@ class ExploreMapScreen extends StatefulWidget {
 }
 
 class _ExploreMapScreenState extends State<ExploreMapScreen> {
-  int _currentIndex = 1;
   final TextEditingController _searchCtrl = TextEditingController();
   final MapController _mapController = MapController();
   SearchFilterModel _currentFilter = const SearchFilterModel();
@@ -266,7 +264,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                                 BoxShadow(
                                   color: const Color(
                                     0xFF0284C7,
-                                  ).withOpacity(0.4),
+                                  ).withValues(alpha: 0.4),
                                   blurRadius: 10,
                                   spreadRadius:
                                       4, // Vòng hào quang phát sáng lan tỏa
@@ -310,7 +308,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
+                      color: Colors.black.withValues(alpha: 0.12),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
