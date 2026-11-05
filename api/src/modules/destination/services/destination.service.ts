@@ -107,4 +107,9 @@ export class DestinationService {
 
     return { message: `Đã xóa ảnh ID ${imageId} thành công.` };
   }
+  
+  async getFeatured(limit = 10):Promise<DestinationResponseDto[]>{
+      const destinations = await this.destinationRepository.findFeatured(limit);
+    return destinations.map((dest)=> DestinationMapper.toResponseDto(dest));
+  }
 }

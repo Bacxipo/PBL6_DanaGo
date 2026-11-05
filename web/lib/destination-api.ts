@@ -16,6 +16,7 @@ export interface DestinationCategory {
   name: string;
 }
 
+// Interface từ nhánh develop (tương thích các tính năng Home/Featured)
 export interface Destination {
   id: number;
   name: string;
@@ -36,6 +37,7 @@ export interface Destination {
   }>;
 }
 
+// Interface thô từ CSDL PostgreSQL/Prisma
 export interface RawDestination {
   id: number;
   name: string;
@@ -55,6 +57,7 @@ export interface RawDestination {
   images?: DestinationImage[];
 }
 
+// Interface chuẩn cho trang chi tiết điểm đến (DetailPlace)
 export interface DestinationDetail {
   id: number;
   name: string;
@@ -75,6 +78,7 @@ export interface DestinationDetail {
   longitude?: number;
 }
 
+// Interface chuẩn cho danh sách thẻ (Explore / Catalog)
 export interface DestinationCardItem {
   id: number;
   name: string;

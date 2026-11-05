@@ -30,6 +30,7 @@ export class DestinationRepository {
       ticketPrice: dest.ticketPrice ?? undefined,
       openHours: dest.openHours ?? undefined,
       avgRating: dest.avgRating ? Number(dest.avgRating) : 0,
+      isFeatured: dest.isFeatured ?? false,
       status: dest.status,
       createdBy: dest.createdBy ?? undefined,
       createdAt: dest.createdAt,
@@ -206,5 +207,23 @@ export class DestinationRepository {
       where: { id: imageId },
     });
     return true;
+  }
+  async findFeatured(limit = 10): Promise<DestinationEntity[]>{
+    const destinations = await this.prisma.destination.findMany({
+      where: {
+        status: ContentStatus.APPROVED,
+      },
+      orderBy: [
+        {isFeatured: 'desc'},
+        {avgRating: 'desc'},
+        {createdAt: 'desc'},
+      ],
+      take: limit,
+      include:{
+        images: true,
+        category: true,
+      }
+    });
+    return destinations.map((dest) => this.mapToEntity(dest));
   }
 }

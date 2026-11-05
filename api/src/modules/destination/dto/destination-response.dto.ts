@@ -16,6 +16,7 @@ export class DestinationResponseDto {
   ticketPrice?: string;
   openHours?: string;
   avgRating: number;
+  isFeatured?: boolean;
   status: string;
   createdBy?: number;
   createdAt: Date;
