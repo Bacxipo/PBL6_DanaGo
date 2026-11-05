@@ -1,5 +1,6 @@
 export class UserEntity {
   id: number;
+  supabaseId?: string;
   username: string;
   fullName: string;
   email: string;

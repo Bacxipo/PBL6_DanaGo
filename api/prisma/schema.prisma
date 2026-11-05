@@ -60,6 +60,7 @@ model User {
   username     String     @unique @db.VarChar(50)
   fullName     String     @map("full_name") @db.VarChar(100)
   email        String     @unique @db.VarChar(150)
+  supabaseId   String?    @unique @map("supabase_id") @db.Uuid
   passwordHash String     @map("password_hash") @db.VarChar(255)
   avatarUrl    String?    @map("avatar_url") @db.VarChar(255)
   bio          String?    @db.Text
