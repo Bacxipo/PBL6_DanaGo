@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import { StatusBadge, StatusFilter, AsyncContent, EmptyState } from '@/components/ui';
-import { useApi, removeById, avatarFallback, isMissingApi, timeAgo, getImageUrl, getImageId } from '@/lib/utils';
+import { useApi, removeById, avatarFallback, timeAgo, getImageUrl, getImageId } from '@/lib/utils';
 import { useAction, useAuth, usePending } from '@/lib/context';
 import type { ContentStatus } from '@/lib/types';
 import { CheckCircle2, XCircle, ExternalLink, MapPin, MessageSquare, Heart, Star } from 'lucide-react';
@@ -36,8 +36,9 @@ export default function ModerationPage() {
   const [tab, setTab] = useState<Tab>('reviews');
   const [status, setStatus] = useState<ContentStatus>('PENDING');
 
-  const reviews = useApi(() => reviewApi.listByStatus(status), [status], tab === 'reviews');
-  const reviewsMissing = isMissingApi(reviews.error); // backend chưa có API duyệt đánh giá
+  // Review giờ luôn APPROVED ngay khi tạo/sửa (không còn hàng chờ duyệt) -> chỉ hiện danh sách đã duyệt,
+  // không lọc theo "status" như 2 mục còn lại.
+  const reviews = useApi(reviewApi.listApproved, [], tab === 'reviews');
   const pois = useApi(() => destinationApi.listByStatus(status), [status], tab === 'pois');
   const posts = useApi(() => feedApi.listByStatus(status), [status], tab === 'posts');
   // Chỉ ADMIN xem được danh sách tài khoản -> dùng để hiện tên người gửi địa điểm
@@ -80,10 +81,11 @@ export default function ModerationPage() {
           ))}
         </div>
 
-        <StatusFilter value={status} onChange={setStatus} />
+        {/* Review không còn trạng thái chờ duyệt nên không cần bộ lọc trạng thái */}
+        {tab !== 'reviews' && <StatusFilter value={status} onChange={setStatus} />}
 
         {tab === 'reviews' && (
-          <AsyncContent loading={reviews.loading} error={reviewsMissing ? null : reviews.error} data={reviewsMissing ? [] : reviews.data} onRetry={reviews.reload}>
+          <AsyncContent loading={reviews.loading} error={reviews.error} data={reviews.data} onRetry={reviews.reload}>
             {(list) =>
               list.length === 0 ? (
                 <EmptyState icon={Star} title="Không có đánh giá nào trong mục này" />
