@@ -39,7 +39,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#e6f4f2]">
-      <div className="md:w-1/2 bg-gradient-to-br from-[#005258] via-[#006971] to-[#0f172a] p-8 md:p-14 text-white flex flex-col justify-between relative overflow-hidden">
+      <div className="md:w-1/2 bg-gradient-to-br from-[#005258] via-[#006971] to-[#0f172a] p-8 md:p-14 text-white flex flex-col relative overflow-hidden">
         <div className="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-[#38bdf8]/20 blur-3xl pointer-events-none"></div>
         <div className="absolute -left-20 -bottom-20 w-96 h-96 rounded-full bg-[#FFB347]/15 blur-3xl pointer-events-none"></div>
 
@@ -53,20 +53,17 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="my-12 max-w-lg">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-[#FFB347] border border-white/15 mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            Cổng Quản Trị Hệ Thống PBL6
+        <div className="flex-1 flex items-center">
+          <div className="max-w-lg">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-[#FFB347] border border-white/15 mb-4">
+              <Sparkles className="w-3.5 h-3.5" />
+              Cổng Quản Trị Hệ Thống
+            </div>
+            <h2 className="text-3xl md:text-4xl font-extrabold leading-tight">Quản Trị Vận Hành & Trải Nghiệm Du Lịch Thông Minh</h2>
+            <p className="mt-4 text-sm text-gray-200 leading-relaxed">
+              Kiểm duyệt điểm đến, quản lý sự kiện và theo dõi xu hướng lập lịch trình của du khách tại thành phố Đà Nẵng.
+            </p>
           </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold leading-tight">Quản Trị Vận Hành & Trải Nghiệm Du Lịch Thông Minh</h2>
-          <p className="mt-4 text-sm text-gray-200 leading-relaxed">
-            Kiểm duyệt điểm đến, quản lý sự kiện, đối tác và theo dõi xu hướng lập lịch trình của du khách tại thành phố Đà Nẵng.
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-gray-300 pt-4 border-t border-white/15">
-          <span>Học phần PBL6 - ĐH Bách Khoa ĐN</span>
-          <span>Phiên bản 1.0.0</span>
         </div>
       </div>
 
