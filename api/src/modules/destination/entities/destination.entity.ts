@@ -19,6 +19,7 @@ export class DestinationEntity {
   ticketPrice?: string;
   openHours?: string;
   avgRating: number;
+  isFeatured: boolean;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdBy?: number;
   createdAt: Date;
