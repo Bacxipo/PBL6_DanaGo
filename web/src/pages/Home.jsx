@@ -102,7 +102,7 @@ export default function Home() {
             {/* Banner Lập lịch trình */}
             <div className='flex flex-wrap gap-4 bg-[#006971] rounded-2xl p-8 md:p-10 items-center justify-between shadow-sm'>
                 <div className='flex flex-col space-y-2'>
-                    <h2 className='font-bold text-2xl md:text-3xl text-white'>Lập lịch trình thông minh chỉ trong 1 phút</h2>
+                    <h2 className='font-bold text-2xl md:text-3xl text-white'>Lập lịch trình thông minh</h2>
                     <p className='text-cyan-100 text-sm md:text-base'>Để chúng tôi gợi ý hành trình hoàn hảo dựa trên sở thích và ngân sách của bạn</p>
                 </div>
                 <div>
