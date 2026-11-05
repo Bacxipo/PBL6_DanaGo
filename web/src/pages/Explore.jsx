@@ -5,8 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Rating from '../components/comon/ui/Rating';
 import PlaceList from "../components/comon/place/PlaceList";
 import { Loader2, RefreshCw, AlertCircle, Search, X } from 'lucide-react';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import { getRawDestinations, getDestinationCategories, normalizeDestinationCard } from "@/lib/destination-api";
 
 const normalizePlaceName = (value = '') => value
     .normalize('NFD')
@@ -48,22 +47,10 @@ export default function Explore() {
         setLoading(true);
         setError(null);
         try {
-            // 1. Lấy danh sách điểm đến đã duyệt
-            const destRes = await fetch(`${API_BASE_URL}/destinations?status=APPROVED`);
-            if (!destRes.ok) throw new Error(`Lỗi tải điểm đến: ${destRes.status}`);
-            const destData = await destRes.json();
-
-            // 2. Lấy danh mục từ API
-            let catData = [];
-            try {
-                const catRes = await fetch(`${API_BASE_URL}/destinations/categories`);
-                if (catRes.ok) {
-                    catData = await catRes.json();
-                }
-            } catch {
-                // Fallback nếu route categories chưa có
-            }
-
+            const [destData, catData] = await Promise.all([
+                getRawDestinations({ status: 'APPROVED' }),
+                getDestinationCategories(),
+            ]);
             setDestinations(destData);
             setCategories(catData);
         } catch (err) {
@@ -90,21 +77,7 @@ export default function Explore() {
 
     // Chuẩn hóa danh sách điểm đến sang format PlaceCard cần
     const mappedPlaces = useMemo(() => {
-        return destinations.map((item) => {
-            const hasImg = item.images && item.images.length > 0 && item.images[0]?.imageUrl;
-
-            return {
-                id: item.id,
-                name: item.name,
-                img: hasImg ? item.images[0].imageUrl : null,
-                des: item.description || "Điểm đến hấp dẫn tại Đà Nẵng và miền Trung.",
-                stars: item.avgRating ? Number(item.avgRating) : 5,
-                price: item.ticketPrice || "Miễn phí",
-                priceDisplay: item.ticketPrice || "Miễn phí",
-                category: item.categoryName || "Địa điểm",
-                address: item.district || "Đà Nẵng",
-            };
-        });
+        return destinations.map(normalizeDestinationCard);
     }, [destinations]);
 
     // Áp dụng bộ lọc (bao gồm tìm kiếm theo tên địa điểm)
@@ -238,27 +211,27 @@ export default function Explore() {
                             Tìm kiếm địa điểm
                         </label>
                         <div className="relative">
-                        <Search aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#006971] pointer-events-none" />
-                        <input
-                            id="destination-search"
-                            type="text"
-                            autoComplete="off"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Tìm kiếm theo tên địa điểm (Bà Nà, Mỹ Khê, Sơn Trà...)..."
-                            className="w-full pl-11 pr-11 py-3 bg-white border border-gray-300 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/20 transition-all shadow-xs"
-                        />
-                        {searchTerm && (
-                            <button
-                                type="button"
-                                onClick={() => setSearchTerm("")}
-                                aria-label="Xóa từ khóa tìm kiếm"
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer p-0.5 rounded-full hover:bg-gray-100 transition-colors"
-                                title="Xóa từ khóa tìm kiếm"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        )}
+                            <Search aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#006971] pointer-events-none" />
+                            <input
+                                id="destination-search"
+                                type="text"
+                                autoComplete="off"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Tìm kiếm theo tên địa điểm (Bà Nà, Mỹ Khê, Sơn Trà...)..."
+                                className="w-full pl-11 pr-11 py-3 bg-white border border-gray-300 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/20 transition-all shadow-xs"
+                            />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchTerm("")}
+                                    aria-label="Xóa từ khóa tìm kiếm"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer p-0.5 rounded-full hover:bg-gray-100 transition-colors"
+                                    title="Xóa từ khóa tìm kiếm"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
                         </div>
                     </div>
 

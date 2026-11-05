@@ -24,6 +24,7 @@ services:
       args:
         # Trình duyệt gọi API trực tiếp nên dùng localhost (không phải tên service)
         NEXT_PUBLIC_API_URL: http://localhost:5000
+        NEXT_PUBLIC_AI_API_URL: http://localhost:8000
     container_name: danago_web
     restart: always
     ports:
@@ -35,6 +36,10 @@ services:
       PORT: 3000
       API_URL: http://api:5000
       WEB_ORIGIN: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+      NEXT_PUBLIC_AI_API_URL: http://localhost:8000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - api
 

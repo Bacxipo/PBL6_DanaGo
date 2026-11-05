@@ -121,6 +121,7 @@ model Destination {
   ticketPrice String?       @default("Miễn phí") @map("ticket_price") @db.VarChar(150)
   openHours   String?       @map("open_hours") @db.VarChar(100)
   avgRating   Decimal?      @default(0) @map("avg_rating") @db.Decimal(2, 1)
+  isFeatured  Boolean       @default(false) @map("is_featured")
   status      ContentStatus @default(PENDING)
   createdBy   Int?          @map("created_by")
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamp()

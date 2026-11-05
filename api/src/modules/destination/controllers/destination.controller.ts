@@ -27,6 +27,7 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { UserRole, ContentStatus } from '@prisma/client';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('destinations')
 export class DestinationController {
@@ -75,7 +76,11 @@ export class DestinationController {
   async getCategories() {
     return this.destinationService.getAllCategories();
   }
-
+  @Get('featured')
+  @ApiOperation({summary: 'Lấy danh sách địa điểm nổi bật'})
+  async getFeature(@Query('limit') limit?: number){
+    return this.destinationService.getFeatured(limit ? Number(limit) : 6);
+  }
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   async getById(
@@ -141,4 +146,6 @@ export class DestinationController {
   ): Promise<{ message: string }> {
     return this.destinationService.deleteImage(imageId);
   }
+
+  
 }

@@ -16,6 +16,7 @@ export class DestinationMapper {
       ticketPrice: entity.ticketPrice ?? undefined,
       openHours: entity.openHours ?? undefined,
       avgRating: entity.avgRating ? Number(entity.avgRating) : 0,
+      isFeatured: entity.isFeatured,
       status: entity.status,
       createdBy: entity.createdBy ?? undefined,
       createdAt: entity.createdAt,
