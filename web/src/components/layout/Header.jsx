@@ -27,7 +27,7 @@ export default function Header() {
     }, [pathname]);
 
     const getLinkClass = (path) => {
-        const isActive = pathname === path;
+        const isActive = pathname === path || (path !== '/' && pathname?.startsWith(path));
         return isActive
             ? "text-[#006971] font-bold text-sm border-b-2 border-[#006971] pb-1"
             : "text-gray-600 hover:text-[#006971] text-sm font-semibold transition-colors";
@@ -45,6 +45,9 @@ export default function Header() {
                     </Link>
                     <Link href="/explore" className={getLinkClass('/explore')}>
                         Khám phá
+                    </Link>
+                    <Link href="/itinerary" className={getLinkClass('/itinerary')}>
+                        Lịch trình
                     </Link>
                     <Link href="/community" className={getLinkClass('/community')}>
                         Cộng đồng

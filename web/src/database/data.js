@@ -335,6 +335,11 @@ const sampleItineraries = [
                     time: '08:00',
                     tag: 'Biển',
                     img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+                    checklists: [
+                        { id: 1001, itemName: 'Kem chống nắng SPF 50+', isChecked: true },
+                        { id: 1002, itemName: 'Đồ bơi & kính râm', isChecked: false },
+                        { id: 1003, itemName: 'Khăn tắm lớn', isChecked: false }
+                    ]
                 },
                 {
                     id: 102,
@@ -343,6 +348,10 @@ const sampleItineraries = [
                     time: '14:00',
                     tag: 'Giải trí',
                     img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=600&q=80',
+                    checklists: [
+                        { id: 1004, itemName: 'Điện thoại đầy pin & sạc dự phòng', isChecked: true },
+                        { id: 1005, itemName: 'Tiền mặt ăn vặt chợ đêm', isChecked: false }
+                    ]
                 },
             ],
             2: [
@@ -353,6 +362,11 @@ const sampleItineraries = [
                     time: '08:30',
                     tag: 'Tham quan',
                     img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80',
+                    checklists: [
+                        { id: 1006, itemName: 'Áo khoác nhẹ (trên núi se lạnh)', isChecked: false },
+                        { id: 1007, itemName: 'Vé cáp treo / CCCD', isChecked: true },
+                        { id: 1008, itemName: 'Giày thể thao êm chân', isChecked: false }
+                    ]
                 }
             ],
             3: []
@@ -374,6 +388,9 @@ const sampleItineraries = [
                     time: '11:30',
                     tag: 'Ẩm thực',
                     img: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80',
+                    checklists: [
+                        { id: 2001, itemName: 'Khăn ướt / Giấy lau', isChecked: true }
+                    ]
                 },
                 {
                     id: 202,
@@ -382,6 +399,9 @@ const sampleItineraries = [
                     time: '18:30',
                     tag: 'Ẩm thực',
                     img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=600&q=80',
+                    checklists: [
+                        { id: 2002, itemName: 'Tiền mặt lẻ 20k - 50k', isChecked: false }
+                    ]
                 }
             ],
             2: []
@@ -406,80 +426,80 @@ const interestOptions = [
 
 
 const postTypesData = [
-  { id: 'trai-nghiem', label: 'Trải nghiệm' },
-  { id: 'hoi-dap', label: 'Hỏi đáp' },
-  { id: 'dia-diem-moi', label: 'Địa điểm mới' },
+    { id: 'trai-nghiem', label: 'Trải nghiệm' },
+    { id: 'hoi-dap', label: 'Hỏi đáp' },
+    { id: 'dia-diem-moi', label: 'Địa điểm mới' },
 ];
 
 const initialPosts = [
-  // 1. Bài viết Trải nghiệm
-  {
-    id: 1,
-    postType: 'trai-nghiem',
-    user: {
-      name: 'nChuc_',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80'
+    // 1. Bài viết Trải nghiệm
+    {
+        id: 1,
+        postType: 'trai-nghiem',
+        user: {
+            name: 'nChuc_',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80'
+        },
+        date: '17/9/2024',
+        content: 'Tôi đã đi theo lịch trình gợi ý của ứng dụng và nó khá thú vị. Đây là 1 số địa điểm tôi cảm thấy thích.',
+        image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80',
+        location: 'Cầu Rồng, Đà Nẵng',
+        likes: 1,
+        commentsCount: 1,
+        isLiked: false
     },
-    date: '17/9/2024',
-    content: 'Tôi đã đi theo lịch trình gợi ý của ứng dụng và nó khá thú vị. Đây là 1 số địa điểm tôi cảm thấy thích.',
-    image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80',
-    location: 'Cầu Rồng, Đà Nẵng',
-    likes: 1,
-    commentsCount: 1,
-    isLiked: false
-  },
-  // 2. Bài viết Hỏi đáp (Dùng chung khung với Trải nghiệm, chỉ khác tag góc phải)
-  {
-    id: 2,
-    postType: 'hoi-dap',
-    user: {
-      name: 'Minh Hoàng',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80'
+    // 2. Bài viết Hỏi đáp (Dùng chung khung với Trải nghiệm, chỉ khác tag góc phải)
+    {
+        id: 2,
+        postType: 'hoi-dap',
+        user: {
+            name: 'Minh Hoàng',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80'
+        },
+        date: '16/9/2024',
+        content: 'Cuối tuần này nhóm mình 4 người vào Đà Nẵng, mọi người cho mình hỏi quanh bãi biển Mỹ Khê có quán hải sản nào ngon, giá hợp lý không ạ?',
+        location: 'Bãi biển Mỹ Khê, Đà Nẵng',
+        likes: 3,
+        commentsCount: 4,
+        isLiked: true
     },
-    date: '16/9/2024',
-    content: 'Cuối tuần này nhóm mình 4 người vào Đà Nẵng, mọi người cho mình hỏi quanh bãi biển Mỹ Khê có quán hải sản nào ngon, giá hợp lý không ạ?',
-    location: 'Bãi biển Mỹ Khê, Đà Nẵng',
-    likes: 3,
-    commentsCount: 4,
-    isLiked: true
-  },
-  // 3. Bài viết Địa điểm mới (Hộp thông tin chi tiết)
-  {
-    id: 3,
-    postType: 'dia-diem-moi',
-    user: {
-      name: 'Thu Trang',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80'
-    },
-    date: '15/9/2024',
-    placeName: 'Tiệm Cà Phê Rừng Dừa Cẩm Lệ',
-    category: 'Cafe & Check-in',
-    openTime: '07:00',
-    closeTime: '22:30',
-    isFree: false,
-    priceFrom: '25.000',
-    priceTo: '55.000',
-    description: 'Quán cafe không gian xanh mát cạnh rừng dừa nước, view hoàng hôn cực chill.',
-    images: [
-      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80',
-      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80'
-    ],
-    likes: 8,
-    commentsCount: 2,
-    isLiked: false
-  }
+    // 3. Bài viết Địa điểm mới (Hộp thông tin chi tiết)
+    {
+        id: 3,
+        postType: 'dia-diem-moi',
+        user: {
+            name: 'Thu Trang',
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80'
+        },
+        date: '15/9/2024',
+        placeName: 'Tiệm Cà Phê Rừng Dừa Cẩm Lệ',
+        category: 'Cafe & Check-in',
+        openTime: '07:00',
+        closeTime: '22:30',
+        isFree: false,
+        priceFrom: '25.000',
+        priceTo: '55.000',
+        description: 'Quán cafe không gian xanh mát cạnh rừng dừa nước, view hoàng hôn cực chill.',
+        images: [
+            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80',
+            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80'
+        ],
+        likes: 8,
+        commentsCount: 2,
+        isLiked: false
+    }
 ];
 const currentUser = {
-  name: 'abc_user',
-  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80',
+    name: 'abc_user',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80',
 };
-export { 
-    categoriesData, 
-    placesData, 
-    districtsData, 
-    reviews, 
-    itineraryDaysData, 
-    initialItineraryData, 
+export {
+    categoriesData,
+    placesData,
+    districtsData,
+    reviews,
+    itineraryDaysData,
+    initialItineraryData,
     quickSearchPlacesData,
     quickSearchCategoriesData,
     sampleItineraries,
