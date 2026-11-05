@@ -10,7 +10,9 @@ import {
   ParseIntPipe, 
   UseGuards, 
   HttpCode, 
-  HttpStatus 
+  HttpStatus, 
+  UseInterceptors,
+  UploadedFiles
 } from '@nestjs/common';
 import { ReviewService } from '../services/review.service';
 import { ReviewResponseDto } from '../dto/review-response.dto';
@@ -22,6 +24,7 @@ import { CreateReviewDto } from '../dto/create-review.dto';
 import { UpdateReviewDto } from '../dto/update-review.dto';
 import { UpdateReviewStatusDto } from '../dto/update-review-status.dto';
 import { UserRole } from '@prisma/client';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('community/reviews')
 export class ReviewController {
@@ -70,13 +73,15 @@ export class ReviewController {
   // POST /community/reviews
   @Post()
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FilesInterceptor('images', 5)) 
   @HttpCode(HttpStatus.CREATED)
   async createReview(
     @CurrentUser() user: any,
     @Body() dto: CreateReviewDto,
+    @UploadedFiles() files?: Express.Multer.File[],
   ): Promise<ReviewResponseDto> {
     const userId = user.sub || user.userId;
-    return this.reviewService.createReview(userId, dto);
+    return this.reviewService.createReview(userId, dto, files);
   }
 
   // 6. [USER] Sửa bài đánh giá (Chuyển về PENDING chờ duyệt lại)

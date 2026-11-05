@@ -11,12 +11,15 @@ import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateReviewDto } from '../dto/create-review.dto';
 import { UpdateReviewDto } from '../dto/update-review.dto';
 import { ContentStatus } from '@prisma/client';
+import { SupabaseStorageService } from '../../../shared/storage/supabase-storage.service';
+import 'multer';
 
 @Injectable()
 export class ReviewService {
   constructor(
     private readonly reviewRepository: ReviewRepository,
     private readonly prisma: PrismaService,
+    private readonly storageService: SupabaseStorageService,
   ) {}
 
   // 1. Lấy danh sách reviews đã duyệt của 1 điểm đến (cho người dùng xem công khai)
@@ -32,32 +35,51 @@ export class ReviewService {
   }
 
   // 3. Tạo review mới (Mặc định trạng thái PENDING chờ Admin duyệt)
-  async createReview(userId: number, dto: CreateReviewDto): Promise<ReviewResponseDto> {
-    // Kiểm tra điểm đến có tồn tại không
+  async createReview(
+    userId: number, 
+    dto: CreateReviewDto,
+    files?: Express.Multer.File[], // Nhận các file ảnh từ Controller
+): Promise<ReviewResponseDto> {
+    // 1. Kiểm tra địa điểm tồn tại
     const destination = await this.prisma.destination.findUnique({
-      where: { id: dto.destinationId },
+        where: { id: dto.destinationId },
     });
     if (!destination) {
-      throw new NotFoundException(`Không tìm thấy điểm đến với id ${dto.destinationId}.`);
+        throw new NotFoundException(`Không tìm thấy điểm đến với id ${dto.destinationId}.`);
     }
 
-    // Kiểm tra xem user đã từng đánh giá địa điểm này chưa (chống spam review)
+    // 2. Chống spam: User đã đánh giá địa điểm này chưa
     const existingReview = await this.prisma.review.findUnique({
-      where: {
-        userId_destinationId: {
-          userId,
-          destinationId: dto.destinationId,
+        where: {
+            userId_destinationId: {
+                userId,
+                destinationId: dto.destinationId,
+            },
         },
-      },
     });
     if (existingReview) {
-      throw new ConflictException('Bạn đã đánh giá địa điểm này rồi. Hãy sử dụng chức năng chỉnh sửa!');
+        throw new ConflictException('Bạn đã đánh giá địa điểm này rồi. Hãy sử dụng chức năng chỉnh sửa!');
     }
 
-    // Tạo review mới với status = PENDING
+  
+    if (files && files.length > 0) {
+        const uploadedUrls: string[] = [];
+        for (const file of files) {
+            const url = await this.storageService.uploadFile(
+                file,
+                'review_image',               // Bucket riêng của review
+                `dest-${dto.destinationId}`,    // Thư mục chia theo ID địa điểm
+            );
+            uploadedUrls.push(url);
+        }
+        dto.images = [...(dto.images || []), ...uploadedUrls];
+    }
+
+    // 4. Lưu vào Database
     const created = await this.reviewRepository.create(userId, dto);
+    await this.updateDestinationAvgRating(dto.destinationId);
     return ReviewMapper.toResponseDto(created);
-  }
+}
 
   // 4. Chỉnh sửa review (Sau khi sửa, chuyển lại PENDING để Admin duyệt lại)
   async updateReview(
@@ -129,12 +151,25 @@ export class ReviewService {
 
   // Helper tính và cập nhật avgRating trong bảng Destination
   private async updateDestinationAvgRating(destinationId: number): Promise<void> {
-    const { avgRating } = await this.reviewRepository.calculateAvgRating(destinationId);
-    await this.prisma.destination.update({
-      where: { id: destinationId },
-      data: {
-        avgRating: Number(avgRating.toFixed(1)),
-      },
-    });
+  const destination = await this.prisma.destination.findUnique({
+    where: { id: destinationId },
+    select: { avgRating: true },
+  });
+  if (!destination) return;
+  const { sumRating, totalReviews } = await this.reviewRepository.calculateAvgRating(destinationId);
+  if (totalReviews === 0) return;
+  const initialRating = destination.avgRating ? Number(destination.avgRating) : 0;
+  let newAvgRating = 0;
+  if (initialRating > 0) {
+    newAvgRating = (initialRating + sumRating) / (1 + totalReviews);
+  } else {
+    newAvgRating = sumRating / totalReviews;
   }
+  await this.prisma.destination.update({
+    where: { id: destinationId },
+    data: {
+      avgRating: Number(newAvgRating.toFixed(1)),
+    },
+  });
+}
 }

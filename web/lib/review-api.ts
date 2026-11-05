@@ -57,39 +57,27 @@ export async function getMyReviews(token: string): Promise<Review[]>{
     return Array.isArray(data) ? data : [];
 }
 //upload file ảnh đánh giá 
-export async function uploadReviewImage(file: File, token: string): Promise<string>{
-    const formData = new FormData();
-    formData.append('file',file);
-
-    const res = await fetch(`${API_BASE_URL}/upload/image?folder=review`,{
-        method: 'POST',
-        headers:{
-            Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-    });
-    if(!res.ok){
-        const err = await res.json().catch(()=>({}));
-        throw new Error(err.message || `Upload ảnh ${file.name} thất bại`);
+export async function createReview(
+    data: FormData | CreateReviewPayload, 
+    token: string
+): Promise<Review> {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+    };
+    if (!isFormData) {
+        headers['Content-Type'] = 'application/json';
     }
-    const data = await res.json();
-    return data.url;
-}
-//Tạo bài review mới
-export async function createReview(payload: CreateReviewPayload, token: string): Promise<Review> {
     const res = await fetch(`${API_BASE_URL}/community/reviews`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+        headers,
+        body: isFormData ? data : JSON.stringify(data),
     });
-    const data = await res.json();
+    const result = await res.json();
     if (!res.ok) {
-        throw new Error(data.message || 'Không thể gửi đánh giá.');
+        throw new Error(result.message || 'Không thể gửi đánh giá.');
     }
-    return data;
+    return result;
 }
 // Chỉnh sửa đánh giá
 export async function updateReview(

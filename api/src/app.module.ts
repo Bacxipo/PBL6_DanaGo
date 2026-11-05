@@ -22,7 +22,7 @@ import { EventModule } from './modules/event/event.module';
     NotificationModule,
     FeedModule,
     AiModule,
-    EventModule,
+    EventModule
   ],
   controllers: [AppController],
   providers: [AppService],
