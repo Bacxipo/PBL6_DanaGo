@@ -1,19 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Catalog from '../components/comon/place/Catalog';
 import PlaceCard from '../components/comon/place/PlaceCard';
-
+import { getFeaturedDestinations } from '../../lib/destination-api'; 
 import heroImg from '../assets/images/cr.jpg';
 import Link from 'next/link';
 import { categoriesData, placesData } from '../database/data';
+import {ChevronLeft, ChevronRight} from 'lucide-react';
 
 export default function Home() {
     const bgUrl = typeof heroImg === 'string' ? heroImg : heroImg.src || heroImg;
     const [searchQuery, setSearchQuery] = useState('');
     const router = useRouter();
-
+    const [featuredPlaces, setFeaturedPlaces] = useState([]);
+    const [loadingFeatured, setLoadingFeatured] = useState(true);
+    const sliderRef = useRef(null);
+    const handleScrollLeft = () =>{
+        if(sliderRef.current){
+            sliderRef.current.scrollBy({left: -sliderRef.current.offsetWidth, behavior: 'smooth'});
+        }
+    };
+    const handleScrollRight = () => {
+        if (sliderRef.current) {
+            sliderRef.current.scrollBy({ left: sliderRef.current.offsetWidth, behavior: 'smooth' });
+        }
+    };
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
@@ -22,7 +35,15 @@ export default function Home() {
             router.push('/explore');
         }
     };
-
+    useEffect(() => {
+        async function fetchFeatured() {
+            setLoadingFeatured(true);
+            const data = await getFeaturedDestinations(6); 
+            setFeaturedPlaces(data);
+            setLoadingFeatured(false);
+        }
+        fetchFeatured();
+    }, []);
     return (
         <section className="w-full space-y-12 pb-8">
             {/* Hero Section */}
@@ -47,7 +68,7 @@ export default function Home() {
                             Tìm kiếm
                         </button>
                     </form>
-                </div>
+                </div> 
             </div>
 
             {/* Catalog Section */}
@@ -62,22 +83,67 @@ export default function Home() {
 
             {/* Featured Places Section */}
             <div className="w-full max-w-7xl mx-auto px-2">
-                <h2 className="text-black font-bold text-2xl md:text-3xl mb-6">Địa điểm nổi tiếng</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                    {placesData.slice(0, 4).map((place) => (
+             <div className="flex items-center justify-between mb-6">
+             <h2 className="text-black font-bold text-2xl md:text-3xl">Địa điểm nổi tiếng</h2>
+                {featuredPlaces.length > 4 && (
+                 <div className="hidden sm:flex items-center gap-2">
+                    <button
+                         onClick={handleScrollLeft}
+                         className="p-2 rounded-full border border-gray-200 hover:bg-gray-100 transition shadow-sm cursor-pointer bg-white"
+                         title="Xem trước đó"
+                    >
+                    <ChevronLeft className="w-5 h-5 text-gray-700" />
+                    </button>
+                    <button
+                    onClick={handleScrollRight}
+                    className="p-2 rounded-full border border-gray-200 hover:bg-gray-100 transition shadow-sm cursor-pointer bg-white"
+                    title="Xem tiếp theo"
+                    >
+                    <ChevronRight className="w-5 h-5 text-gray-700" />
+                    </button>
+                 </div>
+                )}
+             </div>
+
+            {loadingFeatured ? (
+            <div className="text-center py-10 text-gray-500">Đang tải địa điểm nổi bật...</div>
+             ) : featuredPlaces.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">Chưa có địa điểm nổi bật nào.</div>
+            ) : (
+            /* Container vuốt ngang: Mỗi màn hình desktop chia đúng 4 card, mobile chia 1.2 card */
+            <div
+                ref={sliderRef}
+                className="flex gap-6 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth no-scrollbar"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+             >
+                {featuredPlaces.map((place) => {
+                    const mainImg = place.images?.find((img) => img.isPrimary)?.imageUrl
+                                || place.images?.[0]?.imageUrl 
+                                || place.images?.[0]?.url
+                                || heroImg;
+
+                return (
+                    <div
+                        key={place.id}
+                        className="w-[280px] sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] flex-shrink-0 snap-start"
+                    >
                         <PlaceCard
                             key={place.id}
                             id={place.id}
                             name={place.name}
-                            img={place.img}
-                            des={place.des}
-                            stars={place.stars}
-                            price={place.priceDisplay}
-                            category={place.category}
-                            address={place.address}
+                            img={mainImg}
+                            des={place.description}
+                            stars={place.avgRating}
+                            price={place.ticketPrice || 'Miễn phí'}
+                            category={place.categoryName || place.category?.name}
+                            address={place.district}
+                            isFeatured={place.isFeatured}
                         />
-                    ))}
-                </div>
+                    </div>
+                );
+            })}
+        </div>
+    )}
             </div>
             {/* Featured Places Section Recommended */}
             <div className="w-full max-w-7xl mx-auto px-2">
@@ -98,7 +164,6 @@ export default function Home() {
                     ))}
                 </div>
             </div>
-
             {/* Banner Lập lịch trình */}
             <div className='flex flex-wrap gap-4 bg-[#006971] rounded-2xl p-8 md:p-10 items-center justify-between shadow-sm'>
                 <div className='flex flex-col space-y-2'>
