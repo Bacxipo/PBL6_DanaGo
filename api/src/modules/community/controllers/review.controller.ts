@@ -57,6 +57,15 @@ export class ReviewController {
     return this.reviewService.getPendingReviews();
   }
 
+  // 3b. [ADMIN] Lấy toàn bộ review đã duyệt (mọi điểm đến) - cho trang Kiểm duyệt nội dung
+  // GET /community/reviews/admin/approved
+  @Get('admin/approved')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getApprovedReviews(): Promise<any[]> {
+    return this.reviewService.getApprovedReviews();
+  }
+
   // 4. [ADMIN] Duyệt hoặc từ chối bài đánh giá
   // PATCH /community/reviews/:id/status
   @Patch(':id/status')

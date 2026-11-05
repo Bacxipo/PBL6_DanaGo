@@ -213,6 +213,41 @@ export class ReviewRepository {
     });
   }
 
+  // 8b. [ADMIN] Lấy toàn bộ review đã duyệt (mọi điểm đến) - dùng cho trang Kiểm duyệt nội dung
+  async findApprovedReviews() {
+    return this.prisma.review.findMany({
+      where: {
+        status: ContentStatus.APPROVED,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+        destination: {
+          select: {
+            id: true,
+            name: true,
+            district: true,
+          },
+        },
+        images: {
+          select: {
+            id: true,
+            imageUrl: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc', // Mới nhất lên trước
+      },
+    });
+  }
+
   // 9. Tính điểm sao trung bình (Chỉ tính các bài đã được APPROVED)
  async calculateAvgRating(destinationId: number) {
   const result = await this.prisma.review.aggregate({

@@ -133,6 +133,11 @@ export class ReviewService {
     return this.reviewRepository.findPendingReviews();
   }
 
+  // 6b. [ADMIN] Lấy toàn bộ review đã duyệt (mọi điểm đến) cho trang Kiểm duyệt nội dung
+  async getApprovedReviews(): Promise<any[]> {
+    return this.reviewRepository.findApprovedReviews();
+  }
+
   // 7. [ADMIN] Duyệt hoặc từ chối bài đánh giá
   async moderateReview(reviewId: number, status: ContentStatus): Promise<ReviewResponseDto> {
     const review = await this.reviewRepository.findById(reviewId);
