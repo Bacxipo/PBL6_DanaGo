@@ -7,6 +7,11 @@ import { UserEntity } from '../entities/user.entity';
 export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findBySupabaseId(supabaseId: string): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findUnique({ where: { supabaseId } });
+    return user ? this.mapToEntity(user) : null;
+  }
+
   async findById(id: number): Promise<UserEntity | null> {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) return null;
@@ -38,6 +43,7 @@ export class UserRepository {
   async create(data: Partial<UserEntity>): Promise<UserEntity> {
     const created = await this.prisma.user.create({
       data: {
+        supabaseId: data.supabaseId,
         username: data.username!,
         fullName: data.fullName!,
         email: data.email!,
@@ -64,6 +70,7 @@ export class UserRepository {
   private mapToEntity(row: any): UserEntity {
     return {
       id: row.id,
+      supabaseId: row.supabaseId,
       username: row.username,
       fullName: row.fullName,
       email: row.email,

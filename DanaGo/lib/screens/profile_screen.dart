@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/services/google_auth_service.dart';
 import 'package:smarttrip/screens/edit_profile_screen.dart';
 import 'package:smarttrip/screens/favorites_screen.dart';
 import 'package:smarttrip/screens/itinerary_screen.dart';
@@ -319,14 +320,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
-            },
+              onPressed: () async {
+                try {
+                  await GoogleAuthService.instance.signOut();
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                  if (!mounted) return;
+                  Navigator.of(this.context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                } catch (_) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Chưa thể đăng xuất. Vui lòng thử lại.')),
+                  );
+                }
+              },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
