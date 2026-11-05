@@ -176,13 +176,13 @@ const countPending = (path: string) =>
 
 export function PendingProvider({ children }: { children: React.ReactNode }) {
   const { data, reload } = useApi<PendingCounts>(async () => {
-    const [reviews, destinations, feedPosts, events] = await Promise.all([
-      countPending('/community/reviews/manage'),
+    const [destinations, feedPosts, events] = await Promise.all([
       countPending('/destinations'),
       countPending('/feed/posts'),
       countPending('/events')
     ]);
-    return { reviews, destinations, feedPosts, events };
+    // Review giờ luôn APPROVED ngay khi tạo/sửa -> không còn hàng chờ duyệt, không cần gọi API đếm
+    return { reviews: 0, destinations, feedPosts, events };
   });
 
   const counts = data ?? { reviews: 0, destinations: 0, feedPosts: 0, events: 0 };

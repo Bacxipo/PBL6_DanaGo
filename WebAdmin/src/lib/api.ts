@@ -175,7 +175,8 @@ export const categoryApi = {
 };
 
 export const reviewApi = {
-  listByStatus: (status: ContentStatus) => api.get<Review[]>('/community/reviews/manage', { status }),
+  // Review giờ luôn APPROVED ngay khi tạo/sửa -> chỉ còn ý nghĩa xem danh sách đã duyệt
+  listApproved: () => api.get<Review[]>('/community/reviews/admin/approved'),
   setStatus: (id: number, status: ContentStatus) => setStatus<Review>('/community/reviews', id, status)
 };
 

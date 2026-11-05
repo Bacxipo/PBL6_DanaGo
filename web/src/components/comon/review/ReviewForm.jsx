@@ -63,56 +63,45 @@ export default function ReviewForm({ destinationId, onSuccess }) {
         e.preventDefault();
         setError(null);
         setSuccessMsg(null);
-
         // Lấy token đăng nhập
         const token = typeof window !== 'undefined'
             ? sessionStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('accessToken')
             : null;
-
         if (!token) {
             setError('Vui lòng đăng nhập để gửi đánh giá.');
             return;
         }
-
         if (!comment.trim()) {
             setError('Vui lòng nhập nội dung đánh giá của bạn.');
             return;
         }
-
         setLoading(true);
-
         try {
-            // Bước 1: Upload các file ảnh lên Supabase bằng hàm trong review-api.ts
-            const uploadedImageUrls = [];
-            if (selectedFiles.length > 0) {
-                for (let i = 0; i < selectedFiles.length; i++) {
-                    setUploadingStatus(`Đang tải lên ảnh ${i + 1}/${selectedFiles.length}...`);
-                    const url = await uploadReviewImage(selectedFiles[i], token);
-                    uploadedImageUrls.push(url);
-                }
-            }
+         setUploadingStatus('Đang gửi đánh giá và tải ảnh lên...');
 
-            // Bước 2: Tạo bài review 
-            setUploadingStatus('Đang gửi đánh giá...');
-            await createReview({
-                destinationId: Number(destinationId),
-                rating,
-                comment,
-                images: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
-            }, token);
+         // Đóng gói các trường và file ảnh vào FormData
+         const formData = new FormData();
+         formData.append('destinationId', destinationId);
+         formData.append('rating', rating);
+         if (comment.trim()) {
+             formData.append('comment', comment.trim());
+         }
 
-            setSuccessMsg('Đánh giá của bạn đã được gửi thành công và đang chờ Admin duyệt!');
-            setComment('');
-            setSelectedFiles([]);
-            setPreviewUrls([]);
-            setRating(5);
-
-            if (onSuccess) onSuccess();
-        } catch (err) {
-            setError(err.message || 'Đã có lỗi xảy ra.');
-        } finally {
-            setLoading(false);
-            setUploadingStatus('');
+         for (const file of selectedFiles) {
+             formData.append('images', file);
+         }
+         await createReview(formData, token);
+         setSuccessMsg('Đánh giá của bạn đã được gửi thành công!');
+         setComment('');
+         setSelectedFiles([]);
+         setPreviewUrls([]);
+         setRating(5);
+         if (onSuccess) onSuccess();
+         } catch (err) {
+             setError(err.message || 'Đã có lỗi xảy ra.');
+         } finally {
+             setLoading(false);
+             setUploadingStatus('');
         }
     };
 

@@ -6,7 +6,7 @@ import { AsyncContent } from '@/components/ui';
 import { useApi, avatarFallback, formatDate, timeAgo, todayIso, getImageUrl } from '@/lib/utils';
 import { useAction, useAuth, usePending } from '@/lib/context';
 import { Calendar, CheckCircle2, ChevronRight, ImageOff, Inbox, MapPin, MessageSquare, ShieldAlert, Star, Users, type LucideIcon } from 'lucide-react';
-import { destinationApi, eventApi, feedApi, reviewApi, userApi } from '@/lib/api';
+import { destinationApi, eventApi, feedApi, userApi } from '@/lib/api';
 import { getTimeline } from '@/lib/types';
 
 const DAY_MS = 86_400_000;
@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const destinations = useApi(destinationApi.listAll);
   const events = useApi(eventApi.listAll);
   const posts = useApi(() => feedApi.listByStatus('PENDING'));
-  const reviews = useApi(() => reviewApi.listByStatus('PENDING')); // lỗi (backend chưa có API) thì bỏ qua, không có mục đánh giá
+  // Review giờ luôn APPROVED ngay khi tạo/sửa -> không còn ở hàng chờ duyệt, không đưa vào đây
   // Danh sách tài khoản chỉ ADMIN xem được
   const users = useApi(userApi.list, [], isAdmin);
 
@@ -57,7 +57,6 @@ export default function DashboardPage() {
 
   // Hàng đợi = địa điểm + sự kiện + bài đăng đang chờ duyệt, gửi trước xử lý trước
   const queue = [
-    ...(reviews.data ?? []).map((r) => ({ key: `r${r.id}`, kind: 'review' as const, id: r.id, at: r.createdAt, title: `${r.user?.fullName ?? 'Du khách'} đánh giá ${r.rating}★`, sub: r.destination?.name ?? '', text: r.comment })),
     ...(destinations.data ?? []).filter((d) => d.status === 'PENDING').map((d) => ({ key: `d${d.id}`, kind: 'poi' as const, id: d.id, at: d.createdAt, title: d.name, sub: d.district, text: d.description })),
     ...(events.data ?? []).filter((e) => e.status === 'PENDING').map((e) => ({ key: `e${e.id}`, kind: 'event' as const, id: e.id, at: e.createdAt, title: e.name, sub: `${formatDate(e.startDate)} — ${formatDate(e.endDate)}`, text: e.description })),
     ...(posts.data ?? []).map((p) => ({ key: `p${p.id}`, kind: 'post' as const, id: p.id, at: p.createdAt, title: `${p.user.fullName} đăng bài`, sub: 'Cộng đồng', text: p.content }))
@@ -65,8 +64,7 @@ export default function DashboardPage() {
 
   const approve = async (item: (typeof queue)[number]) => {
     const ok = await run(async () => {
-      if (item.kind === 'review') await reviewApi.setStatus(item.id, 'APPROVED');
-      else if (item.kind === 'poi') await destinationApi.setStatus(item.id, 'APPROVED');
+      if (item.kind === 'poi') await destinationApi.setStatus(item.id, 'APPROVED');
       else if (item.kind === 'event') await eventApi.setStatus(item.id, 'APPROVED');
       else await feedApi.setStatus(item.id, 'APPROVED');
     }, 'Đã duyệt.');
@@ -74,7 +72,6 @@ export default function DashboardPage() {
       destinations.reload();
       events.reload();
       posts.reload();
-      reviews.reload();
       refresh();
     }
   };

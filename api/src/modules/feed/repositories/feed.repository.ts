@@ -68,6 +68,31 @@ export class FeedRepository {
     });
   }
 
+  async attachImages(postId: number, userId: number, destinationId: number | null, urls: string[]) {
+    return this.prisma.$transaction(async (tx) => {
+      if (urls.length) {
+        await tx.feedPostImage.createMany({
+          data: urls.map((imageUrl) => ({ postId, imageUrl })),
+        });
+        if (destinationId !== null) {
+          await tx.destinationImage.createMany({
+            data: urls.map((imageUrl) => ({ destinationId, uploadedBy: userId, imageUrl })),
+          });
+        }
+      }
+      return tx.feedPost.findUniqueOrThrow({ where: { id: postId }, include: feedPostInclude });
+    });
+  }
+
+  async rollbackCreatedPost(postId: number, newDestinationId: number | null) {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.feedPost.delete({ where: { id: postId } });
+      if (newDestinationId !== null) {
+        await tx.destination.delete({ where: { id: newDestinationId } });
+      }
+    });
+  }
+
   async moderatePost(id: number, status: ContentStatus) {
     if (
       status !== ContentStatus.APPROVED &&

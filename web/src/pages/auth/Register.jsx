@@ -1,13 +1,66 @@
+'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, Lock } from 'lucide-react';
+import { User, AtSign, Mail, Lock } from 'lucide-react';
 import imgRegister from '@/assets/images/register.jpg';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { apiRequest } from '@/lib/feed-api';
 
 export default function Register() {
+  const router = useRouter();
+
+  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Mật khẩu phải chứa ít nhất 6 ký tự.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await apiRequest('/identity/auth/register', {
+        method: 'POST',
+        body: {
+          username: username.trim(),
+          fullName: fullName.trim(),
+          email: email.trim(),
+          password,
+        },
+      });
+
+      sessionStorage.setItem('accessToken', result.accessToken);
+      window.dispatchEvent(new Event('auth-changed'));
+
+      router.push('/community');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4 bg-gray-50">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden border border-gray-100">
-        
+
         {/* Cột trái: Form Đăng ký */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
           <div className="text-center mb-6">
@@ -15,16 +68,51 @@ export default function Register() {
             <p className="text-xs text-gray-500 mt-1">Nhập thông tin bên dưới để tạo tài khoản</p>
           </div>
 
-          <form className="space-y-3.5">
-            {/* Tên */}
+          <form className="space-y-3.5" onSubmit={handleSubmit}>
+            {/* Họ và tên */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Tên</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Họ và tên</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
+                  required
                   placeholder="Nhập họ và tên"
                   className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Tên đăng nhập */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Tên đăng nhập</label>
+              <div className="relative">
+                <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  required
+                  placeholder="Nhập tên đăng nhập"
+                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="email"
+                  required
+                  placeholder="Nhập địa chỉ email"
+                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -36,8 +124,12 @@ export default function Register() {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="password"
-                  placeholder="Nhập mật khẩu"
+                  required
+                  minLength={6}
+                  placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
                   className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>
@@ -49,18 +141,24 @@ export default function Register() {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="password"
+                  required
                   placeholder="Nhập lại mật khẩu"
                   className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
               </div>
             </div>
 
+            {error && <p role="alert" className="text-red-600 text-xs whitespace-pre-line">{error}</p>}
+
             {/* Nút Đăng ký */}
             <button
+              disabled={isSubmitting}
               type="submit"
-              className="w-full bg-[#006971] hover:bg-[#00555a] text-white font-semibold py-2.5 rounded-full text-sm transition-colors shadow-md mt-2"
+              className="w-full bg-[#006971] hover:bg-[#00555a] text-white font-semibold py-2.5 rounded-full text-sm transition-colors shadow-md mt-2 disabled:opacity-60"
             >
-              Đăng ký
+              {isSubmitting ? 'Đang tạo tài khoản...' : 'Đăng ký'}
             </button>
           </form>
 
@@ -92,7 +190,7 @@ export default function Register() {
 
         {/* Cột phải: Ảnh Cầu Vàng */}
         <div className="relative w-full md:w-1/2 min-h-[350px] md:min-h-[550px] hidden md:block">
-          <Image src={imgRegister} alt="Đăng ký" fill priority className="object-cover"  sizes="(max-width: 768px) 100vw, 50vw" />
+          <Image src={imgRegister} alt="Đăng ký" fill priority className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <h3 className="absolute bottom-8 left-8 text-white text-2xl font-bold max-w-xs leading-snug">
             Bắt đầu hành trình của bạn

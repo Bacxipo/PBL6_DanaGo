@@ -1,9 +1,12 @@
 import {IsInt, IsNotEmpty, Min, Max, IsOptional, IsString, IsArray  } from "class-validator";
+import { Type } from "class-transformer";
 export class CreateReviewDto {
+    @Type(()=> Number)
     @IsInt({message: 'Mã địa điểm phải là số nguyên.'})
     @IsNotEmpty({message: 'Mã địa điểm không được để trống.'})
     destinationId!: number;
 
+    @Type(()=> Number)
     @IsInt({message: 'Điểm đánh giá phải là số nguyên.'})
     @Min(1, {message: 'Điểm đánh giá phải lớn hơn hoặc bằng 1.'})
     @Max(5, {message: 'Điểm đánh giá phải nhỏ hơn hoặc bằng 5.'})

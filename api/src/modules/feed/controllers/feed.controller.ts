@@ -9,18 +9,87 @@ import { UserRole, ContentStatus } from '@prisma/client';
 import { OptionalJwtAuthGuard } from '../../../shared/guards/optional-jwt-auth.guard';
 import { ModerateFeedPostDto } from '../dto/moderate-feed-post.dto';
 import { UpdateFeedPostDto } from '../dto/update-feed-post.dto';
-
+import { BadRequestException, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 @Controller('feed')
 export class FeedController {
   constructor(private readonly feedService: FeedService) { }
 
   @Post('posts')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FilesInterceptor('files', 5, {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+      fileFilter: (_request, file, callback) => {
+        const allowedTypes = [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+        ];
+
+        if (!allowedTypes.includes(file.mimetype)) {
+          return callback(
+            new BadRequestException(
+              'Chỉ chấp nhận ảnh JPG, PNG hoặc WebP.',
+            ),
+            false,
+          );
+        }
+
+        callback(null, true);
+      },
+    }),
+  )
   async createPost(
     @CurrentUser('sub') userId: number,
-    @Body() dto: CreateFeedPostDto,
+    @Body('data') rawData: string,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return this.feedService.createPost(userId, dto);
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(rawData);
+    } catch {
+      throw new BadRequestException(
+        'Trường data phải là JSON hợp lệ.',
+      );
+    }
+
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      Array.isArray(parsed)
+    ) {
+      throw new BadRequestException('Dữ liệu bài viết không hợp lệ.');
+    }
+
+    // Ảnh phải đến từ files, không nhận URL do client tự gửi.
+    if ('images' in parsed) {
+      throw new BadRequestException(
+        'Vui lòng gửi ảnh bằng trường files.',
+      );
+    }
+
+    const dto = plainToInstance(CreateFeedPostDto, parsed);
+
+    const errors = await validate(dto, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+
+    if (errors.length) {
+      throw new BadRequestException(errors);
+    }
+
+    return this.feedService.createPostWithImages(
+      userId,
+      dto,
+      files ?? [],
+    );
   }
 
   @Get('posts')

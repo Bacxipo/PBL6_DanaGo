@@ -44,7 +44,7 @@ export class ReviewRepository {
         destinationId: dto.destinationId,
         rating: dto.rating,
         comment: dto.comment,
-        status: ContentStatus.PENDING,
+        status: ContentStatus.APPROVED,
         images:
           dto.images && dto.images.length > 0
             ? {
@@ -118,7 +118,7 @@ export class ReviewRepository {
       data: {
         rating: dto.rating,
         comment: dto.comment,
-        status: ContentStatus.PENDING, // Khi người dùng sửa bài -> chuyển lại về PENDING để admin duyệt lại
+        status: ContentStatus.APPROVED, 
         images:
           dto.images && dto.images.length > 0
             ? {
@@ -213,23 +213,56 @@ export class ReviewRepository {
     });
   }
 
-  // 9. Tính điểm sao trung bình (Chỉ tính các bài đã được APPROVED)
-  async calculateAvgRating(destinationId: number) {
-    const result = await this.prisma.review.aggregate({
+  // 8b. [ADMIN] Lấy toàn bộ review đã duyệt (mọi điểm đến) - dùng cho trang Kiểm duyệt nội dung
+  async findApprovedReviews() {
+    return this.prisma.review.findMany({
       where: {
-        destinationId,
         status: ContentStatus.APPROVED,
       },
-      _avg: {
-        rating: true,
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+        destination: {
+          select: {
+            id: true,
+            name: true,
+            district: true,
+          },
+        },
+        images: {
+          select: {
+            id: true,
+            imageUrl: true,
+          },
+        },
       },
-      _count: {
-        rating: true,
+      orderBy: {
+        createdAt: 'desc', // Mới nhất lên trước
       },
     });
-    return {
-      avgRating: result._avg.rating ?? 0,
-      totalReviews: result._count.rating,
-    };
   }
+
+  // 9. Tính điểm sao trung bình (Chỉ tính các bài đã được APPROVED)
+ async calculateAvgRating(destinationId: number) {
+  const result = await this.prisma.review.aggregate({
+    where: {
+      destinationId,
+      status: ContentStatus.APPROVED,
+    },
+    _avg: { rating: true },
+    _sum: { rating: true },
+    _count: { rating: true },
+  });
+  return {
+    avgRating: result._avg.rating ?? 0,
+    sumRating: result._sum.rating ?? 0,
+    totalReviews: result._count.rating,
+  };
+}
 }

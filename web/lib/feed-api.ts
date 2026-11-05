@@ -126,32 +126,19 @@ export async function apiRequest<T>(
     return data as T;
 }
 
-export async function uploadFeedImage(
-    file: File,
-    token: string,
-): Promise<string> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const result = await apiRequest<{ url: string }>(
-        '/upload/image?folder=feed',
-        {
-            method: 'POST',
-            body: formData,
-            token,
-        },
-    );
-
-    return result.url;
-}
-
 export function createFeedPost(
-    body: CreateFeedPostInput,
+    body: Omit<CreateFeedPostInput, 'images'>,
+    files: File[],
     token: string,
 ): Promise<FeedPost> {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(body));
+    for (const file of files) {
+        formData.append('files', file);
+    }
     return apiRequest<FeedPost>('/feed/posts', {
         method: 'POST',
-        body,
+        body: formData,
         token,
     });
 }
