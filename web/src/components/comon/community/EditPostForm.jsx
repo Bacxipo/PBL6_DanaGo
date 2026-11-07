@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import PostImagePreview from './PostImagePreview';
 
 export default function EditPostForm({
   postId,
@@ -12,6 +13,7 @@ export default function EditPostForm({
   isSaving,
   isDeleting,
   error,
+  images = [],
 }) {
   const dialogRef = useRef(null);
 
@@ -78,6 +80,8 @@ export default function EditPostForm({
         rows={5}
         className="w-full rounded-xl border border-gray-300 bg-white p-3 text-sm outline-none focus:border-[#006971]"
       />
+
+      {images.length > 0 && <PostImagePreview files={images} disabled={isSaving} />}
 
       <div className="flex justify-end gap-2">
         <button

@@ -109,6 +109,17 @@ export class AuthService {
       || !identity.identities?.some((item) => item.provider === 'google')) {
       throw new UnauthorizedException('Phiên đăng nhập Google không hợp lệ.');
     }
+    const googleIdentity = identity.identities.find((item) => item.provider === 'google');
+    const picture = googleIdentity?.identity_data?.avatar_url
+      || googleIdentity?.identity_data?.picture
+      || identity.user_metadata.avatar_url
+      || identity.user_metadata.picture;
+    let avatarUrl: string | null = null;
+    if (typeof picture === 'string' && picture.length <= 255) {
+      try {
+        if (new URL(picture).protocol === 'https:') avatarUrl = picture;
+      } catch { /* Missing or invalid photos use the default avatar. */ }
+    }
     let user = await this.userRepository.findBySupabaseId(identity.id);
     if (!user) {
       if (await this.userRepository.findByEmail(identity.email)) {
@@ -131,6 +142,9 @@ export class AuthService {
       }
     }
     if (user.status !== 'ACTIVE') throw new ForbiddenException('Tài khoản chưa hoạt động hoặc đã bị khóa.');
+    if ((user.avatarUrl ?? null) !== avatarUrl) {
+      user = await this.userRepository.update(user.id, { avatarUrl });
+    }
     return { accessToken: this.generateToken(user.id, user.username, user.role), user: UserMapper.toResponseDto(user) };
   }
 

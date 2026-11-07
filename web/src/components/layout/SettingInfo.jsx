@@ -1,13 +1,38 @@
 'use client';
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import UserAvatar from '@/components/comon/ui/UserAvatar';
+import { getMyProfile } from '@/lib/feed-api';
 export default function SettingInfo() {
+  const [profile, setProfile] = useState(null);
+  useEffect(() => {
+    let active = true;
+    let generation = 0;
+    async function load() {
+      const request = ++generation;
+      const token = sessionStorage.getItem('accessToken');
+      setProfile(null);
+      if (!token) return;
+      try {
+        const user = await getMyProfile(token);
+        if (active && request === generation && token === sessionStorage.getItem('accessToken')) setProfile(user);
+      } catch {
+        if (active && request === generation) setProfile(null);
+      }
+    }
+    load();
+    window.addEventListener('auth-changed', load);
+    return () => {
+      active = false;
+      window.removeEventListener('auth-changed', load);
+    };
+  }, []);
     return (
         <div className='flex flex-col'>
             <h3 className="text-lg font-semibold text-gray-800">Thông tin cá nhân</h3>
             <form className='flex flex-col'>
                 <div className='flex gap-6 p-3'>
                     <div className='rounded-full w-32 h-32 overflow-hidden shrink-0'>
-                        <Image src="https://png.pngtree.com/png-clipart/20190920/original/pngtree-user-flat-character-avatar-png-png-image_4643588.jpg" alt="Avatar" className="w-full h-full object-cover" width={128} height={128} />
+                        <UserAvatar user={profile} size={128} />
                     </div>
                     <div className='grid grid-cols-2 gap-4 mb-5 w-full'>
                         <label className='flex flex-col gap-1 text-sm font-medium text-gray-700'>

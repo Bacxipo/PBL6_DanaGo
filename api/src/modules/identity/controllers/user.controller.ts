@@ -50,6 +50,19 @@ export class UserController {
     return this.userService.getUserProfile(id);
   }
 
+  @Get(':id/public')
+  async getPublicProfile(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.userService.getUserProfile(id);
+    return {
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
+      authProvider: user.authProvider,
+      bio: user.bio,
+    };
+  }
+
   // Token ký với { sub, username, role } nên lấy mã người dùng từ 'sub'
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)

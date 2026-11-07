@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Grid3X3, Plus, User } from 'lucide-react';
+import { Grid3X3, Plus } from 'lucide-react';
+import UserAvatar from '@/components/comon/ui/UserAvatar';
 import { getMyFeedPosts, getMyProfile } from '@/lib/feed-api';
 import { mapFeedPost, updatePostInList } from '@/lib/feed-utils';
 import StandardPostCard from '../comon/community/StandardPostCard';
@@ -61,7 +62,7 @@ export default function PersonalPage() {
             </div>
             <div className="flex items-center gap-4 px-4 py-6">
                 <div className="rounded-full w-20 h-20 bg-teal-50 flex items-center justify-center text-[#006971] shrink-0">
-                    <User size={40} />
+                    <UserAvatar user={profile} size={80} />
                 </div>
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800">{profile?.fullName || profile?.username || (loading ? '...' : 'Trang cá nhân')}</h2>

@@ -149,6 +149,10 @@ export class FeedService {
     return this.feedRepository.findAllPosts(undefined, userId, userId);
   }
 
+  async getUserPosts(userId: number, currentUserId?: number) {
+    return this.feedRepository.findAllPosts(ContentStatus.APPROVED, currentUserId, userId);
+  }
+
   async getPostById(id: number) {
     const post = await this.feedRepository.findPostById(id);
     if (!post) {

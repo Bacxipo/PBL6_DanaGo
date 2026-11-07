@@ -1,4 +1,5 @@
 export class UserResponseDto {
+  authProvider: 'google' | 'password';
   id: number;
   username: string;
   fullName: string;
