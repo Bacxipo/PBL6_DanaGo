@@ -8,7 +8,7 @@ import 'package:smarttrip/theme/app_styles.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/utils/validators.dart';
 import 'package:smarttrip/widgets/common/custom_text_field.dart';
-
+import 'package:smarttrip/screens/interest_screen.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
