@@ -23,9 +23,9 @@ export class UserService {
       || (file.mimetype === 'image/png' && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])))
       || (file.mimetype === 'image/webp' && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP');
     if (!valid) throw new BadRequestException('Nội dung ảnh không hợp lệ. Vui lòng chọn ảnh JPG, PNG hoặc WebP.');
-    const bucket = process.env.SUPABASE_BUCKET_AVATARS || process.env.SUPABASE_BUCKET_DESTINATIONS || 'destination_image';
+    const bucket = 'avater_image';
     const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.mimetype];
-    const avatarUrl = await this.storageService.uploadFile({ ...file, originalname: `avatar.${extension}` }, bucket, `avatars/${userId}`);
+    const avatarUrl = await this.storageService.uploadFile({ ...file, originalname: `avatar.${extension}` }, bucket, String(userId));
     try {
       const updated = await this.userRepository.update(userId, { avatarUrl });
       return UserMapper.toResponseDto(updated);
