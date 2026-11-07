@@ -69,7 +69,7 @@ class FeedImageGallery extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A2E35).withOpacity(0.65),
+                  color: const Color(0xFF1A2E35).withValues(alpha: 0.65),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -121,8 +121,8 @@ class FeedImageGallery extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.15),
-                      Colors.black.withOpacity(0.75),
+                      Colors.black.withValues(alpha: 0.15),
+                      Colors.black.withValues(alpha: 0.75),
                     ],
                     stops: const [0.4, 0.7, 1.0],
                   ),
@@ -137,7 +137,7 @@ class FeedImageGallery extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A2E35).withOpacity(0.7),
+                    color: const Color(0xFF1A2E35).withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -202,7 +202,7 @@ class FeedImageGallery extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppColors.accent.withOpacity(0.95),
+                          color: AppColors.accent.withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

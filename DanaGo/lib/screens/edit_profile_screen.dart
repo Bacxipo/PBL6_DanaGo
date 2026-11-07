@@ -44,7 +44,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -120,6 +120,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -128,24 +130,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                 blurRadius: 8,
               ),
             ],
           ),
-          child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppColors.textPrimary),
+          child: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 16,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
         ),
       ),
-      title: const Text(
+      title: Text(
         'Chỉnh sửa hồ sơ',
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
+          color: isDark ? Colors.white : AppColors.textPrimary,
         ),
       ),
       centerTitle: true,
@@ -209,14 +215,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          color: isDark ? Colors.white : AppColors.textPrimary,
         ),
       ),
     );
@@ -230,13 +238,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -246,9 +255,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
-          color: AppColors.textPrimary,
+          color: isDark ? Colors.white : AppColors.textPrimary,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
@@ -259,7 +268,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             fontWeight: FontWeight.w500,
           ),
           hintText: hint,
-          hintStyle: TextStyle(
+          hintStyle: const TextStyle(
             fontSize: 14,
             color: AppColors.textHint,
           ),
@@ -285,7 +294,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).cardColor,
           contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
@@ -293,15 +302,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildGenderSelector() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final genders = ['Nam', 'Nữ', 'Khác'];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -346,10 +356,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     margin: EdgeInsets.only(right: gender != genders.last ? 10 : 0),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.bgPrimary,
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? const Color(0xFF0F172A) : AppColors.bgPrimary),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.border,
+                        color: isSelected
+                            ? AppColors.primary
+                            : (isDark ? Colors.white12 : AppColors.border),
                       ),
                     ),
                     child: Text(
@@ -358,7 +372,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? Colors.grey.shade300 : AppColors.textSecondary),
                       ),
                     ),
                   ),
@@ -372,6 +388,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildDatePicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () async {
         final picked = await showDatePicker(
@@ -382,11 +399,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
-                colorScheme: const ColorScheme.light(
-                  primary: AppColors.primary,
-                  onPrimary: Colors.white,
-                  surface: Colors.white,
-                ),
+                colorScheme: isDark
+                    ? const ColorScheme.dark(
+                        primary: AppColors.primary,
+                        onPrimary: Colors.white,
+                        surface: Color(0xFF1E293B),
+                        onSurface: Colors.white,
+                      )
+                    : const ColorScheme.light(
+                        primary: AppColors.primary,
+                        onPrimary: Colors.white,
+                        surface: Colors.white,
+                      ),
               ),
               child: child!,
             );
@@ -402,11 +426,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -443,7 +467,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: _birthDate != null ? AppColors.textPrimary : AppColors.textHint,
+                      color: _birthDate != null
+                          ? (isDark ? Colors.white : AppColors.textPrimary)
+                          : AppColors.textHint,
                     ),
                   ),
                 ],
@@ -468,6 +494,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       {'label': 'Nightlife', 'icon': Icons.nightlife_rounded, 'selected': false},
     ];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -484,10 +511,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
+              color: isSelected
+                  ? AppColors.primary.withValues(alpha: 0.1)
+                  : Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isSelected ? AppColors.primary : AppColors.border,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? Colors.white12 : AppColors.border),
                 width: isSelected ? 1.5 : 1,
               ),
               boxShadow: isSelected
@@ -514,7 +545,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                    color: isSelected
+                        ? AppColors.primary
+                        : (isDark ? Colors.grey.shade300 : AppColors.textSecondary),
                   ),
                 ),
                 if (isSelected) ...[
@@ -640,14 +673,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showAvatarOptions() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -656,17 +690,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: isDark ? Colors.white24 : AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Đổi ảnh đại diện',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: isDark ? Colors.white : AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 20),
@@ -699,6 +733,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     Color? color,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       onTap: onTap,
       leading: Container(
@@ -714,7 +749,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: color ?? AppColors.textPrimary,
+          color: color ?? (isDark ? Colors.white : AppColors.textPrimary),
         ),
       ),
       trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),

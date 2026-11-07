@@ -17,16 +17,24 @@ class InterestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.white,
+          color: isSelected
+              ? (isDark
+                  ? AppColors.primary.withValues(alpha: 0.15)
+                  : AppColors.primaryLight)
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? Colors.white12 : AppColors.border),
             width: isSelected ? 1.8 : 1.0,
           ),
           boxShadow: [
@@ -42,7 +50,9 @@ class InterestCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textTertiary,
+              color: isSelected
+                  ? (isDark ? const Color(0xFF2DD4BF) : AppColors.primary)
+                  : (isDark ? Colors.grey.shade400 : AppColors.textTertiary),
               size: 22,
             ),
             const SizedBox(width: 14),
@@ -53,15 +63,15 @@ class InterestCard extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   color: isSelected
-                      ? AppColors.primary
-                      : AppColors.textPrimary,
+                      ? (isDark ? const Color(0xFF2DD4BF) : AppColors.primary)
+                      : (isDark ? Colors.white : AppColors.textPrimary),
                 ),
               ),
             ),
             if (isSelected)
-              const Icon(
+              Icon(
                 Icons.check_circle_rounded,
-                color: AppColors.primary,
+                color: isDark ? const Color(0xFF2DD4BF) : AppColors.primary,
                 size: 22,
               ),
           ],

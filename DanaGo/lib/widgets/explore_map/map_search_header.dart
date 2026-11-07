@@ -21,6 +21,8 @@ class MapSearchHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -32,11 +34,11 @@ class MapSearchHeader extends StatelessWidget {
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                     blurRadius: 15,
                     offset: const Offset(0, 4),
                   ),
@@ -50,7 +52,10 @@ class MapSearchHeader extends StatelessWidget {
                     child: TextField(
                       controller: controller,
                       onChanged: onSearchChanged,
-                      style: const TextStyle(fontSize: 14),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
+                      ),
                       decoration: const InputDecoration(
                         hintText: 'Bạn muốn đi đâu ở Đà Nẵng?',
                         hintStyle: TextStyle(
@@ -64,14 +69,14 @@ class MapSearchHeader extends StatelessWidget {
                   Container(
                     height: 20,
                     width: 1,
-                    color: AppColors.divider,
+                    color: isDark ? Colors.white12 : AppColors.divider,
                   ),
                   const SizedBox(width: 6),
                   IconButton(
                     onPressed: onFilterTap,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.tune_rounded,
-                      color: AppColors.textSecondary,
+                      color: isDark ? Colors.grey.shade300 : AppColors.textSecondary,
                       size: 20,
                     ),
                     padding: EdgeInsets.zero,

@@ -126,13 +126,18 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textSecondary),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? Colors.white : AppColors.textSecondary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -142,13 +147,16 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Container(
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.bgSecondary,
+                  color: isDark ? const Color(0xFF0F172A) : AppColors.bgSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextField(
                   controller: _searchCtrl,
                   autofocus: false,
-                  style: const TextStyle(fontSize: 14),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(
                       Icons.search,
@@ -186,13 +194,13 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.bgSecondary,
+                    color: isDark ? const Color(0xFF0F172A) : AppColors.bgSecondary,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.tune_rounded,
-                      color: AppColors.textSecondary,
+                      color: isDark ? Colors.white70 : AppColors.textSecondary,
                       size: 22,
                     ),
                     onPressed: _openFilterBottomSheet,

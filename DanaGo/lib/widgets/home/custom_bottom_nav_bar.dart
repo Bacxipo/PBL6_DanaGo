@@ -34,14 +34,19 @@ class CustomBottomNavBar extends StatelessWidget {
       label: 'Khám phá',
     ),
     NavItemData(
-      icon: Icons.map_outlined,
-      activeIcon: Icons.map_rounded,
+      icon: Icons.calendar_month_outlined,
+      activeIcon: Icons.calendar_month_rounded,
       label: 'Lịch trình',
     ),
     NavItemData(
       icon: Icons.message_outlined,
       activeIcon: Icons.message_outlined,
       label: 'Bảng tin',
+    ),
+    NavItemData(
+      icon: Icons.auto_awesome_outlined,
+      activeIcon: Icons.auto_awesome_rounded,
+      label: 'AI Plan',
     ),
     NavItemData(
       icon: Icons.person_outline_rounded,
@@ -53,10 +58,10 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      margin: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(30), // Bo tròn
         boxShadow: [
           BoxShadow(
@@ -106,7 +111,7 @@ class CustomBottomNavBar extends StatelessWidget {
                       color: isSelected
                           ? Colors.white
                           : const Color(0xFF9CA3AF),
-                      size: 22,
+                      size: 20,
                     ),
                   ),
                   if (isSelected) ...[

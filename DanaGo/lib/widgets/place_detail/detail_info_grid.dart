@@ -26,21 +26,25 @@ class DetailInfoGrid extends StatelessWidget {
       mainAxisSpacing: 12,
       children: [
         _buildInfoCard(
+          context: context,
           icon: Icons.location_on_outlined,
           title: 'ĐỊA CHỈ',
           content: address,
         ),
         _buildInfoCard(
+          context: context,
           icon: Icons.access_time_outlined,
           title: 'GIỜ MỞ CỬA',
           content: openHours,
         ),
         _buildInfoCard(
+          context: context,
           icon: Icons.confirmation_number_outlined,
           title: 'GIÁ VÉ',
           content: priceTag,
         ),
         _buildInfoCard(
+          context: context,
           icon: Icons.near_me_outlined,
           title: 'BẢN ĐỒ',
           content: 'Xem đường đi',
@@ -52,22 +56,25 @@ class DetailInfoGrid extends StatelessWidget {
   }
 
   Widget _buildInfoCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String content,
     bool isLink = false,
     VoidCallback? onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.05),
+          color: isDark ? const Color(0xFF1E293B) : AppColors.primary.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -82,7 +89,7 @@ class DetailInfoGrid extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(icon, color: AppColors.primary, size: 20),
@@ -108,7 +115,9 @@ class DetailInfoGrid extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: isLink ? AppColors.primary : Colors.black87,
+                color: isLink
+                    ? (isDark ? const Color(0xFF2DD4BF) : AppColors.primary)
+                    : (isDark ? Colors.white : Colors.black87),
               ),
             ),
           ],

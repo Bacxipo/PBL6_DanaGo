@@ -16,17 +16,23 @@ class MapDraggableSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.40,
       minChildSize: 0.18,
       maxChildSize: 0.85,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
-              BoxShadow(color: Colors.black12, blurRadius: 12, spreadRadius: 2),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
             ],
           ),
           child: ListView(
@@ -39,7 +45,7 @@ class MapDraggableSheet extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: isDark ? Colors.white24 : AppColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -50,17 +56,17 @@ class MapDraggableSheet extends StatelessWidget {
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'Tìm kiếm gần bạn',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
-                      SizedBox(height: 2),
-                      Text(
+                      const SizedBox(height: 2),
+                      const Text(
                         'Hiển thị các địa điểm xung quanh bạn',
                         style: TextStyle(
                           fontSize: 12,

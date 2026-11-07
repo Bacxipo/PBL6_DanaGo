@@ -18,15 +18,17 @@ class MyReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -71,11 +73,11 @@ class MyReviewCard extends StatelessWidget {
                         review.placeTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -174,10 +176,10 @@ class MyReviewCard extends StatelessWidget {
           // Review Content
           Text(
             review.content,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Be Vietnam Pro',
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: isDark ? Colors.white70 : AppColors.textSecondary,
               height: 1.5,
             ),
           ),

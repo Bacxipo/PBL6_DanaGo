@@ -39,6 +39,8 @@ class CategorySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 42,
       child: ListView.builder(
@@ -65,10 +67,14 @@ class CategorySelector extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.white,
+                    color: isSelected
+                        ? AppColors.primary
+                        : (isDark ? const Color(0xFF1E293B) : Colors.white),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : AppColors.border,
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? Colors.white12 : AppColors.border),
                       width: 1,
                     ),
                     boxShadow: isSelected
@@ -81,7 +87,7 @@ class CategorySelector extends StatelessWidget {
                           ]
                         : [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.02),
+                              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
                             ),
@@ -100,7 +106,9 @@ class CategorySelector extends StatelessWidget {
                         catName,
                         style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.grey.shade200 : AppColors.textPrimary),
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                           fontSize: 13,
                         ),

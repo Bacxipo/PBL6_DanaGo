@@ -201,6 +201,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     final list = _filteredReviews;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final double avg = _reviews.isEmpty
         ? 0.0
         : _reviews.map((r) => r.rating).reduce((a, b) => a + b) / _reviews.length;
@@ -208,27 +209,34 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
         _reviews.isEmpty ? 0 : _reviews.map((r) => r.helpfulCount).reduce((a, b) => a + b);
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Đánh giá của tôi',
           style: TextStyle(
             fontFamily: 'Be Vietnam Pro',
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: isDark ? Colors.white : AppColors.textPrimary,
           ),
         ),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.divider, height: 1),
+          child: Container(
+            color: isDark ? Colors.white12 : AppColors.divider,
+            height: 1,
+          ),
         ),
       ),
       body: CustomScrollView(

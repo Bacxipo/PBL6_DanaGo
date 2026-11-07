@@ -24,14 +24,16 @@ class ProfileMenuSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -63,13 +65,13 @@ class ProfileMenuSection extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
+                            color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.08),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             item.icon,
                             size: 20,
-                            color: AppColors.primary,
+                            color: isDark ? const Color(0xFF2DD4BF) : AppColors.primary,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -79,19 +81,19 @@ class ProfileMenuSection extends StatelessWidget {
                             children: [
                               Text(
                                 item.title,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.textPrimary,
+                                  color: isDark ? Colors.white : AppColors.textPrimary,
                                 ),
                               ),
                               if (item.subtitle != null) ...[
                                 const SizedBox(height: 2),
                                 Text(
                                   item.subtitle!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textTertiary,
+                                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textTertiary,
                                   ),
                                 ),
                               ],
@@ -101,10 +103,10 @@ class ProfileMenuSection extends StatelessWidget {
                         if (item.trailing != null)
                           item.trailing!
                         else
-                          const Icon(
+                          Icon(
                             Icons.chevron_right_rounded,
                             size: 20,
-                            color: AppColors.textHint,
+                            color: isDark ? const Color(0xFF64748B) : AppColors.textHint,
                           ),
                       ],
                     ),
@@ -112,9 +114,12 @@ class ProfileMenuSection extends StatelessWidget {
                 ),
               ),
               if (!isLast)
-                const Padding(
-                  padding: EdgeInsets.only(left: 60),
-                  child: Divider(height: 1, color: AppColors.divider),
+                Padding(
+                  padding: const EdgeInsets.only(left: 60),
+                  child: Divider(
+                    height: 1,
+                    color: isDark ? const Color(0xFF334155) : AppColors.divider,
+                  ),
                 ),
             ],
           );

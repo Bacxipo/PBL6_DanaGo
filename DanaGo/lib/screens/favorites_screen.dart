@@ -84,30 +84,35 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     final list = _filteredFavorites;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Địa điểm yêu thích',
           style: TextStyle(
             fontFamily: 'Be Vietnam Pro',
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: isDark ? Colors.white : AppColors.textPrimary,
           ),
         ),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
-            color: AppColors.divider,
+            color: isDark ? Colors.white12 : AppColors.divider,
             height: 1,
           ),
         ),
@@ -116,7 +121,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         children: [
           // Search & Filter Header Container
           Container(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,13 +130,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 Container(
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.bgSecondary,
+                    color: isDark ? const Color(0xFF0F172A) : AppColors.bgSecondary,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
                     controller: _searchCtrl,
                     onChanged: (_) => setState(() {}),
                     textInputAction: TextInputAction.search,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      fontSize: 13,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Tìm kiếm trong mục yêu thích...',
                       hintStyle: const TextStyle(
@@ -187,10 +196,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             fontFamily: 'Be Vietnam Pro',
                             fontSize: 12,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? Colors.white : AppColors.textSecondary,
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark ? Colors.grey.shade300 : AppColors.textSecondary),
                           ),
                           selectedColor: AppColors.primary,
-                          backgroundColor: AppColors.bgSecondary,
+                          backgroundColor: isDark ? const Color(0xFF0F172A) : AppColors.bgSecondary,
                           side: BorderSide.none,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),

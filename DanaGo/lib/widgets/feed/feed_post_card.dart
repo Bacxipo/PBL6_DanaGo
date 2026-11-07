@@ -79,16 +79,17 @@ class _FeedPostCardState extends State<FeedPostCard> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -114,11 +115,11 @@ class _FeedPostCardState extends State<FeedPostCard> {
             const SizedBox(height: 10),
             Text(
               post.title!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Be Vietnam Pro',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: isDark ? Colors.white : AppColors.textPrimary,
                 height: 1.35,
               ),
             ),
@@ -126,7 +127,7 @@ class _FeedPostCardState extends State<FeedPostCard> {
 
           // 4. Post Body Text
           const SizedBox(height: 10),
-          _buildRichContent(post.content),
+          _buildRichContent(post.content, isDark),
 
           // 5. Image Gallery
           if (post.images.isNotEmpty) ...[
@@ -168,7 +169,7 @@ class _FeedPostCardState extends State<FeedPostCard> {
     );
   }
 
-  Widget _buildRichContent(String content) {
+  Widget _buildRichContent(String content, bool isDark) {
     // Highlight hashtags with primary teal
     final words = content.split(' ');
     final spans = <TextSpan>[];
@@ -184,7 +185,9 @@ class _FeedPostCardState extends State<FeedPostCard> {
             fontFamily: 'Be Vietnam Pro',
             fontSize: 14,
             height: 1.45,
-            color: isHashtag ? AppColors.primary : AppColors.textPrimary,
+            color: isHashtag
+                ? (isDark ? const Color(0xFF2DD4BF) : AppColors.primary)
+                : (isDark ? Colors.white70 : AppColors.textPrimary),
             fontWeight: isHashtag ? FontWeight.w600 : FontWeight.w400,
           ),
         ),

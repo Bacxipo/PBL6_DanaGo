@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smarttrip/screens/home_screen.dart';
+import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/widgets/interest/interest_card.dart';
@@ -40,16 +40,19 @@ class _InterestScreenState extends State<InterestScreen> {
       return;
     }
     UiHelpers.showSuccess(context, 'Đã lưu sở thích thành công');
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      MaterialPageRoute(builder: (context) => const MainScreen()),
+      (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -61,7 +64,7 @@ class _InterestScreenState extends State<InterestScreen> {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(15, 8, 130, 137),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -80,12 +83,12 @@ class _InterestScreenState extends State<InterestScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Chọn các danh mục bạn quan tâm để chúng tôi gợi ý những địa điểm phù hợp nhất',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.black,
+                  color: isDark ? Colors.white70 : AppColors.textSecondary,
                   height: 1.4,
                 ),
               ),

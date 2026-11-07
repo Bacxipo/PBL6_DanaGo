@@ -16,17 +16,19 @@ class SearchResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -46,7 +48,7 @@ class SearchResultCard extends StatelessWidget {
                 errorBuilder: (ctx, err, _) => Container(
                   width: 95,
                   height: 95,
-                  color: AppColors.bgSecondary,
+                  color: isDark ? const Color(0xFF0F172A) : AppColors.bgSecondary,
                   child: const Icon(
                     Icons.broken_image,
                     color: AppColors.textHint,
@@ -68,10 +70,10 @@ class SearchResultCard extends StatelessWidget {
                           item.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: isDark ? Colors.white : AppColors.textPrimary,
                           ),
                         ),
                       ),

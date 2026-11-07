@@ -16,8 +16,10 @@ class ItineraryDayTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -25,12 +27,12 @@ class ItineraryDayTabBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Lịch trình chi tiết',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: isDark ? Colors.white : AppColors.textPrimary,
                 ),
               ),
               Container(
@@ -83,7 +85,11 @@ class ItineraryDayTabBar extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.bgSecondary,
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark
+                              ? const Color(0xFF334155)
+                              : AppColors.bgSecondary),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -93,7 +99,9 @@ class ItineraryDayTabBar extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: isSelected
                             ? Colors.white
-                            : AppColors.textTertiary,
+                            : (isDark
+                                ? Colors.grey.shade300
+                                : AppColors.textTertiary),
                       ),
                     ),
                   ),

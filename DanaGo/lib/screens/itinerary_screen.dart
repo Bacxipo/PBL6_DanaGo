@@ -3,7 +3,7 @@ import 'package:smarttrip/models/itinerary_model.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_card.dart';
 import 'itinerary_detail_screen.dart';
-import 'suggest_itinerary_screen.dart';
+import 'package:smarttrip/widgets/itinerary/create_itinerary_sheet.dart';
 
 class ItineraryScreen extends StatefulWidget {
   const ItineraryScreen({super.key});
@@ -17,6 +17,7 @@ class _ItineraryScreenState extends State<ItineraryScreen>
   int _selectedFilter = 0;
   late AnimationController _fabController;
   late Animation<double> _fabAnimation;
+  List<Itinerary> _myIntineraries = List.from(Itinerary.sampleList);
 
   final List<String> _filters = [
     'Tất cả',
@@ -54,20 +55,22 @@ class _ItineraryScreenState extends State<ItineraryScreen>
 
   List<Itinerary> get _filteredList {
     final status = _filterStatuses[_selectedFilter];
-    if (status == null) return Itinerary.sampleList;
+    if (status == null) return _myIntineraries;
     return Itinerary.sampleList.where((e) => e.status == status).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
-            _buildFilterTabs(),
+            _buildHeader(isDark),
+            _buildFilterTabs(isDark),
             Expanded(
               child: _filteredList.isEmpty
                   ? _buildEmptyState()
@@ -97,13 +100,46 @@ class _ItineraryScreenState extends State<ItineraryScreen>
       floatingActionButton: ScaleTransition(
         scale: _fabAnimation,
         child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const SuggestItineraryScreen(),
-              ),
+          heroTag: 'itinerary_fab',
+          onPressed: () async {
+            // 1. Mở modal và chờ người dùng nhập xong
+            final data = await showModalBottomSheet<Map<String, dynamic>>(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) => const CreateItinerarySheet(),
             );
+            // 2. Nếu người dùng bấm "Tạo lịch trình" (data != null)
+            if (data != null && mounted) {
+              final newItinerary = Itinerary(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                title: data['title'],
+                coverImage:
+                    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
+                dateRange: '${data['startDate']} – ${data['endDate']}',
+                placeCount: 0,
+                status: ItineraryStatus.upcoming,
+                days: [
+                  const ItineraryDay(
+                    date: 'Khởi hành',
+                    label: 'Ngày 1',
+                    places: [],
+                  ),
+                ],
+              );
+              // Thêm vào danh sách lịch trình
+              setState(() {
+                _myIntineraries.insert(0, newItinerary);
+              });
+              // 3. 🔥 MỞ NGAY MÀN HÌNH CHI TIẾT CỦA LỊCH TRÌNH VỪA TẠO
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ItineraryDetailScreen(itinerary: newItinerary),
+                ),
+              );
+            }
           },
           backgroundColor: AppColors.primary,
           elevation: 6,
@@ -113,7 +149,7 @@ class _ItineraryScreenState extends State<ItineraryScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Row(
@@ -122,12 +158,12 @@ class _ItineraryScreenState extends State<ItineraryScreen>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Lịch trình của tôi',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: isDark ? Colors.white : AppColors.textPrimary,
                 ),
               ),
               Text(
@@ -139,32 +175,12 @@ class _ItineraryScreenState extends State<ItineraryScreen>
               ),
             ],
           ),
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.tune_rounded,
-              color: AppColors.textSecondary,
-              size: 20,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterTabs() {
+  Widget _buildFilterTabs(bool isDark) {
     return Container(
       height: 44,
       margin: const EdgeInsets.only(bottom: 8),
@@ -181,7 +197,9 @@ class _ItineraryScreenState extends State<ItineraryScreen>
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : Colors.white,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? const Color(0xFF1E293B) : Colors.white),
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   if (isSelected)
@@ -197,7 +215,11 @@ class _ItineraryScreenState extends State<ItineraryScreen>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : AppColors.textTertiary,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                            ? Colors.grey.shade400
+                            : AppColors.textTertiary),
                 ),
               ),
             ),
