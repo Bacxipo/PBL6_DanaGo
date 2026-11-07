@@ -197,25 +197,31 @@ export class FeedRepository {
   }
 
   async addComment(postId: number, userId: number, dto: CreateFeedCommentDto) {
-    return this.prisma.feedComment.create({
+    const comment = await this.prisma.feedComment.create({
       data: {
         postId,
         userId,
         content: dto.content,
       },
       include: {
-        user: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        user: { select: { id: true, username: true, fullName: true, avatarUrl: true, supabaseId: true } },
       },
     });
+    const { supabaseId, ...user } = comment.user;
+    return { ...comment, user: { ...user, authProvider: supabaseId ? 'google' : 'password' } };
   }
 
   async getCommentsByPostId(postId: number) {
-    return this.prisma.feedComment.findMany({
+    const comments = await this.prisma.feedComment.findMany({
       where: { postId },
       orderBy: { createdAt: 'asc' },
       include: {
-        user: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        user: { select: { id: true, username: true, fullName: true, avatarUrl: true, supabaseId: true } },
       },
+    });
+    return comments.map((comment) => {
+      const { supabaseId, ...user } = comment.user;
+      return { ...comment, user: { ...user, authProvider: supabaseId ? 'google' : 'password' } };
     });
   }
   async deletePost(id: number) {

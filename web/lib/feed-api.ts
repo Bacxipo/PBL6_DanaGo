@@ -57,6 +57,7 @@ export interface FeedComment {
     content: string;
     createdAt: string;
     user: {
+        authProvider: 'google' | 'password';
         id: number;
         username: string;
         fullName: string | null;
@@ -160,8 +161,16 @@ export function getMyFeedPosts(token: string): Promise<FeedPost[]> {
     return apiRequest<FeedPost[]>('/feed/posts/mine', { token });
 }
 
+export function getUserFeedPosts(userId: number, token?: string | null): Promise<FeedPost[]> {
+    return apiRequest<FeedPost[]>(`/feed/users/${userId}/posts`, { token });
+}
+
+export function getPublicProfile(userId: number) {
+    return apiRequest<{ id: number; username: string; fullName: string | null; avatarUrl?: string | null; authProvider: 'google' | 'password'; bio?: string | null }>(`/identity/users/${userId}/public`);
+}
+
 export function getMyProfile(token: string) {
-    return apiRequest<{ id: number; username: string; fullName: string | null }>(
+    return apiRequest<{ id: number; username: string; fullName: string | null; avatarUrl?: string | null; authProvider: 'google' | 'password' }>(
         '/identity/users/me',
         { token },
     );

@@ -77,7 +77,7 @@ export class UserRepository {
     return users.map((u) => this.mapToEntity(u));
   }
 
-  async update(id: number, data: { status?: UserStatus; role?: UserRole }): Promise<UserEntity> {
+  async update(id: number, data: { status?: UserStatus; role?: UserRole; avatarUrl?: string | null }): Promise<UserEntity> {
     const updated = await this.prisma.user.update({ where: { id }, data });
     return this.mapToEntity(updated);
   }

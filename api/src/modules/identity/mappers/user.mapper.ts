@@ -9,6 +9,7 @@ export class UserMapper {
       fullName: entity.fullName,
       email: entity.email,
       avatarUrl: entity.avatarUrl,
+      authProvider: entity.supabaseId ? 'google' : 'password',
       bio: entity.bio,
       role: entity.role,
       status: entity.status,

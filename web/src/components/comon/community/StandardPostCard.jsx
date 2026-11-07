@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, MoreVertical, Heart, MessageCircle, Store, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import ContentPost from './ContentPost';
 import NewPlacePost from './NewPlacePost';
@@ -12,11 +14,23 @@ import EditPostForm from './EditPostForm';
 import { toggleFeedLike, deleteFeedPost, updateFeedPost, } from '@/lib/feed-api';
 
 export default function StandardPostCard({ post, currentUserId, onDeleted, onUpdated }) {
+  const router = useRouter();
   const [isLiked, setIsLiked] = useState(post?.isLiked || false);
   const [likesCount, setLikesCount] = useState(post?.likes || 0);
 
   const [isLiking, setIsLiking] = useState(false);
   const [likeError, setLikeError] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
+
+  useEffect(() => {
+    const syncAuth = () => {
+      setIsLoggedIn(Boolean(sessionStorage.getItem('accessToken')));
+      setLikeError('');
+    };
+    syncAuth();
+    window.addEventListener('auth-changed', syncAuth);
+    return () => window.removeEventListener('auth-changed', syncAuth);
+  }, []);
 
   const [commentsCount, setCommentsCount] = useState(
     post?.commentsCount ?? 0
@@ -39,6 +53,12 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
 
   const [showComments, setShowComments] = useState(false);
 
+  const toggleComments = () => {
+    if (!canInteract) return;
+    setLikeError('');
+    setShowComments((previous) => !previous);
+  };
+
   const rawPostType = post?.postType || post?.type || 'trai-nghiem';
 
   const postType = {
@@ -55,7 +75,8 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
     const token = sessionStorage.getItem('accessToken');
 
     if (!token) {
-      setLikeError('Bạn cần đăng nhập để thích bài viết.');
+      setIsLoggedIn(false);
+      router.push('/login');
       return;
     }
 
@@ -187,10 +208,14 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
       {/* ================= 1. HEADER ================= */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          {renderAvatar()}
+          <Link href={`/personal/${post.userId}`} aria-label={`Xem trang cá nhân của ${post?.user?.name || 'tác giả'}`}>
+            {renderAvatar()}
+          </Link>
           <div>
             <h4 className="font-bold text-gray-900 text-base leading-tight">
-              {post?.user?.name || 'abc_user'}
+              <Link href={`/personal/${post.userId}`} className="hover:text-[#006971] hover:underline">
+                {post?.user?.name || 'Người dùng'}
+              </Link>
             </h4>
             <span className="text-xs text-gray-400 font-normal">
               {post?.date || 'Vừa xong'}
@@ -265,6 +290,7 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
 
       {isEditing && (
         <EditPostForm
+          images={post.images}
           postId={post.id}
           content={editContent}
           onContentChange={setEditContent}
@@ -291,7 +317,7 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
         <span>{likesCount} yêu thích</span>
         <button
           type="button"
-          onClick={() => setShowComments(!showComments)}
+          onClick={toggleComments}
           disabled={!canInteract}
           className="hover:underline hover:text-[#006971] cursor-pointer"
         >
@@ -306,7 +332,7 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
           disabled={isLiking || !canInteract}
           aria-pressed={isLiked}
           onClick={toggleLike}
-          className={`flex items-center gap-2 hover:text-rose-500 transition cursor-pointer py-1.5 px-4 rounded-xl hover:bg-rose-50/50 ${isLiked ? 'text-rose-500 font-bold' : ''
+          className={`flex items-center gap-2 enabled:hover:text-rose-500 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 py-1.5 px-4 rounded-xl enabled:hover:bg-rose-50/50 ${isLiked ? 'text-rose-500 font-bold' : ''
             }`}
         >
           <Heart className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
@@ -317,8 +343,8 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
         <button
           type="button"
           disabled={!canInteract}
-          onClick={() => setShowComments(!showComments)}
-          className={`flex items-center gap-2 transition cursor-pointer py-1.5 px-4 rounded-xl ${showComments
+          onClick={toggleComments}
+          className={`flex items-center gap-2 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 py-1.5 px-4 rounded-xl ${showComments
             ? 'text-[#006971] bg-teal-50/60 font-bold'
             : 'hover:text-[#006971] hover:bg-teal-50/50'
             }`}
@@ -332,10 +358,8 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
           Chỉ có thể thích và bình luận khi bài viết được duyệt.
         </p>
       )}
-      {canInteract && likeError && (
-        <p role="alert" className="text-sm text-red-600">
-          {likeError}
-        </p>
+      {canInteract && isLoggedIn && likeError && (
+        <p role="alert" className="text-sm text-red-600">{likeError}</p>
       )}
       {/* ================= 5. KHUNG BÌNH LUẬN HIỂN THỊ PHÍA DƯỚI BÀI VIẾT ================= */}
       {canInteract && showComments && (

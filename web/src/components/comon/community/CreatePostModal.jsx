@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { User, X, Image as ImageIcon, MapPin, Store, Sparkles, HelpCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 import ExperiencePostForm from './ExperiencePostForm';
 import NewPlacePostForm from './NewPlacePostForm';
+import CreatePostHeader from './CreatePostHeader';
+import PostAuthorInfo from './PostAuthorInfo';
+import PostTypeSelector from './PostTypeSelector';
+import PostImagePicker from './PostImagePicker';
 
-import { createFeedPost, getFeedCategories } from '@/lib/feed-api';
+import { createFeedPost, getFeedCategories, getMyProfile } from '@/lib/feed-api';
 
 const INITIAL_PLACE_DATA = {
   placeName: '',
@@ -21,7 +24,6 @@ const INITIAL_PLACE_DATA = {
   description: '',
 };
 export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
-  const fileInputRef = useRef(null);
 
   const [postType, setPostType] = useState('trai-nghiem');
   const [content, setContent] = useState('');
@@ -31,9 +33,37 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
   const [error, setError] = useState('');
   const [categories, setCategories] = useState([]);
   const [categoryError, setCategoryError] = useState('');
+  const [profile, setProfile] = useState(null);
+  const [profileStatus, setProfileStatus] = useState('loading');
   const [placeData, setPlaceData] = useState({
     ...INITIAL_PLACE_DATA,
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+
+    async function loadProfile() {
+      setProfile(null);
+      setProfileStatus('loading');
+      const token = sessionStorage.getItem('accessToken');
+      if (!token) {
+        setProfileStatus('signed-out');
+        return;
+      }
+      try {
+        const user = await getMyProfile(token);
+        if (!active || token !== sessionStorage.getItem('accessToken')) return;
+        setProfile(user);
+        setProfileStatus('ready');
+      } catch {
+        if (active) setProfileStatus('error');
+      }
+    }
+
+    loadProfile();
+    return () => { active = false; };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -62,6 +92,11 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
 
   const handlePlaceFieldChange = (field, value) => {
     setPlaceData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleRemoveImage = (index) => {
+    setFiles((prev) => prev.filter((_, fileIndex) => fileIndex !== index));
+    setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -150,9 +185,6 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
       setFiles([]);
       setPlaceData({ ...INITIAL_PLACE_DATA });
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
 
       onAddPost?.(post);
       onClose();
@@ -173,91 +205,10 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
         className="bg-white rounded-3xl p-6 shadow-2xl max-w-lg w-full relative space-y-5 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-800 p-1 hover:bg-gray-100 rounded-full transition cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <h3 className="text-lg font-bold text-gray-900">
-            Tạo bài viết mới
-          </h3>
-        </div>
-
-        {/* User profile & Tags */}
+        <CreatePostHeader onClose={onClose} />
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-100 border border-gray-500 text-slate-400 flex items-center justify-center shrink-0 overflow-hidden group-hover:border-teal-500 transition-colors">
-              <User className="w-6 h-6" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-gray-900 text-base">abc_user</span>
-
-              {postType === 'trai-nghiem' && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-teal-50 text-[#006971] px-2 py-0.5 rounded-full border border-teal-100">
-                  <Sparkles size={11} />
-                  Trải nghiệm
-                </span>
-              )}
-
-              {postType === 'hoi-dap' && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
-                  <HelpCircle size={11} />
-                  Hỏi đáp
-                </span>
-              )}
-
-              {postType === 'dia-diem-moi' && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                  <Store size={11} />
-                  Địa điểm mới
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* 3 Nút chọn loại */}
-          <div className="flex items-center gap-2">
-            <button
-              disabled={isSubmitting}
-              type="button"
-              onClick={() => setPostType('trai-nghiem')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${postType === 'trai-nghiem'
-                ? 'bg-[#006971] text-white shadow-xs'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Trải nghiệm
-            </button>
-
-            <button
-              disabled={isSubmitting}
-              type="button"
-              onClick={() => setPostType('hoi-dap')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${postType === 'hoi-dap'
-                ? 'bg-[#006971] text-white shadow-xs'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Hỏi đáp
-            </button>
-
-            <button
-              disabled={isSubmitting}
-              type="button"
-              onClick={() => setPostType('dia-diem-moi')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${postType === 'dia-diem-moi'
-                ? 'bg-[#006971] text-white shadow-xs'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Địa điểm mới
-            </button>
-          </div>
+          <PostAuthorInfo profile={profile} profileStatus={profileStatus} postType={postType} />
+          <PostTypeSelector postType={postType} onChange={setPostType} disabled={isSubmitting} />
         </div>
 
         {postType === 'dia-diem-moi' ? (
@@ -265,82 +216,40 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
             placeData={placeData}
             onChangeField={handlePlaceFieldChange}
             categories={categories}
+            files={files}
+            onRemoveImage={handleRemoveImage}
+            isSubmitting={isSubmitting}
           />
         ) : (
           <ExperiencePostForm
             postType={postType}
             content={content}
             onChangeContent={setContent}
+            files={files}
+            onRemoveImage={handleRemoveImage}
+            isSubmitting={isSubmitting}
           />
         )}
-        {/* phần chọn ảnh tại đây */}
-        <input
-          ref={fileInputRef}
-          hidden
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
+        <PostImagePicker
+          files={files}
+          onFilesChange={setFiles}
+          onRemoveImage={handleRemoveImage}
+          onError={setError}
           disabled={isSubmitting}
-          onChange={(e) => {
-            const selected = Array.from(e.target.files || []);
+          showPreview={false}
+        >
+          {postType === 'dia-diem-moi' && categoryError && (
+            <p role="alert" className="text-sm text-amber-700">
+              {categoryError}
+            </p>
+          )}
 
-            if (selected.length > 5) {
-              setError('Chỉ được chọn tối đa 5 ảnh.');
-              e.target.value = '';
-              return;
-            }
-
-            if (
-              selected.some(
-                (file) =>
-                  !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
-                  file.size > 5 * 1024 * 1024,
-              )
-            ) {
-              setError('Ảnh phải là JPG, PNG hoặc WebP, tối đa 5MB mỗi ảnh.');
-              e.target.value = '';
-              return;
-            }
-
-            setError('');
-            setFiles(selected);
-          }}
-        />
-
-        <p className="text-sm text-gray-500">
-          Đã chọn {files.length}/5 ảnh
-        </p>
-
-        {postType === 'dia-diem-moi' && categoryError && (
-          <p role="alert" className="text-sm text-amber-700">
-            {categoryError}
-          </p>
-        )}
-
-        {error && (
-          <p role="alert" className="text-sm text-red-600">
-            {error}
-          </p>
-        )}
-
-        {/* Attachment Toolbar */}
-        <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-xs sm:text-sm font-semibold text-gray-800">
-            Thêm vào bài viết của bạn
-          </span>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              title="Thêm ảnh"
-              aria-label="Chọn ảnh cho bài viết"
-              disabled={isSubmitting}
-              onClick={() => fileInputRef.current?.click()}
-              className="text-[#00a896] hover:opacity-80 p-1 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ImageIcon className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+          {error && (
+            <p role="alert" className="text-sm text-red-600">
+              {error}
+            </p>
+          )}
+        </PostImagePicker>
 
         {/* Nút Đăng */}
         <button

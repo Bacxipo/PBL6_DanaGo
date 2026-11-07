@@ -112,6 +112,15 @@ export class FeedController {
     return this.feedService.getMyPosts(userId);
   }
 
+  @Get('users/:userId/posts')
+  @UseGuards(OptionalJwtAuthGuard)
+  getUserPosts(
+    @Param('userId', ParseIntPipe) userId: number,
+    @CurrentUser('sub') currentUserId?: number,
+  ) {
+    return this.feedService.getUserPosts(userId, currentUserId);
+  }
+
   @Get('posts/:id')
   @UseGuards(OptionalJwtAuthGuard)
   async getPostById(

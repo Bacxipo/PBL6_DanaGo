@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
+import PostImagePreview from './PostImagePreview';
 import { Store, Layers, Clock, Moon, Camera, ChevronDown } from 'lucide-react';
-export default function NewPlacePostForm({ placeData, onChangeField, categories = [], }) {
+
+export default function NewPlacePostForm({ placeData, onChangeField, categories = [], files = [], onRemoveImage, isSubmitting = false }) {
   const {
     placeName = '',
     openTime = '',
@@ -184,12 +186,13 @@ export default function NewPlacePostForm({ placeData, onChangeField, categories 
           <span className="text-[11px] text-gray-400">Tối đa 5 ảnh</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative w-24 h-16 rounded-xl overflow-hidden border border-gray-200">
+        <div className="flex flex-wrap items-center gap-3">
+          <PostImagePreview files={files} onRemoveImage={onRemoveImage} disabled={isSubmitting} />
+          {files.length === 0 && (
             <p className="text-xs text-gray-500">
               Nhấn nút hình ảnh bên dưới để chọn từ 1 đến 5 ảnh thực tế.
             </p>
-          </div>
+          )}
         </div>
       </div>
     </div>

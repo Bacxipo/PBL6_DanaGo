@@ -2,19 +2,33 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User } from 'lucide-react';
+import UserAvatar from '@/components/comon/ui/UserAvatar';
+import { getMyProfile } from '@/lib/feed-api';
 import { useEffect, useState } from 'react';
 
 export default function Header() {
+    const [profile, setProfile] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [authReady, setAuthReady] = useState(false);
 
     const pathname = usePathname();
 
     useEffect(() => {
-        const syncAuth = () => {
-            setIsLoggedIn(Boolean(sessionStorage.getItem('accessToken')));
+        let active = true;
+        let generation = 0;
+        const syncAuth = async () => {
+            const request = ++generation;
+            const token = sessionStorage.getItem('accessToken');
+            setIsLoggedIn(Boolean(token));
             setAuthReady(true);
+            setProfile(null);
+            if (!token) return;
+            try {
+                const user = await getMyProfile(token);
+                if (active && request === generation && token === sessionStorage.getItem('accessToken')) setProfile(user);
+            } catch {
+                if (active && request === generation) setProfile(null);
+            }
         };
 
         syncAuth();
@@ -22,6 +36,7 @@ export default function Header() {
         window.addEventListener('auth-changed', syncAuth);
 
         return () => {
+            active = false;
             window.removeEventListener('auth-changed', syncAuth);
         };
     }, [pathname]);
@@ -66,7 +81,7 @@ export default function Header() {
                                 aria-label="Trang cá nhân"
                                 className="flex items-center text-gray-600 hover:text-[#006971] transition-colors"
                             >
-                                <User className="w-6 h-6" />
+                                <UserAvatar user={profile} size={32} />
                             </Link>
                         ) : (
                             <Link

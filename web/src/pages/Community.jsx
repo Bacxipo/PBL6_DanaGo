@@ -14,7 +14,7 @@ export default function Community() {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [feedError, setFeedError] = useState('');
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const handleAddPost = () => {
     setNotice('Đăng bài thành công. Bài viết đang chờ duyệt.');
@@ -46,26 +46,28 @@ export default function Community() {
       const token = sessionStorage.getItem('accessToken');
 
       if (!token) {
-        if (active) setCurrentUserId(null);
+        if (active) setCurrentUser(null);
         return;
       }
 
       try {
         const user = await getMyProfile(token);
 
-        if (active) {
-          setCurrentUserId(user.id);
+        if (active && token === sessionStorage.getItem('accessToken')) {
+          setCurrentUser(user);
         }
       } catch {
         if (active) {
-          setCurrentUserId(null);
+          setCurrentUser(null);
         }
       }
     }
     loadPosts();
     loadCurrentUser();
+    window.addEventListener('auth-changed', loadCurrentUser);
     return () => {
       active = false;
+      window.removeEventListener('auth-changed', loadCurrentUser);
     };
   }, []);
 
@@ -84,7 +86,7 @@ export default function Community() {
         </div>
 
         {/* Create Post Inline Box */}
-        <CreatePostBox onOpenModal={() => setIsModalOpen(true)} />
+        <CreatePostBox currentUser={currentUser} onOpenModal={() => setIsModalOpen(true)} />
 
         {notice && (
           <p
@@ -104,7 +106,7 @@ export default function Community() {
         ) : (
           <CommunityFeed
             posts={posts}
-            currentUserId={currentUserId}
+            currentUserId={currentUser?.id}
             onUpdated={(updatedPost) => {
               setPosts((previous) =>
                 updatePostInList(previous, updatedPost)
