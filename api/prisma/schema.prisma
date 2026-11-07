@@ -67,6 +67,7 @@ model User {
   role         UserRole   @default(USER)
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamp()
+  phoneNumber  String?    @db.VarChar
 
   preferences          UserPreference[]
   createdDestinations  Destination[]      @relation("CreatedDestinations")

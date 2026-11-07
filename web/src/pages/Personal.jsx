@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { User, Calendar, Map, Settings, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import SettingInfo from '../components/layout/SettingInfo';
-import FavoritePlace from '../components/layout/FavoritePlace';
-import PersonalPage from '../components/layout/PersonalPage';
-import ItineraryDetail from '../components/layout/ItineraryDetail';
+import SettingInfo from '../components/comon/account/SettingInfo';
+import FavoritePlace from '../components/comon/place/FavoritePlace';
+import PersonalPage from '../components/comon/account/PersonalPage';
+import ItineraryDetail from '../components/comon/itinerary/ItineraryDetail';
 
 export default function Personal() {
     const router = useRouter();

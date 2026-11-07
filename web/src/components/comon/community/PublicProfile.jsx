@@ -55,10 +55,10 @@ export default function PublicProfile({ userId }) {
         <>
           <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-6">
             <UserAvatar user={profile} size={80} />
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold text-gray-900">{profile?.fullName || profile?.username}</h1>
-              {profile?.bio && <p className="mt-2 text-sm text-gray-700">{profile.bio}</p>}
               <p className="mt-2 text-sm text-gray-500">{posts.length} bài viết</p>
+              {profile?.bio && <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{profile.bio}</p>}
             </div>
           </div>
           {posts.length === 0 ? (

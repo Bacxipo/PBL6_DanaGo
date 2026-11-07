@@ -6,7 +6,7 @@ import { User, Image as ImageIcon } from 'lucide-react';
 
 export default function CreatePostBox({ onOpenModal, currentUser }) {
   const [failedAvatar, setFailedAvatar] = useState(null);
-  const avatarUrl = currentUser?.authProvider === 'google' ? currentUser.avatarUrl : null;
+  const avatarUrl = currentUser?.avatarUrl;
   return (
     <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100 flex flex-col gap-4 mb-6">
       {/* Top row: Avatar & Placeholder input */}

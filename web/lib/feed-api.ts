@@ -3,6 +3,10 @@ export interface FeedCategory {
     name: string;
 }
 
+export function changeMyPassword(body: { currentPassword: string; newPassword: string; confirmPassword: string }, token: string) {
+    return apiRequest<{ message: string }>('/identity/users/me/password', { method: 'PATCH', body, token });
+}
+
 export function getFeedCategories(): Promise<FeedCategory[]> {
     return apiRequest<FeedCategory[]>('/destinations/categories');
 }
@@ -32,6 +36,9 @@ export interface FeedPost {
         username: string;
         fullName: string | null;
         avatarUrl: string | null;
+        email: string;
+        phoneNumber?: string | null;
+        bio?: string | null;
     };
     destination: {
         id: number;
@@ -169,8 +176,25 @@ export function getPublicProfile(userId: number) {
     return apiRequest<{ id: number; username: string; fullName: string | null; avatarUrl?: string | null; authProvider: 'google' | 'password'; bio?: string | null }>(`/identity/users/${userId}/public`);
 }
 
+export interface UserProfile {
+    id: number;
+    username: string;
+    fullName: string | null;
+    email: string;
+    phoneNumber?: string | null;
+    bio?: string | null;
+    avatarUrl?: string | null;
+    authProvider: 'google' | 'password';
+}
+
+export function updateMyAvatar(file: File, token: string) {
+    const body = new FormData();
+    body.append('file', file);
+    return apiRequest<UserProfile>('/identity/users/me/avatar', { method: 'PATCH', body, token });
+}
+
 export function getMyProfile(token: string) {
-    return apiRequest<{ id: number; username: string; fullName: string | null; avatarUrl?: string | null; authProvider: 'google' | 'password' }>(
+    return apiRequest<UserProfile>(
         '/identity/users/me',
         { token },
     );
@@ -233,4 +257,20 @@ export function updateFeedPost(
         body: { content },
         token,
     });
+}
+export async function updateMyProfile(
+    body: {
+        fullName: string;
+        phoneNumber: string;
+        bio: string;
+        categoryIds?: number[];
+    },
+    token: string,
+) {
+    return apiRequest<UserProfile>('/identity/users/me', {
+        method: 'PATCH',
+        body,
+        token,
+    });
+
 }

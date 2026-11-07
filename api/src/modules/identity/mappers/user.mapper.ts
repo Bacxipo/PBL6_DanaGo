@@ -14,6 +14,7 @@ export class UserMapper {
       role: entity.role,
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
+      phoneNumber: entity.phoneNumber,
     };
   }
 }

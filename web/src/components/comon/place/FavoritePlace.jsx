@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { getMyFavorites, addFavorite, removeFavorite } from '@/lib/favorite-api';
 import { normalizeDestinationCard } from '@/lib/destination-api';
 import { searchPlaces } from '@/utils/filterPlace';
-import PlaceList from '../comon/place/PlaceList.jsx';
+import PlaceList from './PlaceList.jsx';
 
 export default function FavoritePlace() {
     const [searchTerm, setSearchTerm] = useState('');

@@ -5,6 +5,14 @@ import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
 export class UserRepository {
+  async changePassword(id: number, previousHash: string, passwordHash: string): Promise<boolean> {
+    const result = await this.prisma.user.updateMany({
+      where: { id, passwordHash: previousHash, supabaseId: null, status: 'ACTIVE' },
+      data: { passwordHash },
+    });
+    return result.count === 1;
+  }
+
   async getPreferences(userId: number) {
     return this.prisma.userPreference.findMany({ where: { userId }, select: { categoryId: true } });
   }
@@ -20,7 +28,7 @@ export class UserRepository {
     ]);
     return { categoryIds };
   }
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findBySupabaseId(supabaseId: string): Promise<UserEntity | null> {
     const user = await this.prisma.user.findUnique({ where: { supabaseId } });
@@ -81,7 +89,26 @@ export class UserRepository {
     const updated = await this.prisma.user.update({ where: { id }, data });
     return this.mapToEntity(updated);
   }
+  async updateProfile(
+    id: number,
+    data: {
+      fullName: string;
+      phoneNumber: string | null;
+      bio: string | null;
+    },
+    categoryIds?: number[],
+  ): Promise<UserEntity> {
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({ where: { id }, data });
+      if (categoryIds !== undefined) {
+        await tx.userPreference.deleteMany({ where: { userId: id } });
+        if (categoryIds.length) await tx.userPreference.createMany({ data: categoryIds.map((categoryId) => ({ userId: id, categoryId })) });
+      }
+      return user;
+    });
 
+    return this.mapToEntity(updated);
+  }
   private mapToEntity(row: any): UserEntity {
     return {
       id: row.id,
@@ -95,6 +122,7 @@ export class UserRepository {
       role: row.role,
       status: row.status,
       createdAt: new Date(row.createdAt),
+      phoneNumber: row.phoneNumber,
     };
   }
 }

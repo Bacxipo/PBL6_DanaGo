@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UserRole } from '@prisma/client';
 import { UserService } from '../services/user.service';
 import { UserResponseDto } from '../dto/user-response.dto';
@@ -9,6 +10,8 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { UpdatePreferencesDto } from '../dto/update-preferences.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { ChangePasswordDto } from '../dto/change-password.dto';
 
 @Controller('identity/users')
 export class UserController {
@@ -38,6 +41,33 @@ export class UserController {
     return this.userService.listUsers();
   }
 
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  updateMyProfile(@CurrentUser('sub') userId: number, @Body() dto: UpdateProfileDto) {
+    return this.userService.updateProfile(userId, dto);
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  changeMyPassword(@CurrentUser('sub') userId: number, @Body() dto: ChangePasswordDto) {
+    return this.userService.changePassword(userId, dto);
+  }
+
+  @Patch('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file', {
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_request, file, callback) => {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+        return callback(new BadRequestException('Ảnh phải là JPG, PNG hoặc WebP.'), false);
+      }
+      callback(null, true);
+    },
+  }))
+  updateMyAvatar(@CurrentUser('sub') userId: number, @UploadedFile() file: Express.Multer.File) {
+    return this.userService.updateAvatar(userId, file);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -46,8 +76,8 @@ export class UserController {
   }
 
   @Get(':id')
-  getProfile(@Param('id', ParseIntPipe) id: number): Promise<UserResponseDto> {
-    return this.userService.getUserProfile(id);
+  getProfile(@Param('id', ParseIntPipe) id: number) {
+    return this.getPublicProfile(id);
   }
 
   @Get(':id/public')
