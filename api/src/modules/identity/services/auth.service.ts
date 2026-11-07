@@ -142,7 +142,8 @@ export class AuthService {
       }
     }
     if (user.status !== 'ACTIVE') throw new ForbiddenException('Tài khoản chưa hoạt động hoặc đã bị khóa.');
-    if ((user.avatarUrl ?? null) !== avatarUrl) {
+    const hasCustomAvatar = user.avatarUrl && !/^https:\/\/[^/]*googleusercontent\.com\//i.test(user.avatarUrl);
+    if (!hasCustomAvatar && (user.avatarUrl ?? null) !== avatarUrl) {
       user = await this.userRepository.update(user.id, { avatarUrl });
     }
     return { accessToken: this.generateToken(user.id, user.username, user.role), user: UserMapper.toResponseDto(user) };

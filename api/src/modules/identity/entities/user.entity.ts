@@ -10,4 +10,5 @@ export class UserEntity {
   role: 'ADMIN' | 'STAFF' | 'USER';
   status: 'ACTIVE' | 'LOCKED' | 'PENDING';
   createdAt: Date;
+  phoneNumber?: string | null;
 }

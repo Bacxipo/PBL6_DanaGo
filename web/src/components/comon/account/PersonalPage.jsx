@@ -6,7 +6,7 @@ import { Grid3X3, Plus } from 'lucide-react';
 import UserAvatar from '@/components/comon/ui/UserAvatar';
 import { getMyFeedPosts, getMyProfile } from '@/lib/feed-api';
 import { mapFeedPost, updatePostInList } from '@/lib/feed-utils';
-import StandardPostCard from '../comon/community/StandardPostCard';
+import StandardPostCard from '../community/StandardPostCard';
 
 export default function PersonalPage() {
     const [posts, setPosts] = useState([]);
@@ -64,8 +64,11 @@ export default function PersonalPage() {
                 <div className="rounded-full w-20 h-20 bg-teal-50 flex items-center justify-center text-[#006971] shrink-0">
                     <UserAvatar user={profile} size={80} />
                 </div>
-                <div>
+                <div className="min-w-0">
                     <h2 className="text-2xl font-bold text-gray-800">{profile?.fullName || profile?.username || (loading ? '...' : 'Trang cá nhân')}</h2>
+                    {profile?.bio && (
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{profile.bio}</p>
+                    )}
                     {!loading && !error && loggedIn && (
                         <span className="text-sm text-gray-500">{posts.length} bài viết</span>
                     )}

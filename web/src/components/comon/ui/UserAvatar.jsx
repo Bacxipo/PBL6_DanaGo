@@ -6,7 +6,7 @@ import { User } from 'lucide-react';
 
 export default function UserAvatar({ user, size = 40 }) {
   const [failedUrl, setFailedUrl] = useState(null);
-  const url = user?.authProvider === 'google' ? user.avatarUrl : null;
+  const url = user?.avatarUrl;
   return (
     <span style={{ width: size, height: size }} className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-400">
       {url && url !== failedUrl ? (

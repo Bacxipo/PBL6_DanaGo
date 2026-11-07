@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Calendar, Sparkles, MapPin, Compass } from 'lucide-react';
-import ItineraryDetail from '@/components/layout/ItineraryDetail';
+import ItineraryDetail from '@/components/comon/itinerary/ItineraryDetail';
 
 export default function ItineraryPage() {
     return (

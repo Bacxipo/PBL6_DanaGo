@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import ItineraryListView from '../comon/itinerary/ItineraryListView';
-import ItineraryEditorView from '../comon/itinerary/ItineraryEditorView';
-import CreateItineraryModal from '../comon/itinerary/CreateItineraryModal';
-import PlaceDetailModal from '../comon/place/PlaceDetailModal';
-import ConfirmLeaveModal from '../comon/itinerary/ConfirmLeaveModal';
+import ItineraryListView from './ItineraryListView';
+import ItineraryEditorView from './ItineraryEditorView';
+import CreateItineraryModal from './CreateItineraryModal';
+import PlaceDetailModal from '../place/PlaceDetailModal';
+import ConfirmLeaveModal from './ConfirmLeaveModal';
 
 import { sampleItineraries, quickSearchPlacesData } from '@/database/data';
 import { saveItineraryFull, updateChecklistItemApi, deleteChecklistItemApi } from '@/lib/itinerary-api';

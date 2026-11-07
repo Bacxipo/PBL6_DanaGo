@@ -9,4 +9,5 @@ export class UserResponseDto {
   role: string;
   status: string;
   createdAt: string;
+  phoneNumber?: string | null;
 }
