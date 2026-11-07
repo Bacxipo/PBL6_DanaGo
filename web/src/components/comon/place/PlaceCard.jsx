@@ -1,18 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { MapPin, Heart, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import Rating from '../ui/Rating';
 import Image from 'next/image';
 
-export default function PlaceCard({ id, name, img, des, stars, price, category, address }) {
-    const [isFav, setIsFav] = useState(false);
+export default function PlaceCard({ id, name, img, des, stars, price, category, address, favoriteState }) {
+    const isFav = favoriteState?.favorites.some((item) => item.destinationId === Number(id)) || false;
+    const disabled = !favoriteState || favoriteState.loading || favoriteState.saving || (favoriteState.signedIn && Boolean(favoriteState.error)) || !Number.isSafeInteger(Number(id)) || Number(id) <= 0;
+    const error = favoriteState?.error;
+    const retry = favoriteState?.refresh;
 
     const handleHeartClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsFav(!isFav);
+        favoriteState?.toggle(id);
     };
 
     const imgSrc = typeof img === 'string' ? img : img?.src || img;
@@ -42,6 +45,9 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                     <button
                         type="button"
                         onClick={handleHeartClick}
+                        disabled={disabled}
+                        aria-pressed={isFav}
+                        aria-label={isFav ? 'Bỏ yêu thích' : 'Lưu vào yêu thích'}
                         className="absolute top-3 right-3 p-1.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs transition cursor-pointer z-10"
                         title={isFav ? "Bỏ yêu thích" : "Yêu thích"}
                     >
@@ -72,6 +78,9 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                     <button
                         type="button"
                         onClick={handleHeartClick}
+                        disabled={disabled}
+                        aria-pressed={isFav}
+                        aria-label={isFav ? 'Bỏ yêu thích' : 'Lưu vào yêu thích'}
                         className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-200/70 hover:bg-gray-300 transition cursor-pointer z-10"
                         title={isFav ? "Bỏ yêu thích" : "Yêu thích"}
                     >
@@ -101,6 +110,10 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
             )}
 
             <div className="p-4 flex flex-col flex-grow justify-between gap-3">
+                {error && <div role="alert" className="text-xs text-red-600">
+                    {error}
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); retry(); }} className="ml-2 underline">Thử lại</button>
+                </div>}
                 <div>
                     <h3 className="font-bold text-base text-gray-800 group-hover:text-[#006971] transition-colors line-clamp-1">
                         {name}

@@ -6,6 +6,8 @@ import imgLogin from '@/assets/images/imgLogin.jpg';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiRequest } from '@/lib/feed-api';
+import { startGoogleLogin } from '@/lib/google-auth';
+import { getPostLoginPath } from '@/lib/preference-api';
 export default function Login() {
 
   const router = useRouter();
@@ -31,7 +33,7 @@ export default function Login() {
       sessionStorage.setItem('accessToken', result.accessToken);
       window.dispatchEvent(new Event('auth-changed'));
 
-      router.push('/community');
+      router.replace(await getPostLoginPath(result.accessToken));
     } catch (error) {
       setError(error.message);
     } finally {
@@ -40,6 +42,18 @@ export default function Login() {
   };
 
 
+
+  const handleGoogleLogin = async () => {
+    if (isSubmitting) return;
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await startGoogleLogin();
+    } catch (error) {
+      setError(error.message);
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4 bg-gray-50">
@@ -123,6 +137,8 @@ export default function Login() {
 
           <button
             type="button"
+            onClick={handleGoogleLogin}
+            disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-3 border border-gray-300 py-2.5 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">

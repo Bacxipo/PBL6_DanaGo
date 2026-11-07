@@ -10,6 +10,22 @@ import { UserAlreadyExistsException } from '../exceptions/user-already-exists.ex
 
 @Injectable()
 export class UserService {
+  async getPreferences(userId: number) {
+    this.validatePreferenceUser(userId);
+    const preferences = await this.userRepository.getPreferences(userId);
+    return { categoryIds: preferences.map((item) => item.categoryId) };
+  }
+
+  async updatePreferences(userId: number, categoryIds: number[]) {
+    this.validatePreferenceUser(userId);
+    const categories = await this.userRepository.findPreferenceCategories(categoryIds);
+    if (categories.length !== categoryIds.length) throw new BadRequestException('Danh mục sở thích không hợp lệ.');
+    return this.userRepository.savePreferences(userId, categoryIds);
+  }
+
+  private validatePreferenceUser(userId: number) {
+    if (!Number.isSafeInteger(userId) || userId <= 0) throw new BadRequestException('Người dùng không hợp lệ.');
+  }
   constructor(private readonly userRepository: UserRepository) {}
 
   async getUserProfile(id: number): Promise<UserResponseDto> {

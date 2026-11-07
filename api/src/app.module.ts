@@ -11,6 +11,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { AiModule } from './modules/ai/ai.module';
 import { EventModule } from './modules/event/event.module';
+import { FavoriteModule } from './modules/favorite/favorite.module';
 @Module({
   imports: [
     DatabaseModule,
@@ -22,7 +23,8 @@ import { EventModule } from './modules/event/event.module';
     NotificationModule,
     FeedModule,
     AiModule,
-    EventModule
+    EventModule,
+    FavoriteModule,
   ],
   controllers: [AppController],
   providers: [AppService],

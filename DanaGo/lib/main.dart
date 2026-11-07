@@ -1,11 +1,16 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:smarttrip/config/auth_config.dart';
 import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/screens/onboarding_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/theme_controller.dart';
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AuthConfig.load();
 
-void main() {
+  // Google SDK initialization happens when the user selects Google login.
+
   runApp(const MyApp());
 }
 

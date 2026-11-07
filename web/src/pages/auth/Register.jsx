@@ -6,6 +6,7 @@ import imgRegister from '@/assets/images/register.jpg';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiRequest } from '@/lib/feed-api';
+import { startGoogleLogin } from '@/lib/google-auth';
 
 export default function Register() {
   const router = useRouter();
@@ -49,10 +50,22 @@ export default function Register() {
       sessionStorage.setItem('accessToken', result.accessToken);
       window.dispatchEvent(new Event('auth-changed'));
 
-      router.push('/community');
+      router.replace('/interests');
     } catch (err) {
       setError(err.message);
     } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    if (isSubmitting) return;
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await startGoogleLogin();
+    } catch (error) {
+      setError(error.message);
       setIsSubmitting(false);
     }
   };
@@ -169,6 +182,8 @@ export default function Register() {
           {/* Đăng ký Google */}
           <button
             type="button"
+            onClick={handleGoogleLogin}
+            disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-3 border border-gray-300 py-2.5 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">

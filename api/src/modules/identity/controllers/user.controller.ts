@@ -8,9 +8,21 @@ import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
+import { UpdatePreferencesDto } from '../dto/update-preferences.dto';
 
 @Controller('identity/users')
 export class UserController {
+  @Get('me/preferences')
+  @UseGuards(JwtAuthGuard)
+  getPreferences(@CurrentUser('sub') userId: number) {
+    return this.userService.getPreferences(userId);
+  }
+
+  @Patch('me/preferences')
+  @UseGuards(JwtAuthGuard)
+  updatePreferences(@CurrentUser('sub') userId: number, @Body() dto: UpdatePreferencesDto) {
+    return this.userService.updatePreferences(userId, dto.categoryIds);
+  }
   constructor(private readonly userService: UserService) {}
 
   @Get('me')

@@ -5,7 +5,27 @@ import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
 export class UserRepository {
+  async getPreferences(userId: number) {
+    return this.prisma.userPreference.findMany({ where: { userId }, select: { categoryId: true } });
+  }
+
+  async findPreferenceCategories(categoryIds: number[]) {
+    return this.prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true } });
+  }
+
+  async savePreferences(userId: number, categoryIds: number[]) {
+    await this.prisma.$transaction([
+      this.prisma.userPreference.deleteMany({ where: { userId } }),
+      this.prisma.userPreference.createMany({ data: categoryIds.map((categoryId) => ({ userId, categoryId })) }),
+    ]);
+    return { categoryIds };
+  }
   constructor(private readonly prisma: PrismaService) {}
+
+  async findBySupabaseId(supabaseId: string): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findUnique({ where: { supabaseId } });
+    return user ? this.mapToEntity(user) : null;
+  }
 
   async findById(id: number): Promise<UserEntity | null> {
     const user = await this.prisma.user.findUnique({ where: { id } });
@@ -38,6 +58,7 @@ export class UserRepository {
   async create(data: Partial<UserEntity>): Promise<UserEntity> {
     const created = await this.prisma.user.create({
       data: {
+        supabaseId: data.supabaseId,
         username: data.username!,
         fullName: data.fullName!,
         email: data.email!,
@@ -64,6 +85,7 @@ export class UserRepository {
   private mapToEntity(row: any): UserEntity {
     return {
       id: row.id,
+      supabaseId: row.supabaseId,
       username: row.username,
       fullName: row.fullName,
       email: row.email,

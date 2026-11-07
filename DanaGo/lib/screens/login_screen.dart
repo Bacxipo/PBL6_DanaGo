@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/services/google_auth_service.dart';
 import 'package:smarttrip/screens/register_screen.dart';
 import 'package:smarttrip/screens/forgot_password_screen.dart';
 import 'package:smarttrip/screens/main_screen.dart';
@@ -20,8 +21,51 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isObscure = true; //hide mk
 
+  final _googleAuth = GoogleAuthService.instance;
+  bool _googleNavigationScheduled = false;
+  String? _lastGoogleError;
+
+  @override
+  void initState() {
+    super.initState();
+    _googleAuth.addListener(_onGoogleAuthChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onGoogleAuthChanged();
+    });
+  }
+
+  void _onGoogleAuthChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final error = _googleAuth.errorMessage;
+    if (_googleAuth.status == GoogleLoginStatus.failed &&
+        error != null && error != _lastGoogleError) {
+      _lastGoogleError = error;
+      UiHelpers.showError(context, error);
+    } else if (_googleAuth.status != GoogleLoginStatus.failed) {
+      _lastGoogleError = null;
+    }
+    if (_googleAuth.status == GoogleLoginStatus.authenticated &&
+        !_googleNavigationScheduled) {
+      _googleNavigationScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const InterestScreen()),
+        );
+      });
+    }
+  }
+
+  Future<void> _handleGoogleLogin() {
+    _lastGoogleError = null;
+    return _googleAuth.signIn();
+  }
+
   @override
   void dispose() {
+    _googleAuth.removeListener(_onGoogleAuthChanged);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -228,9 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: () {
-                    //Logic login gg
-                  },
+                  onPressed: _googleAuth.isBusy ? null : _handleGoogleLogin,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -240,9 +282,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 22,
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        'Đăng nhập bằng Google',
-                        style: TextStyle(
+                      Text(
+                        _googleAuth.isBusy
+                            ? 'Đang đăng nhập…'
+                            : 'Đăng nhập bằng Google',
+                        style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
