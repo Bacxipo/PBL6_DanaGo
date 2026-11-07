@@ -291,10 +291,10 @@ export default function Home() {
                 )}
             </div>
             {/* Featured Places Section Recommended */}
+            {recommendationsSignedIn && (
             <div className="w-full max-w-7xl mx-auto px-2">
                 <h2 className="text-black font-bold text-2xl md:text-3xl mb-6">Gợi ý cho bạn</h2>
                 {recommendationsLoading ? <p role="status">Đang tìm địa điểm phù hợp với sở thích của bạn...</p>
-                    : !recommendationsSignedIn ? <p className="text-gray-500">Hãy <Link href="/login" className="text-[#006971] underline">đăng nhập</Link> để nhận gợi ý theo sở thích.</p>
                         : recommendationsError ? <div role="alert" className="text-red-600">{recommendationsError}
                             <button type="button" onClick={() => setRecommendationsReloadKey((value) => value + 1)} className="ml-2 underline">Thử lại</button>
                         </div>
@@ -319,6 +319,7 @@ export default function Home() {
                                     </div>
                                 </>}
             </div>
+            )}
             {/* Banner Lập lịch trình */}
             <div className='flex flex-wrap gap-4 bg-[#006971] rounded-2xl p-8 md:p-10 items-center justify-between shadow-sm'>
                 <div className='flex flex-col space-y-2'>
