@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { getPostLoginPath } from '@/lib/preference-api';
 
 // Share the in-flight exchange when React Strict Mode runs the effect twice.
 let pendingExchange;
@@ -21,7 +22,7 @@ function completeLogin() {
       if (!response.ok) throw new Error(result.error || 'Đăng nhập Google thất bại.');
       sessionStorage.setItem('accessToken', result.accessToken);
       window.dispatchEvent(new Event('auth-changed'));
-      window.location.replace('/community');
+      window.location.replace(await getPostLoginPath(result.accessToken));
     } finally {
       window.history.replaceState(null, '', '/auth/callback');
     }

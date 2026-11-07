@@ -5,6 +5,21 @@ import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
 export class UserRepository {
+  async getPreferences(userId: number) {
+    return this.prisma.userPreference.findMany({ where: { userId }, select: { categoryId: true } });
+  }
+
+  async findPreferenceCategories(categoryIds: number[]) {
+    return this.prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true } });
+  }
+
+  async savePreferences(userId: number, categoryIds: number[]) {
+    await this.prisma.$transaction([
+      this.prisma.userPreference.deleteMany({ where: { userId } }),
+      this.prisma.userPreference.createMany({ data: categoryIds.map((categoryId) => ({ userId, categoryId })) }),
+    ]);
+    return { categoryIds };
+  }
   constructor(private readonly prisma: PrismaService) {}
 
   async findBySupabaseId(supabaseId: string): Promise<UserEntity | null> {
