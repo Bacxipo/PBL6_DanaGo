@@ -50,7 +50,7 @@ export default function Register() {
       sessionStorage.setItem('accessToken', result.accessToken);
       window.dispatchEvent(new Event('auth-changed'));
 
-      router.push('/community');
+      router.replace('/interests');
     } catch (err) {
       setError(err.message);
     } finally {

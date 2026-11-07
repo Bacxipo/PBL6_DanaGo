@@ -7,13 +7,7 @@ import PlaceList from "../components/comon/place/PlaceList";
 import { Loader2, RefreshCw, AlertCircle, Search, X } from 'lucide-react';
 import { getRawDestinations, getDestinationCategories, normalizeDestinationCard } from "@/lib/destination-api";
 
-const normalizePlaceName = (value = '') => value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[đĐ]/g, 'd')
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ');
+import { searchPlaces } from '@/utils/filterPlace';
 
 export default function Explore() {
     const searchParams = useSearchParams();
@@ -82,15 +76,11 @@ export default function Explore() {
 
     // Áp dụng bộ lọc (bao gồm tìm kiếm theo tên địa điểm)
     const filteredPlaces = useMemo(() => {
-        const query = normalizePlaceName(searchTerm);
-        return mappedPlaces.filter((item) => {
-            const matchSearch =
-                !query ||
-                normalizePlaceName(item.name).includes(query);
+        return searchPlaces(mappedPlaces, searchTerm).filter((item) => {
             const matchCategory = category === "Tất cả" || item.category === category;
             const matchAddress = address === "Tất cả quận" || item.address === address;
             const matchRating = minRating === 0 || item.stars >= minRating;
-            return matchSearch && matchCategory && matchAddress && matchRating;
+            return matchCategory && matchAddress && matchRating;
         });
     }, [mappedPlaces, searchTerm, category, address, minRating]);
 

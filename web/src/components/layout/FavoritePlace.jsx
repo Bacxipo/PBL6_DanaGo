@@ -3,9 +3,12 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { getMyFavorites, addFavorite, removeFavorite } from '@/lib/favorite-api';
 import { normalizeDestinationCard } from '@/lib/destination-api';
+import { searchPlaces } from '@/utils/filterPlace';
 import PlaceList from '../comon/place/PlaceList.jsx';
 
 export default function FavoritePlace() {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [category, setCategory] = useState('');
     const [favoriteItems, setFavoriteItems] = useState([]);
     const [favoritesLoading, setFavoritesLoading] = useState(true);
     const [favoritesSignedIn, setFavoritesSignedIn] = useState(false);
@@ -74,6 +77,11 @@ export default function FavoritePlace() {
     const favoriteState = { favorites: favoriteItems, loading: favoritesLoading, signedIn: favoritesSignedIn, error: favoritesError, saving: favoritesSaving, toggle: handleFavoriteToggle, refresh: () => setFavoritesReloadKey((value) => value + 1) };
     const { favorites, loading, signedIn, error, refresh } = favoriteState;
     const places = useMemo(() => favorites.map(({ destination }) => normalizeDestinationCard(destination)), [favorites]);
+    const categories = useMemo(() => [...new Set([
+        ...places.map((place) => place.category), category,
+    ].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi')), [places, category]);
+    const filteredPlaces = useMemo(() => searchPlaces(places, searchTerm)
+        .filter((place) => !category || place.category === category), [places, searchTerm, category]);
     return (
         <div className='flex flex-col gap-4'>
             <div>
@@ -88,7 +96,44 @@ export default function FavoritePlace() {
                             <button type="button" onClick={refresh} className="ml-2 underline">Thử lại</button>
                         </div>
                             : places.length === 0 ? <p>Bạn chưa lưu địa điểm yêu thích nào.</p>
-                                : <PlaceList places={places} favoriteState={favoriteState} />}
+                                : <>
+                                    <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                                        <div className="flex-1">
+                                            <label htmlFor="favorite-search" className="block text-sm font-medium mb-1">Tìm địa điểm</label>
+                                            <div className="flex gap-2">
+                                                <input id="favorite-search" type="search" value={searchTerm}
+                                                    onChange={(event) => setSearchTerm(event.target.value)}
+                                                    aria-describedby="favorite-result-count"
+                                                    aria-controls="favorite-results"
+                                                    placeholder="Nhập tên địa điểm (có dấu hoặc không dấu)..."
+                                                    className="w-full min-w-0 rounded-xl border border-gray-300 px-4 py-2" />
+                                                {searchTerm && <button type="button"
+                                                    onClick={() => setSearchTerm('')}
+                                                    aria-label="Xóa từ khóa tìm kiếm"
+                                                    className="shrink-0 text-sm text-[#006971] underline">Xóa</button>}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="favorite-category" className="block text-sm font-medium mb-1">Danh mục</label>
+                                            <select id="favorite-category" value={category}
+                                                onChange={(event) => setCategory(event.target.value)}
+                                                className="w-full rounded-xl border border-gray-300 px-4 py-2">
+                                                <option value="">Tất cả danh mục</option>
+                                                {categories.map((name) => <option key={name} value={name}>{name}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <p id="favorite-result-count" role="status" className="mb-3 text-sm text-gray-500">Tìm thấy {filteredPlaces.length} / {places.length} địa điểm</p>
+                                    <div id="favorite-results">
+                                        {filteredPlaces.length > 0
+                                            ? <PlaceList places={filteredPlaces} favoriteState={favoriteState} />
+                                            : <div className="py-10 text-center text-gray-500">
+                                                <p>Không có địa điểm phù hợp với bộ lọc.</p>
+                                                <button type="button" onClick={() => { setSearchTerm(''); setCategory(''); }}
+                                                    className="mt-3 text-[#006971] underline">Xóa bộ lọc</button>
+                                            </div>}
+                                    </div>
+                                </>}
             </div>
         </div>
     );

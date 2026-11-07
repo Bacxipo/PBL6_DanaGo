@@ -46,14 +46,16 @@ export default function Header() {
                     <Link href="/explore" className={getLinkClass('/explore')}>
                         Khám phá
                     </Link>
-                    <Link href="/itinerary" className={getLinkClass('/itinerary')}>
-                        Lịch trình
-                    </Link>
+                    {authReady && isLoggedIn && (
+                        <Link href="/itinerary" className={getLinkClass('/itinerary')}>
+                            Lịch trình
+                        </Link>
+                    )}
                     <Link href="/community" className={getLinkClass('/community')}>
                         Cộng đồng
                     </Link>
                     <Link href="/ai-plan" className={getLinkClass('/ai-plan')}>
-                        AI Plan
+                        AI Gợi ý
                     </Link>
                 </nav>
                 <div className="flex min-w-24 items-center justify-end">

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiRequest } from '@/lib/feed-api';
 import { startGoogleLogin } from '@/lib/google-auth';
+import { getPostLoginPath } from '@/lib/preference-api';
 export default function Login() {
 
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function Login() {
       sessionStorage.setItem('accessToken', result.accessToken);
       window.dispatchEvent(new Event('auth-changed'));
 
-      router.push('/community');
+      router.replace(await getPostLoginPath(result.accessToken));
     } catch (error) {
       setError(error.message);
     } finally {
