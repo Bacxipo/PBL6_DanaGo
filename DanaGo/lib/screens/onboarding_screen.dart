@@ -4,14 +4,16 @@ import 'package:smarttrip/screens/login_screen.dart';
 import 'package:smarttrip/widgets/onboarding/onboarding_card.dart';
 import 'package:smarttrip/widgets/onboarding/onboarding_header.dart';
 
-class Khampha extends StatefulWidget {
-  const Khampha({super.key});
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
 
   @override
-  State<Khampha> createState() => _KhamphaState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _KhamphaState extends State<Khampha> {
+typedef Khampha = OnboardingScreen;
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/screens/interest_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/utils/validators.dart';
@@ -45,9 +46,12 @@ class _SignupScreenState extends State<RegisterScreen> {
       context,
       'Đăng ký tài khoản thành công cho ${_nameController.text.trim()}!',
     );
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const InterestScreen()),
+        );
       }
     });
   }

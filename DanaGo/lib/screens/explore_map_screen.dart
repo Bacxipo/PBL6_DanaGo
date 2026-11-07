@@ -219,26 +219,40 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Nút bấm định vị nổi trên bản đồ
           Positioned.fill(
             child: FlutterMap(
               mapController: _mapController,
-              options: const MapOptions(
-                initialCenter: LatLng(16.0680, 108.2430),
+              options: MapOptions(
+                initialCenter: const LatLng(16.0680, 108.2430),
                 initialZoom: 13.8,
                 minZoom: 10.0,
                 maxZoom: 18.0,
+                backgroundColor: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFE2E8F0),
               ),
               children: [
                 TileLayer(
-                  urlTemplate:
-                      'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b'],
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.smarttrip.app',
+                  tileBuilder: isDark
+                      ? (context, tileWidget, tile) => ColorFiltered(
+                            colorFilter: const ColorFilter.matrix(<double>[
+                              -0.15, -0.45, -0.05, 0, 165, // R
+                              -0.15, -0.45, -0.05, 0, 175, // G
+                              -0.15, -0.45, -0.05, 0, 195, // B
+                               0.00,  0.00,  0.00, 1,   0, // A
+                            ]),
+                            child: tileWidget,
+                          )
+                      : null,
                 ),
                 MarkerLayer(
                   markers: [
@@ -300,11 +314,11 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),

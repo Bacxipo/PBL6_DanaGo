@@ -61,6 +61,8 @@ class _FeedCreateExperienceViewState extends State<FeedCreateExperienceView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
@@ -68,9 +70,11 @@ class _FeedCreateExperienceViewState extends State<FeedCreateExperienceView> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderLight),
+            border: Border.all(
+              color: isDark ? Colors.white10 : AppColors.borderLight,
+            ),
           ),
           child: Row(
             children: [
@@ -144,9 +148,11 @@ class _FeedCreateExperienceViewState extends State<FeedCreateExperienceView> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.borderLight),
+            border: Border.all(
+              color: isDark ? Colors.white10 : AppColors.borderLight,
+            ),
           ),
           child: TextField(
             controller: widget.titleController,
@@ -160,11 +166,11 @@ class _FeedCreateExperienceViewState extends State<FeedCreateExperienceView> {
               ),
               border: InputBorder.none,
             ),
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Be Vietnam Pro',
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: isDark ? Colors.white : AppColors.textPrimary,
             ),
           ),
         ),
@@ -174,9 +180,11 @@ class _FeedCreateExperienceViewState extends State<FeedCreateExperienceView> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.borderLight),
+            border: Border.all(
+              color: isDark ? Colors.white10 : AppColors.borderLight,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,9 +276,11 @@ class _FeedCreateExperienceViewState extends State<FeedCreateExperienceView> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderLight),
+            border: Border.all(
+              color: isDark ? Colors.white10 : AppColors.borderLight,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,9 +360,11 @@ class _FeedCreateExperienceViewState extends State<FeedCreateExperienceView> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderLight),
+            border: Border.all(
+              color: isDark ? Colors.white10 : AppColors.borderLight,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

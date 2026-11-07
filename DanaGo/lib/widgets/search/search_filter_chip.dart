@@ -22,6 +22,8 @@ class SearchFilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 38,
       child: ListView.builder(
@@ -44,12 +46,14 @@ class SearchFilterChips extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.primary : Colors.white,
+                  color: isActive
+                      ? AppColors.primary
+                      : (isDark ? const Color(0xFF1E293B) : Colors.white),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isActive
                         ? AppColors.primary
-                        : AppColors.border,
+                        : (isDark ? Colors.white12 : AppColors.border),
                   ),
                 ),
                 child: Row(
@@ -63,7 +67,7 @@ class SearchFilterChips extends StatelessWidget {
                             ? Colors.white
                             : (label.contains('Đánh giá')
                                   ? AppColors.starActive
-                                  : AppColors.textTertiary),
+                                  : (isDark ? Colors.grey.shade400 : AppColors.textTertiary)),
                       ),
                       const SizedBox(width: 5),
                     ],
@@ -74,7 +78,7 @@ class SearchFilterChips extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: isActive
                             ? Colors.white
-                            : AppColors.textSecondary,
+                            : (isDark ? Colors.grey.shade300 : AppColors.textSecondary),
                       ),
                     ),
                   ],

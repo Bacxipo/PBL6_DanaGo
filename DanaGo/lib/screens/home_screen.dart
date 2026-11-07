@@ -10,7 +10,9 @@ import 'package:smarttrip/widgets/home/featured_card.dart';
 import 'package:smarttrip/widgets/home/home_search_bar.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onSearchTap;
+
+  const HomeScreen({super.key, this.onSearchTap});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -204,12 +206,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedCategory = _categories[_selectCategoryIndex];
     final bool isAll = _selectCategoryIndex == 0;
     final filteredPlaces = _categoryPlaces[selectedCategory] ?? [];
 
     return Scaffold(
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -233,7 +236,13 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // Search bar with Avatar shortcut
               HomeSearchBar(
-                onTap: () => _navigateToSearch(),
+                onTap: () {
+                  if (widget.onSearchTap != null) {
+                    widget.onSearchTap!();
+                  } else {
+                    _navigateToSearch();
+                  }
+                },
                 onAvatarTap: _navigateToUserProfile,
               ),
               const SizedBox(height: 20),
@@ -256,13 +265,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Nổi bật tại Đà Nẵng',
                       style: TextStyle(
                         fontFamily: 'Be Vietnam Pro',
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                     GestureDetector(
@@ -301,13 +310,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Gợi ý cho bạn',
                       style: TextStyle(
                         fontFamily: 'Be Vietnam Pro',
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                     GestureDetector(
@@ -339,13 +348,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Gần bạn',
                       style: TextStyle(
                         fontFamily: 'Be Vietnam Pro',
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                     GestureDetector(

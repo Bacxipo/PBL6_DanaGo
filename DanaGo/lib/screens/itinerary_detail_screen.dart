@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:smarttrip/models/itinerary_model.dart';
+import 'package:smarttrip/screens/suggest_itinerary_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_bottom_bar.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_day_tab_bar.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_timeline_item.dart';
+import 'package:smarttrip/widgets/itinerary/checklist_bottom_sheet.dart';
+import 'explore_map_screen.dart';
+import 'main_screen.dart';
 
 class ItineraryDetailScreen extends StatefulWidget {
   final Itinerary itinerary;
@@ -20,6 +24,20 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
   late TabController _tabController;
   int _selectedDay = 0;
   bool _isSaved = true;
+  void _saveItinerary() {
+    setState(() {
+      _isSaved = true; // Chuyển trạng thái về Đã lưu
+    });
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ Đã lưu toàn bộ thay đổi lịch trình!'),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -42,9 +60,10 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
   @override
   Widget build(BuildContext context) {
     final it = widget.itinerary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           _buildSliverAppBar(it, innerBoxIsScrolled),
@@ -64,14 +83,25 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
                     child: TabBarView(
                       controller: _tabController,
                       children: it.days.map((day) {
-                        return _buildDayContent(day);
+                        return _buildDayContent(day, isDark);
                       }).toList(),
                     ),
                   ),
                 ],
               ),
       ),
-      bottomNavigationBar: const ItineraryBottomBar(),
+      bottomNavigationBar: ItineraryBottomBar(
+        onAutoSave: _saveItinerary,
+        onAddPlace: () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const MainScreen(initialIndex: 4),
+            ),
+            (route) => false,
+          );
+        },
+      ),
     );
   }
 
@@ -80,6 +110,8 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
       expandedHeight: 280,
       pinned: true,
       backgroundColor: AppColors.primary,
+
+      // 1. Nút Quay về
       leading: GestureDetector(
         onTap: () => Navigator.pop(context),
         child: Container(
@@ -92,38 +124,98 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
         ),
       ),
       actions: [
+        // --- NÚT CHECKLIST ---
         GestureDetector(
           onTap: () {
-            setState(() => _isSaved = !_isSaved);
-            HapticFeedback.lightImpact();
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) => const ChecklistBottomSheet(),
+            );
           },
           child: Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.black26,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              _isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
               color: Colors.white,
-              size: 20,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_box_outlined,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
+                SizedBox(width: 5),
+                Text(
+                  'Checklist',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
+        // --- NÚT ĐÃ LƯU
         GestureDetector(
-          onTap: () {},
-          child: Container(
-            margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.black26,
-              borderRadius: BorderRadius.circular(12),
+          onTap: _saveItinerary,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            margin: const EdgeInsets.only(
+              top: 10,
+              bottom: 10,
+              left: 4,
+              right: 14,
             ),
-            child: const Icon(
-              Icons.share_rounded,
-              color: Colors.white,
-              size: 20,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: _isSaved ? const Color(0xFFECFDF5) : AppColors.primary,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _isSaved ? const Color(0xFFA7F3D0) : AppColors.primary,
+              ),
+              boxShadow: _isSaved
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _isSaved ? Icons.check_rounded : Icons.save_rounded,
+                  size: 15,
+                  color: _isSaved ? const Color(0xFF047857) : Colors.white,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _isSaved ? 'Đã lưu' : 'Lưu',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: _isSaved ? const Color(0xFF047857) : Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -181,7 +273,6 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // Date range
                   Row(
                     children: [
                       const Icon(
@@ -272,7 +363,7 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
     );
   }
 
-  Widget _buildDayContent(ItineraryDay day) {
+  Widget _buildDayContent(ItineraryDay day, bool isDark) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
       itemCount: day.places.length + 2,
@@ -282,10 +373,10 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               '${day.label}: ${_getDayTitle(day)} — ${day.places.length} điểm',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: isDark ? Colors.white : AppColors.textPrimary,
               ),
             ),
           );
@@ -312,15 +403,31 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
   }
 
   Widget _buildAddPlaceButton(ItineraryDay day) {
-    return Container(
-      margin: const EdgeInsets.only(left: 44, top: 4, bottom: 16),
+    return Center(
       child: OutlinedButton.icon(
-        onPressed: () {},
-        icon: const Icon(Icons.add_circle_outline, size: 18),
-        label: Text('Thêm điểm đến vào ${day.label}'),
+        onPressed: () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const MainScreen(initialIndex: 1),
+            ),
+            (route) => false,
+          );
+        },
+        icon: const Icon(
+          Icons.add_location_alt_outlined,
+          size: 18,
+          color: AppColors.primary,
+        ),
+        label: Text(
+          'Thêm điểm đến vào ${day.label}',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
+          side: const BorderSide(color: AppColors.primary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -343,10 +450,7 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
           const SizedBox(height: 12),
           const Text(
             'Chưa có lịch trình chi tiết',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textTertiary,
-            ),
+            style: TextStyle(fontSize: 16, color: AppColors.textTertiary),
           ),
         ],
       ),

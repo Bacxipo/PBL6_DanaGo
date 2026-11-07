@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smarttrip/services/google_auth_service.dart';
 import 'package:smarttrip/screens/register_screen.dart';
 import 'package:smarttrip/screens/forgot_password_screen.dart';
-import 'package:smarttrip/screens/interest_screen.dart';
+import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/app_styles.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
@@ -83,13 +83,10 @@ class _LoginScreenState extends State<LoginScreen> {
       UiHelpers.showError(context, "Địa chỉ Email không đúng định dạng!");
       return;
     }
-    UiHelpers.showSuccess(
-      context,
-      'Đăng nhập thành công! Chào mừng quay trở lại',
-    );
+    UiHelpers.showSuccess(context, 'Đăng nhập thành công!');
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const InterestScreen()),
+      MaterialPageRoute(builder: (context) => const MainScreen()),
     );
   }
 
@@ -245,10 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: Divider(
-                      color: AppColors.divider,
-                      thickness: 1,
-                    ),
+                    child: Divider(color: AppColors.divider, thickness: 1),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -262,10 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   Expanded(
-                    child: Divider(
-                      color: AppColors.divider,
-                      thickness: 1,
-                    ),
+                    child: Divider(color: AppColors.divider, thickness: 1),
                   ),
                 ],
               ),
@@ -342,13 +333,9 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 15),
               GestureDetector(
                 onTap: () {
-                  // Logic
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Đang truy cập ứng dụng với tư cách khách...',
-                      ),
-                    ),
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainScreen()),
                   );
                 },
                 child: const Row(

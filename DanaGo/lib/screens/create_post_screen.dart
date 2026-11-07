@@ -211,30 +211,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         centerTitle: true,
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Hủy',
             style: TextStyle(
               fontFamily: 'Be Vietnam Pro',
               fontSize: 14,
-              color: AppColors.neutral,
+              color: isDark ? Colors.grey.shade400 : AppColors.neutral,
             ),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Tạo bài viết',
           style: TextStyle(
             fontFamily: 'Be Vietnam Pro',
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: isDark ? Colors.white : AppColors.textPrimary,
           ),
         ),
         actions: [

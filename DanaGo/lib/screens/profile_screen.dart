@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:smarttrip/services/google_auth_service.dart';
 import 'package:smarttrip/screens/edit_profile_screen.dart';
 import 'package:smarttrip/screens/favorites_screen.dart';
-import 'package:smarttrip/screens/itinerary_screen.dart';
 import 'package:smarttrip/screens/login_screen.dart';
+import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/screens/my_reviews_screen.dart';
 import 'package:smarttrip/screens/notifications_screen.dart';
 import 'package:smarttrip/screens/user_profile_posts_screen.dart';
@@ -11,6 +11,7 @@ import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/profile/profile_header.dart';
 import 'package:smarttrip/widgets/profile/profile_menu_section.dart';
 import 'package:smarttrip/widgets/profile/profile_stats_pill.dart';
+import 'package:smarttrip/theme/theme_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -62,9 +63,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToItinerary() {
-    Navigator.push(
+    Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const ItineraryScreen()),
+      MaterialPageRoute(builder: (_) => const MainScreen(initialIndex: 2)),
+      (route) => false,
     );
   }
 
@@ -81,7 +83,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute(
         builder: (_) => UserProfilePostsScreen(
           authorName: _user['name'] ?? 'Nguyễn Văn A',
-          authorAvatar: _user['avatar'] ?? 'https://i.postimg.cc/X7QYBdY8/avt2.jpg',
+          authorAvatar:
+              _user['avatar'] ?? 'https://i.postimg.cc/X7QYBdY8/avt2.jpg',
           isVerified: true,
           isCurrentUser: true,
         ),
@@ -92,11 +95,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ─── Header with Avatar ────────────────────────────────────
           SliverToBoxAdapter(
             child: ProfileHeader(
               user: _user,
@@ -104,8 +106,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onSettingsTap: _navigateToEditProfile,
             ),
           ),
-
-          // ─── Stats Pill ───────────────────────────────────────────
           SliverToBoxAdapter(
             child: ProfileStatsPill(
               tripsCount: _user['tripsCount'] ?? 0,
@@ -118,9 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           // ─── Account Section ──────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _buildSectionLabel('Tài khoản'),
-          ),
+          SliverToBoxAdapter(child: _buildSectionLabel('Tài khoản')),
           SliverToBoxAdapter(
             child: ProfileMenuSection(
               items: [
@@ -157,64 +155,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-
           // ─── Settings Section ─────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _buildSectionLabel('Cài đặt'),
-          ),
-          SliverToBoxAdapter(
-            child: ProfileMenuSection(
-              items: [
-                ProfileMenuItem(
-                  icon: Icons.notifications_none_rounded,
-                  title: 'Thông báo',
-                  subtitle: 'Quản lý thông báo',
-                  onTap: _navigateToNotifications,
-                ),
-                ProfileMenuItem(
-                  icon: Icons.language_rounded,
-                  title: 'Ngôn ngữ',
-                  subtitle: 'Tiếng Việt',
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+          SliverToBoxAdapter(child: _buildSectionLabel('Cài đặt')),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark;
+              return SliverToBoxAdapter(
+                child: ProfileMenuSection(
+                  items: [
+                    ProfileMenuItem(
+                      icon: Icons.notifications_none_rounded,
+                      title: 'Thông báo',
+                      subtitle: 'Quản lý thông báo',
+                      onTap: _navigateToNotifications,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'VI',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+                    ProfileMenuItem(
+                      icon: Icons.language_rounded,
+                      title: 'Ngôn ngữ',
+                      subtitle: 'Tiếng Việt',
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'VI',
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
+                      onTap: () {},
                     ),
-                  ),
-                  onTap: () {},
+                    // 🔥 Mục Chế độ tối chuẩn kiểu ProfileMenuItem:
+                    ProfileMenuItem(
+                      icon: isDark
+                          ? Icons.dark_mode_rounded
+                          : Icons.light_mode_rounded,
+                      title: 'Chế độ tối',
+                      subtitle: isDark
+                          ? 'Đang bật giao diện tối'
+                          : 'Đang dùng giao diện sáng',
+                      trailing: Switch(
+                        value: isDark,
+                        activeColor: AppColors.primary,
+                        onChanged: (val) {
+                          ThemeController.toggleTheme(val);
+                        },
+                      ),
+                      onTap: () {
+                        ThemeController.toggleTheme(!isDark);
+                      },
+                    ),
+                    ProfileMenuItem(
+                      icon: Icons.shield_outlined,
+                      title: 'Bảo mật & Quyền riêng tư',
+                      onTap: () {},
+                    ),
+                  ],
                 ),
-                ProfileMenuItem(
-                  icon: Icons.dark_mode_outlined,
-                  title: 'Giao diện',
-                  subtitle: 'Sáng',
-                  onTap: () {},
-                ),
-                ProfileMenuItem(
-                  icon: Icons.shield_outlined,
-                  title: 'Bảo mật & Quyền riêng tư',
-                  onTap: () {},
-                ),
-              ],
-            ),
+              );
+            },
           ),
-
           // ─── Other Section ────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _buildSectionLabel('Khác'),
-          ),
+          SliverToBoxAdapter(child: _buildSectionLabel('Khác')),
           SliverToBoxAdapter(
             child: ProfileMenuSection(
               items: [
@@ -305,18 +317,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Đăng xuất',
-          style: TextStyle(fontFamily: 'Be Vietnam Pro', fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontFamily: 'Be Vietnam Pro',
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: const Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
-          style: TextStyle(fontFamily: 'Be Vietnam Pro', color: AppColors.textSecondary),
+          style: TextStyle(
+            fontFamily: 'Be Vietnam Pro',
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text(
               'Hủy',
-              style: TextStyle(fontFamily: 'Be Vietnam Pro', color: AppColors.textTertiary),
+              style: TextStyle(
+                fontFamily: 'Be Vietnam Pro',
+                color: AppColors.textTertiary,
+              ),
             ),
           ),
           ElevatedButton(
@@ -346,7 +367,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: const Text(
               'Đăng xuất',
-              style: TextStyle(fontFamily: 'Be Vietnam Pro', fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontFamily: 'Be Vietnam Pro',
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

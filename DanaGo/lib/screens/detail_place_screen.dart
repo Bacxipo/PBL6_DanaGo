@@ -145,7 +145,7 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       bottomNavigationBar: DetailBotttomActionBar(
         onAddtoItinerary: () {
           ScaffoldMessenger.of(context).showSnackBar(

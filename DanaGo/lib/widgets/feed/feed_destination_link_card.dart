@@ -58,15 +58,16 @@ class _FeedDestinationLinkCardState extends State<FeedDestinationLinkCard> {
   @override
   Widget build(BuildContext context) {
     final dest = widget.destination;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final rating = widget.ratingText ?? dest.rating.toStringAsFixed(1);
     final tag = widget.priceOrTagText ?? dest.tag;
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF5F5),
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEFF5F5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.08),
+          color: isDark ? Colors.white10 : AppColors.primary.withValues(alpha: 0.08),
         ),
       ),
       child: Material(
@@ -110,11 +111,11 @@ class _FeedDestinationLinkCardState extends State<FeedDestinationLinkCard> {
                     children: [
                       Text(
                         dest.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -172,7 +173,7 @@ class _FeedDestinationLinkCardState extends State<FeedDestinationLinkCard> {
                       color: _isSaved ? AppColors.primary : Colors.white,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(

@@ -13,15 +13,17 @@ class SuggestResultSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       builder: (context, scroll) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -31,7 +33,7 @@ class SuggestResultSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: isDark ? Colors.white24 : AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -52,7 +54,7 @@ class SuggestResultSheet extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -61,10 +63,10 @@ class SuggestResultSheet extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                              color: isDark ? Colors.white : AppColors.textPrimary,
                             ),
                           ),
-                          Text(
+                          const Text(
                             'Được tạo bởi AI • 3 ngày • 8 điểm đến',
                             style: TextStyle(
                               fontSize: 12,
@@ -90,11 +92,13 @@ class SuggestResultSheet extends StatelessWidget {
                         'Cà Phê Sơn Trà',
                       ],
                       '~350.000đ',
+                      isDark,
                     ),
                     _buildDaySummary(
                       'Ngày 2',
                       ['Bà Nà Hills', 'Cầu Vàng', 'Khu ẩm thực Bạch Đằng'],
                       '~850.000đ',
+                      isDark,
                     ),
                     _buildDaySummary(
                       'Ngày 3',
@@ -103,6 +107,7 @@ class SuggestResultSheet extends StatelessWidget {
                         'Làng rau Trà Quế',
                       ],
                       '~250.000đ',
+                      isDark,
                     ),
                     const SizedBox(height: 12),
                     // Total cost
@@ -192,14 +197,15 @@ class SuggestResultSheet extends StatelessWidget {
     String day,
     List<String> places,
     String cost,
+    bool isDark,
   ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: isDark ? const Color(0xFF0F172A) : AppColors.bgCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: isDark ? Colors.white12 : AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,9 +255,9 @@ class SuggestResultSheet extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     p,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: isDark ? Colors.grey.shade300 : AppColors.textSecondary,
                     ),
                   ),
                 ],

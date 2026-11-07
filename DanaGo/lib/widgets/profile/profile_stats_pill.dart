@@ -21,15 +21,17 @@ class ProfileStatsPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(30), // Bo tròn dạng viên thuốc
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
             blurRadius: 16,
             spreadRadius: 1,
             offset: const Offset(0, 4),
@@ -39,22 +41,25 @@ class ProfileStatsPill extends StatelessWidget {
       child: Row(
         children: [
           _buildStatItem(
+            context: context,
             count: '$tripsCount',
             label: 'Lịch trình',
             icon: Icons.map_rounded,
             color: AppColors.primary,
             onTap: onTripsTap,
           ),
-          _buildDividerVertical(),
+          _buildDividerVertical(isDark),
           _buildStatItem(
+            context: context,
             count: '$reviewsCount',
             label: 'Đánh giá',
             icon: Icons.star_rounded,
             color: AppColors.accentLight,
             onTap: onReviewsTap,
           ),
-          _buildDividerVertical(),
+          _buildDividerVertical(isDark),
           _buildStatItem(
+            context: context,
             count: '$favoritesCount',
             label: 'Yêu thích',
             icon: Icons.favorite_rounded,
@@ -67,12 +72,15 @@ class ProfileStatsPill extends StatelessWidget {
   }
 
   Widget _buildStatItem({
+    required BuildContext context,
     required String count,
     required String label,
     required IconData icon,
     required Color color,
     VoidCallback? onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -90,18 +98,18 @@ class ProfileStatsPill extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               count,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: isDark ? Colors.white : AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textTertiary,
+                color: isDark ? const Color(0xFF94A3B8) : AppColors.textTertiary,
               ),
             ),
           ],
@@ -110,11 +118,11 @@ class ProfileStatsPill extends StatelessWidget {
     );
   }
 
-  Widget _buildDividerVertical() {
+  Widget _buildDividerVertical(bool isDark) {
     return Container(
       width: 1,
       height: 42,
-      color: AppColors.divider,
+      color: isDark ? const Color(0xFF334155) : AppColors.divider,
     );
   }
 }

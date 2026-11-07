@@ -23,6 +23,8 @@ class ItineraryTimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         // ─── Main Place Row ──────────────────────────────────────────
@@ -36,7 +38,10 @@ class ItineraryTimelineItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                  width: 2,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withValues(alpha: 0.3),
@@ -61,11 +66,11 @@ class ItineraryTimelineItem extends StatelessWidget {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -159,10 +164,10 @@ class ItineraryTimelineItem extends StatelessWidget {
                                   children: [
                                     Text(
                                       place.name,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
+                                        color: isDark ? Colors.white : AppColors.textPrimary,
                                       ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,

@@ -73,14 +73,15 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.8,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -92,7 +93,7 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: isDark ? Colors.white24 : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -104,23 +105,31 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
               children: [
                 Text(
                   'Bình luận (${_comments.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Be Vietnam Pro',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 20,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
                   onPressed: () => Navigator.pop(context),
                   visualDensity: VisualDensity.compact,
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: AppColors.divider),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: isDark ? Colors.white12 : AppColors.divider,
+          ),
           // Comment list
           Expanded(
             child: _comments.isEmpty
@@ -144,7 +153,7 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                     separatorBuilder: (context, index) => const SizedBox(height: 16),
                     itemBuilder: (context, index) {
                       final cmt = _comments[index];
-                      return _buildCommentItem(cmt);
+                      return _buildCommentItem(cmt, isDark);
                     },
                   ),
           ),
@@ -157,10 +166,10 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
               bottom: bottomInset + 12,
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, -2),
                 ),
@@ -187,11 +196,15 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF5F5),
+                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEFF5F5),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
                       controller: _commentController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppColors.textPrimary,
+                        fontSize: 13,
+                      ),
                       decoration: const InputDecoration(
                         hintText: 'Thêm bình luận...',
                         hintStyle: TextStyle(
@@ -222,7 +235,7 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
     );
   }
 
-  Widget _buildCommentItem(CommentItem cmt) {
+  Widget _buildCommentItem(CommentItem cmt, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -248,7 +261,7 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F6F6),
+                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F6F6),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
@@ -256,21 +269,21 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                   children: [
                     Text(
                       cmt.authorName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Be Vietnam Pro',
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       cmt.content,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Be Vietnam Pro',
                         fontSize: 13,
                         height: 1.35,
-                        color: AppColors.textSecondary,
+                        color: isDark ? Colors.white70 : AppColors.textSecondary,
                       ),
                     ),
                   ],

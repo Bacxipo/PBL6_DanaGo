@@ -13,21 +13,26 @@ class _DetailAboutSectionState extends State<DetailAboutSection> {
   bool isExpanded = false;
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Về địa điểm này',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           widget.description,
           maxLines: isExpanded ? null : 3,
           overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: AppColors.textSecondary,
+            color: isDark ? Colors.white70 : AppColors.textSecondary,
             height: 1.5,
           ),
         ),
