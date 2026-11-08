@@ -1,128 +1,155 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
     Sparkles,
     MapPin,
-    Clock,
+    Calendar,
     Coins,
-    Star,
+    SlidersHorizontal,
+    Plus,
+    X,
+    Hotel,
+    Loader2,
+    AlertCircle,
+    RotateCcw,
+    Map as MapIcon,
+    ListFilter,
     Compass,
     Check,
-    AlertCircle,
-    Loader2,
-    RotateCcw,
-    SlidersHorizontal,
-    Waves,
-    Utensils,
-    Landmark,
-    Trees,
-    FerrisWheel,
-    ArrowRight,
-    Send,
-    CornerDownLeft,
+    ChevronDown,
 } from 'lucide-react';
 
-const AI_API_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000';
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import SelectPlacesModal from '@/components/comon/ai-plan/SelectPlacesModal';
+import SelectLodgingModal from '@/components/comon/ai-plan/SelectLodgingModal';
+import PlanResultView from '@/components/comon/ai-plan/PlanResultView';
 
-// 5 nhóm sở thích chuẩn từ model AI DanaGo
-const INTEREST_GROUPS = [
-    { id: 'Biển & đảo', label: 'Biển & Đảo', icon: Waves },
-    { id: 'Ẩm thực', label: 'Ẩm thực địa phương', icon: Utensils },
-    { id: 'Văn hóa & lịch sử', label: 'Văn hóa & Lịch sử', icon: Landmark },
-    { id: 'Thiên nhiên & khám phá', label: 'Thiên nhiên & Khám phá', icon: Trees },
-    { id: 'Vui chơi & check-in', label: 'Vui chơi & Check-in', icon: FerrisWheel },
+// Tải bản đồ Leaflet động (tránh lỗi SSR trong Next.js)
+const AiPlanMap = dynamic(
+    () => import('@/components/comon/ai-plan/AiPlanMap'),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="w-full h-full min-h-[550px] flex flex-col items-center justify-center bg-slate-100 rounded-2xl border border-gray-200 text-gray-500 space-y-2">
+                <Loader2 size={30} className="animate-spin text-[#006971]" />
+                <span className="text-xs font-medium">Đang tải bản đồ tương tác...</span>
+            </div>
+        ),
+    }
+);
+
+const AI_API_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000';
+
+// Các phong cách du lịch tương ứng với model AI
+const STYLE_OPTIONS = [
+    { id: 'Văn hóa & lịch sử', label: 'Đậm văn hóa & Bản địa', icon: '🏛️' },
+    { id: 'Biển & đảo', label: 'Nghỉ dưỡng biển & Đảo', icon: '🌊' },
+    { id: 'Ẩm thực', label: 'Khám phá ẩm thực địa phương', icon: '🍜' },
+    { id: 'Thiên nhiên & khám phá', label: 'Thiên nhiên sinh thái & Suối thác', icon: '🌲' },
+    { id: 'Vui chơi & check-in', label: 'Vui chơi giải trí & Check-in', icon: '🎡' },
 ];
 
 // Danh sách khu vực
-const REGIONS = [
-    { value: '', label: 'Tất cả khu vực' },
-    { value: 'Đà Nẵng nội thành', label: 'Đà Nẵng nội thành' },
-    { value: 'Hội An - Điện Bàn', label: 'Hội An - Điện Bàn' },
-    { value: 'Hòa Vang - Bà Nà', label: 'Hòa Vang - Bà Nà' },
-    { value: 'Duy Xuyên - Mỹ Sơn', label: 'Duy Xuyên - Mỹ Sơn' },
-    { value: 'Cù Lao Chàm', label: 'Cù Lao Chàm' },
-    { value: 'Nam Quảng Nam', label: 'Nam Quảng Nam' },
-    { value: 'Tây Bắc Quảng Nam', label: 'Tây Bắc Quảng Nam' },
-    { value: 'Tây Nam Quảng Nam', label: 'Tây Nam Quảng Nam' },
+const REGION_OPTIONS = [
+    { value: '', label: 'Tất cả khu vực (AI tự cân đối cung đường)' },
+    { value: 'Đà Nẵng nội thành', label: 'Đà Nẵng nội thành (Sơn Trà, Hải Châu, Ngũ Hành Sơn)' },
+    { value: 'Hội An - Điện Bàn', label: 'Hội An - Điện Bàn (Phố Cổ, Biển An Bàng)' },
+    { value: 'Hòa Vang - Bà Nà', label: 'Hòa Vang - Bà Nà (Bà Nà Hills, Núi Thần Tài)' },
+    { value: 'Cù Lao Chàm', label: 'Cù Lao Chàm (Lặn biển & Khám phá đảo)' },
+    { value: 'Duy Xuyên - Mỹ Sơn', label: 'Duy Xuyên - Mỹ Sơn (Thánh địa Mỹ Sơn)' },
+    { value: 'Nam Quảng Nam', label: 'Nam Quảng Nam (Tam Kỳ, Làng Bích Họa)' },
 ];
 
-// Các gợi ý câu hỏi mẫu thông minh
-const QUICK_PROMPTS = [
-    '🌅 Chỗ ngắm hoàng hôn yên tĩnh lãng mạn',
-    '☕ Quán cà phê view đẹp sống ảo ở Hội An',
-    '🏖️ Bãi biển trong xanh yên bình ít người',
-    '🍜 Quán ăn ngon đặc sản đậm chất Đà Nẵng',
-    '🏛️ Địa điểm văn hóa lịch sử tâm linh',
-    '🌲 Khám phá thiên nhiên suối thác mát mẻ',
-];
+export default function AiPlanPage() {
+    // 1. FORM STATES (Theo giao diện người dùng yêu cầu)
+    const [destination, setDestination] = useState('Đà Nẵng');
 
-// Ảnh mặc định theo từng nhóm sở thích khi chưa tải được ảnh riêng
-const FALLBACK_IMAGES = {
-    'Biển & đảo': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
-    'Ẩm thực': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80',
-    'Văn hóa & lịch sử': 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=800&q=80',
-    'Thiên nhiên & khám phá': 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=80',
-    'Vui chơi & check-in': 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=800&q=80',
-};
+    // Ngày bắt đầu & kết thúc (Mặc định hôm nay -> 2 ngày sau = 3 ngày 2 đêm)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const defaultEndStr = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 2);
+        return d.toISOString().split('T')[0];
+    })();
 
-export default function AIPlanPage() {
-    // Form States
-    const [query, setQuery] = useState('');
-    const [selectedInterests, setSelectedInterests] = useState([]);
-    const [region, setRegion] = useState('');
-    const [budget, setBudget] = useState('');
-    const [perGroup, setPerGroup] = useState(6);
+    const [startDate, setStartDate] = useState(todayStr);
+    const [endDate, setEndDate] = useState(defaultEndStr);
+    const [numDays, setNumDays] = useState(3);
 
-    // Results States
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [results, setResults] = useState(null);
-    const [activeGroupTab, setActiveGroupTab] = useState('ALL');
+    // Tính toán số ngày và đêm
+    useEffect(() => {
+        if (!startDate || !endDate) return;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.max(0, end - start);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        setNumDays(Math.min(Math.max(1, diffDays), 7));
+    }, [startDate, endDate]);
+
+    // Ngân sách mỗi người
+    const [budget, setBudget] = useState(4200000);
+
+    // Phong cách / Sở thích đã chọn
+    const [selectedInterests, setSelectedInterests] = useState(['Văn hóa & lịch sử']);
+
+    // Khu vực trọng tâm
+    const [selectedRegion, setSelectedRegion] = useState('');
+
+    // Địa điểm người dùng chọn trước
     const [selectedPlaces, setSelectedPlaces] = useState([]);
-    const [destinationThumbnails, setDestinationThumbnails] = useState({});
+    const [isPlacesModalOpen, setIsPlacesModalOpen] = useState(false);
+
+    // Nơi ở người dùng chọn trước
+    const [selectedLodgings, setSelectedLodgings] = useState([]);
+    const [isLodgingModalOpen, setIsLodgingModalOpen] = useState(false);
+
+    // 2. KẾT QUẢ VÀ TRẠNG THÁI LẬP LỊCH
+    const [loadingPlan, setLoadingPlan] = useState(false);
+    const [error, setError] = useState(null);
+    const [plan, setPlan] = useState(null);
+
+    // Chế độ xem cột phải trên màn hình nhỏ: Bản đồ hoặc Chi tiết lịch
+    const [mobileRightView, setMobileRightView] = useState('map'); // 'map' | 'timeline'
 
     // Toggle nhóm sở thích
-    const toggleInterest = (interestId) => {
+    const toggleInterest = (id) => {
         setSelectedInterests((prev) =>
-            prev.includes(interestId) ? prev.filter((i) => i !== interestId) : [...prev, interestId]
+            prev.includes(id) ? (prev.length > 1 ? prev.filter((i) => i !== id) : prev) : [...prev, id]
         );
     };
 
-    // Chọn câu hỏi mẫu
-    const handleSelectPrompt = (prompt) => {
-        const cleanText = prompt.replace(/^[\p{Emoji}\s]+/u, '').trim();
-        setQuery(cleanText);
+    // Đặt lại form về mặc định
+    const handleResetAll = () => {
+        setStartDate(todayStr);
+        setEndDate(defaultEndStr);
+        setBudget(4200000);
+        setSelectedInterests(['Văn hóa & lịch sử']);
+        setSelectedRegion('');
+        setSelectedPlaces([]);
+        setSelectedLodgings([]);
+        setPlan(null);
+        setError(null);
     };
 
-    // Gửi request tới AI Service
-    const handleSearchCandidates = async (e) => {
+    // Gọi AI Service lập lịch trình
+    const handleGeneratePlan = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        setLoading(true);
+        setLoadingPlan(true);
         setError(null);
 
-        // Chuyển đổi ngân sách thành số (nếu có)
-        let parsedBudget = null;
-        if (budget && budget.toString().trim()) {
-            const num = parseInt(budget.toString().replace(/[^0-9]/g, ''), 10);
-            if (!isNaN(num) && num > 0) {
-                parsedBudget = num;
-            }
-        }
-
-        const payload = {
-            query: query.trim() || null,
-            interests: selectedInterests,
-            budget_pp: parsedBudget,
-            region: region || null,
-            per_group: perGroup,
-            top_k: 12,
-        };
-
         try {
-            const res = await fetch(`${AI_API_URL}/candidates`, {
+            const payload = {
+                num_days: numDays,
+                budget_pp: budget,
+                interests: selectedInterests,
+                region: selectedRegion || null,
+                selected_ids: selectedPlaces.map((p) => p.id),
+                lodging_ids: selectedLodgings.map((l) => l.id),
+            };
+
+            const res = await fetch(`${AI_API_URL}/plan`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -132,590 +159,409 @@ export default function AIPlanPage() {
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
-                let detailMsg = errData.detail;
-                if (Array.isArray(detailMsg)) {
-                    detailMsg = detailMsg.map((d) => d.msg || JSON.stringify(d)).join(', ');
-                }
-                throw new Error(detailMsg || `Lỗi máy chủ AI (Mã lỗi ${res.status})`);
+                let msg = errData.detail || `Lỗi từ AI Planner (Mã lỗi ${res.status})`;
+                if (Array.isArray(msg)) msg = msg.map((m) => m.msg || JSON.stringify(m)).join(', ');
+                throw new Error(msg);
             }
 
             const data = await res.json();
-            setResults(data);
-            setActiveGroupTab('ALL');
-
-            // Tải ảnh đại diện cho các địa điểm trả về từ backend API (nếu có)
-            fetchThumbnailsForResults(data.groups);
+            setPlan(data);
+            setMobileRightView('timeline'); // Tự động mở tab timeline xem chi tiết khi tạo xong
         } catch (err) {
-            console.error('Lỗi khi gọi AI service:', err);
+            console.error('Lỗi tạo lịch trình:', err);
             setError(
                 err.message.includes('Failed to fetch')
-                    ? 'Không thể kết nối tới AI Service (cổng 8000). Vui lòng đảm bảo bạn đang chạy server AI ở terminal local: "uvicorn api:app --port 8000"'
+                    ? 'Không thể kết nối tới AI Service (cổng 8000). Vui lòng đảm bảo server AI đang chạy.'
                     : err.message
             );
         } finally {
-            setLoading(false);
+            setLoadingPlan(false);
         }
     };
 
-    // Lấy thumbnail ảnh từ API Backend cho các địa điểm tìm được
-    const fetchThumbnailsForResults = (groups) => {
-        if (!groups) return;
-        const allPlaces = Object.values(groups).flat();
-        const ids = [...new Set(allPlaces.map((p) => p.id))].slice(0, 30);
-
-        ids.forEach(async (id) => {
-            if (destinationThumbnails[id]) return;
-            try {
-                const res = await fetch(`${BACKEND_API_URL}/destinations/${id}`);
-                if (res.ok) {
-                    const placeData = await res.json();
-                    let imgUrl = null;
-                    if (placeData.images && placeData.images.length > 0) {
-                        imgUrl = typeof placeData.images[0] === 'string' ? placeData.images[0] : placeData.images[0]?.imageUrl;
-                    }
-                    if (imgUrl) {
-                        setDestinationThumbnails((prev) => ({ ...prev, [id]: imgUrl }));
-                    }
-                }
-            } catch {
-                // Bỏ qua lỗi tải thumbnail lẻ
-            }
-        });
-    };
-
-    // Toggle chọn địa điểm
-    const toggleSelectPlace = (place) => {
-        setSelectedPlaces((prev) => {
-            const exists = prev.some((p) => p.id === place.id);
-            if (exists) {
-                return prev.filter((p) => p.id !== place.id);
-            } else {
-                return [...prev, place];
-            }
-        });
-    };
-
-    // Tự động tìm kiếm lần đầu khi vào trang
-    useEffect(() => {
-        handleSearchCandidates();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    // Lọc danh sách địa điểm theo tab đang chọn
-    const getDisplayedPlaces = () => {
-        if (!results || !results.groups) return [];
-        if (activeGroupTab === 'ALL') {
-            const all = [];
-            Object.entries(results.groups).forEach(([groupName, places]) => {
-                places.forEach((p) => all.push({ ...p, groupName }));
-            });
-            // Nếu có match_score thì sắp xếp giảm dần theo match_score
-            if (results.ranked_by === 'embedding') {
-                all.sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
-            }
-            return all;
-        }
-        return (results.groups[activeGroupTab] || []).map((p) => ({ ...p, groupName: activeGroupTab }));
-    };
-
-    const displayedPlaces = getDisplayedPlaces();
-    const totalPlacesCount = results?.groups
-        ? Object.values(results.groups).reduce((acc, curr) => acc + curr.length, 0)
-        : 0;
+    const nightsCount = Math.max(0, numDays - 1);
 
     return (
-        <div className="w-full min-h-screen bg-gray-50/60 pb-16">
-            {/* ================= HERO HEADER ================= */}
-            <div className="bg-gradient-to-r from-[#004e54] via-[#006971] to-[#00828c] text-white py-10 px-4 mb-8 shadow-sm">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="space-y-2 max-w-2xl text-center md:text-left">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-semibold text-amber-200 border border-white/20">
-                            <Sparkles size={14} className="text-amber-300 animate-pulse" />
-                            DanaGO AI Semantic Discovery
-                        </div>
-                        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                            Gợi Ý Địa Điểm Du Lịch Thông Minh
-                        </h1>
-                        <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
-                            Mô tả trải nghiệm mong muốn của bạn bằng ngôn ngữ tự nhiên, hệ thống AI sẽ phân tích ngữ nghĩa
-                            và đề xuất những điểm đến phù hợp nhất tại Đà Nẵng & Quảng Nam.
-                        </p>
-                    </div>
-
-                    {/* Huy hiệu AI Stats */}
-                    <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-2xl shadow-inner shrink-0">
-                        <div className="text-center px-2">
-                            <div className="text-2xl font-black text-amber-300">250+</div>
-                            <div className="text-xs text-gray-200">Địa điểm du lịch</div>
-                        </div>
-                        <div className="h-8 w-px bg-white/20" />
-                        <div className="text-center px-2">
-                            <div className="text-2xl font-black text-emerald-300">AI</div>
-                            <div className="text-xs text-gray-200">Semantic Matching</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* ================= CỘT TRÁI: FORM ĐIỀU KHIỂN & BỘ LỌC ================= */}
-                    <aside className="lg:col-span-4 bg-white p-6 rounded-2xl shadow-xs border border-gray-100 space-y-6 lg:sticky lg:top-6">
-                        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                            <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
-                                <SlidersHorizontal size={18} className="text-[#006971]" />
-                                Yêu cầu & Bộ lọc
-                            </h2>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setQuery('');
-                                    setSelectedInterests([]);
-                                    setRegion('');
-                                    setBudget('');
-                                }}
-                                className="text-xs text-gray-500 hover:text-[#006971] flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                                <RotateCcw size={12} /> Đặt lại
-                            </button>
+        <div className="w-full min-h-[calc(100vh-70px)] bg-[#f4f7f8] flex flex-col">
+            {/* GIAO DIỆN CHÍNH: 2 CỘT FULL SCREEN VIEW NHƯ ẢNH MẪU */}
+            <div className="flex-1 w-full max-w-[1700px] mx-auto p-3 sm:p-5 flex flex-col lg:flex-row gap-5 items-stretch">
+                {/* ================= CỘT TRÁI: PANEL ĐIỀU KHIỂN AI PLAN (SCROLLABLE) ================= */}
+                <aside className="w-full lg:w-[440px] xl:w-[470px] shrink-0 bg-white rounded-3xl shadow-sm border border-gray-200/80 p-5 sm:p-6 flex flex-col justify-between space-y-5 overflow-y-auto max-h-[calc(100vh-100px)] lg:sticky lg:top-20">
+                    <div className="space-y-5">
+                        {/* 1. ĐIỂM ĐẾN (TỈNH / THÀNH PHỐ) */}
+                        <div>
+                            <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                                Điểm Đến (Tỉnh / Thành Phố)
+                            </label>
+                            <div className="relative flex items-center">
+                                <span className="absolute left-3.5 text-[#006971]">
+                                    <MapPin size={17} />
+                                </span>
+                                <input
+                                    type="text"
+                                    value={destination}
+                                    onChange={(e) => setDestination(e.target.value)}
+                                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50/60 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#006971]/30 focus:border-[#006971] focus:bg-white transition-all"
+                                />
+                                <span className="absolute right-3.5 text-gray-400">
+                                    <Compass size={17} />
+                                </span>
+                            </div>
                         </div>
 
-                        {/* 1. Ô NHẬP MÔ TẢ TỰ DO CHO AI */}
+                        {/* 2. THỜI GIAN CHUYẾN ĐI */}
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
-                                <label className="block text-sm font-semibold text-gray-800">
-                                    Mô tả mong muốn của bạn:
+                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                    Thời Gian Chuyến Đi
                                 </label>
-                                <span className="text-xs font-normal text-gray-400">{query.length}/300</span>
+                                <span className="text-2xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                                    👑 Tối đa 7 ngày (AI Pro)
+                                </span>
                             </div>
 
-                            {/* Khung Textarea tích hợp nút Gửi và phím Enter */}
-                            <div className="rounded-2xl border border-gray-300 bg-white p-2.5 focus-within:ring-2 focus-within:ring-[#006971]/30 focus-within:border-[#006971] transition-all shadow-xs">
-                                <textarea
-                                    rows={3}
-                                    maxLength={300}
-                                    value={query}
-                                    onChange={(e) => setQuery(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSearchCandidates();
-                                        }
-                                    }}
-                                    placeholder="Ví dụ: Chỗ ngắm hoàng hôn yên tĩnh lãng mạn, hoặc quán cà phê view biển đẹp ở Hội An..."
-                                    className="w-full p-1 text-sm bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none leading-relaxed"
-                                />
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 relative flex items-center">
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        min={todayStr}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="w-full px-3 py-2 bg-gray-50/60 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#006971]/30"
+                                    />
+                                </div>
+                                <span className="text-gray-400 font-bold text-xs">-</span>
+                                <div className="flex-1 relative flex items-center">
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        min={startDate || todayStr}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="w-full px-3 py-2 bg-gray-50/60 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#006971]/30"
+                                    />
+                                </div>
 
-                                <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-1">
-                                    <span className="text-xs text-gray-400 flex items-center gap-1 select-none">
-                                        <CornerDownLeft size={11} className="text-gray-400" />
-                                        Nhấn <kbd className="px-1 py-0.5 bg-gray-100 rounded text-gray-600 font-sans text-xs">Enter</kbd> để gửi
-                                    </span>
-
-                                    {/* Nút gửi trực tiếp cạnh ô text */}
-                                    <button
-                                        type="button"
-                                        onClick={handleSearchCandidates}
-                                        disabled={loading}
-                                        className="px-3.5 py-1.5 rounded-xl bg-[#006971] hover:bg-[#00555c] active:scale-95 text-white transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs"
-                                        title="Gửi tìm kiếm (Enter)"
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <Loader2 size={13} className="animate-spin" />
-                                                <span>Đang gửi...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Send size={13} className="stroke-[2.5]" />
-                                                <span>Gửi</span>
-                                            </>
-                                        )}
-                                    </button>
+                                {/* Badge ngày đêm */}
+                                <div className="px-3 py-2 bg-teal-50 border border-teal-200 rounded-xl text-xs font-extrabold text-[#006971] whitespace-nowrap shrink-0">
+                                    {numDays} Ngày {nightsCount > 0 ? `${nightsCount} Đêm` : ''}
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Gợi ý nhanh các prompt mẫu */}
-                            <div className="mt-2.5">
-                                <span className="text-xs font-medium text-gray-500 mb-1.5 flex items-center gap-1">
-                                    <Sparkles size={12} className="text-amber-500" /> Thử các gợi ý nhanh:
+                        {/* 3. NGÂN SÁCH (BUDGET) */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                    Ngân Sách (Budget)
+                                </label>
+                                <span className="text-xs font-extrabold text-[#006971]">
+                                    Ước tính: {budget.toLocaleString('vi-VN')} VND
                                 </span>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {QUICK_PROMPTS.map((p, idx) => (
+                            </div>
+
+                            {/* Slider kéo ngân sách */}
+                            <input
+                                type="range"
+                                min="1000000"
+                                max="15000000"
+                                step="200000"
+                                value={budget}
+                                onChange={(e) => setBudget(Number(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#006971]"
+                            />
+
+                            {/* 3 mốc ngân sách */}
+                            <div className="flex justify-between text-2xs text-gray-400 font-semibold mt-1.5">
+                                <span
+                                    className={`cursor-pointer ${budget <= 2500000 ? 'text-[#006971] font-bold' : ''}`}
+                                    onClick={() => setBudget(2000000)}
+                                >
+                                    Tiết kiệm
+                                </span>
+                                <span
+                                    className={`cursor-pointer ${budget > 2500000 && budget <= 6000000 ? 'text-[#006971] font-bold' : ''}`}
+                                    onClick={() => setBudget(4200000)}
+                                >
+                                    Tiêu chuẩn
+                                </span>
+                                <span
+                                    className={`cursor-pointer ${budget > 6000000 ? 'text-[#006971] font-bold' : ''}`}
+                                    onClick={() => setBudget(9000000)}
+                                >
+                                    Cao cấp
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 4. CẢM XÚC & PHONG CÁCH / SỞ THÍCH */}
+                        <div>
+                            <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                                Cảm Xúc & Phong Cách
+                            </label>
+
+                            <div className="space-y-1.5">
+                                {STYLE_OPTIONS.map((style) => {
+                                    const isSelected = selectedInterests.includes(style.id);
+                                    return (
                                         <button
-                                            key={idx}
+                                            key={style.id}
                                             type="button"
-                                            onClick={() => handleSelectPrompt(p)}
-                                            className="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-[#e6f4f5] text-gray-700 hover:text-[#006971] transition-colors cursor-pointer text-left"
+                                            onClick={() => toggleInterest(style.id)}
+                                            className={`w-full p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                                                isSelected
+                                                    ? 'border-[#006971] bg-teal-50/70 text-[#006971] shadow-2xs'
+                                                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                                            }`}
                                         >
-                                            {p}
+                                            <span className="flex items-center gap-2">
+                                                <span>{style.icon}</span>
+                                                <span>{style.label}</span>
+                                            </span>
+                                            <span
+                                                className={`w-4 h-4 rounded-md flex items-center justify-center text-white ${
+                                                    isSelected ? 'bg-[#006971]' : 'border border-gray-300'
+                                                }`}
+                                            >
+                                                {isSelected && <Check size={11} strokeWidth={3} />}
+                                            </span>
                                         </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 5. KHU VỰC TRỌNG TÂM */}
+                        <div>
+                            <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                                Khu Vực Trọng Tâm
+                            </label>
+                            <div className="relative">
+                                <select
+                                    value={selectedRegion}
+                                    onChange={(e) => setSelectedRegion(e.target.value)}
+                                    className="w-full px-3.5 py-2.5 bg-gray-50/60 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#006971]/30 appearance-none cursor-pointer"
+                                >
+                                    {REGION_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
+                        </div>
+
+                        {/* 6. ĐỊA ĐIỂM NGƯỜI DÙNG CHỌN THÊM */}
+                        <div className="pt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                    Điểm Tham Quan Mong Muốn ({selectedPlaces.length})
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPlacesModalOpen(true)}
+                                    className="text-xs font-bold text-[#006971] hover:underline flex items-center gap-1 cursor-pointer"
+                                >
+                                    <Plus size={13} /> Chọn thêm
+                                </button>
+                            </div>
+
+                            {selectedPlaces.length === 0 ? (
+                                <div
+                                    onClick={() => setIsPlacesModalOpen(true)}
+                                    className="p-3 border border-dashed border-gray-300 rounded-xl text-center text-xs text-gray-400 hover:border-[#006971] hover:text-[#006971] hover:bg-teal-50/30 transition-all cursor-pointer"
+                                >
+                                    Chưa chọn điểm nào. Click để chọn địa điểm yêu thích!
+                                </div>
+                            ) : (
+                                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto no-scrollbar">
+                                    {selectedPlaces.map((p) => (
+                                        <span
+                                            key={p.id}
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-2xs font-semibold bg-teal-50 border border-teal-200 text-[#006971]"
+                                        >
+                                            <span className="truncate max-w-[130px]">{p.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedPlaces(selectedPlaces.filter((item) => item.id !== p.id))}
+                                                className="hover:text-red-500 cursor-pointer"
+                                            >
+                                                <X size={11} />
+                                            </button>
+                                        </span>
                                     ))}
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* 2. CHỌN NHÓM SỞ THÍCH */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-2">
-                                Nhóm sở thích (AI phân nhóm):
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                                {INTEREST_GROUPS.map((ig) => {
-                                    const isSelected = selectedInterests.includes(ig.id);
-                                    const IconComponent = ig.icon;
-                                    return (
-                                        <button
-                                            key={ig.id}
-                                            type="button"
-                                            onClick={() => toggleInterest(ig.id)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${isSelected
-                                                    ? 'bg-[#006971] text-white border-[#006971] shadow-xs'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-[#006971]/40'
-                                                }`}
-                                        >
-                                            <IconComponent size={14} className={isSelected ? 'text-white' : 'text-gray-500'} />
-                                            {ig.label}
-                                            {isSelected && <Check size={12} className="ml-0.5" />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <p className="text-2xs text-gray-400 mt-1.5">
-                                * Để trống để AI tự động phân bổ theo tất cả 5 nhóm sở thích.
-                            </p>
-                        </div>
-
-                        {/* 3. CHỌN KHU VỰC */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                                Khu vực ưu tiên:
-                            </label>
-                            <select
-                                value={region}
-                                onChange={(e) => setRegion(e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-800 focus:outline-none focus:border-[#006971] cursor-pointer"
-                            >
-                                {REGIONS.map((r) => (
-                                    <option key={r.value} value={r.value}>
-                                        {r.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* 4. NGÂN SÁCH MỖI NGƯỜI */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                                Ngân sách tối đa / người (VNĐ):
-                            </label>
-                            <input
-                                type="text"
-                                value={budget}
-                                onChange={(e) => setBudget(e.target.value)}
-                                placeholder="Ví dụ: 500000 hoặc để trống"
-                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-800 focus:outline-none focus:border-[#006971]"
-                            />
-                            <div className="flex gap-2 mt-2">
-                                {[
-                                    { label: 'Miễn phí', val: '0' },
-                                    { label: '< 200k', val: '200000' },
-                                    { label: '< 500k', val: '500000' },
-                                    { label: '< 1 triệu', val: '1000000' },
-                                ].map((b, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() => setBudget(b.val)}
-                                        className="text-2xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 cursor-pointer"
-                                    >
-                                        {b.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* NÚT TÌM KIẾM CHÍNH */}
-                        <button
-                            type="button"
-                            onClick={handleSearchCandidates}
-                            disabled={loading}
-                            className="w-full py-3 rounded-xl bg-[#006971] hover:bg-[#00555c] active:scale-[0.99] text-white font-semibold text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 size={16} className="animate-spin" />
-                                    Đang phân tích & tìm kiếm...
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles size={16} className="text-amber-300" />
-                                    Tìm kiếm với AI
-                                </>
                             )}
-                        </button>
-                    </aside>
+                        </div>
 
-                    {/* ================= CỘT PHẢI: KẾT QUẢ ĐỊA ĐIỂM GỢI Ý ================= */}
-                    <main className="lg:col-span-8 space-y-6">
+                        {/* 7. NƠI Ở / KHÁCH SẠN */}
+                        <div className="pt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                    Nơi Lưu Trú Mong Muốn
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsLodgingModalOpen(true)}
+                                    className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1 cursor-pointer"
+                                >
+                                    <Plus size={13} /> {selectedLodgings.length > 0 ? 'Đổi nơi ở' : 'Chọn nơi ở'}
+                                </button>
+                            </div>
+
+                            {selectedLodgings.length === 0 ? (
+                                <div
+                                    onClick={() => setIsLodgingModalOpen(true)}
+                                    className="p-3 border border-dashed border-purple-200 rounded-xl text-center text-xs text-purple-600/80 bg-purple-50/30 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                >
+                                    <Hotel size={13} />
+                                    <span>Để AI tự động tối ưu hoặc click chọn nơi ở</span>
+                                </div>
+                            ) : (
+                                <div className="p-2.5 rounded-xl border border-purple-200 bg-purple-50/50 flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-2 truncate">
+                                        <Hotel size={14} className="text-purple-600 shrink-0" />
+                                        <span className="font-bold text-purple-900 truncate">
+                                            {selectedLodgings[0].name}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedLodgings([])}
+                                        className="text-purple-500 hover:text-red-600 shrink-0"
+                                    >
+                                        <X size={13} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                         {/* THÔNG BÁO LỖI (NẾU CÓ) */}
                         {error && (
-                            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-700 text-sm">
-                                <AlertCircle size={18} className="shrink-0 mt-0.5 text-red-500" />
-                                <div className="space-y-1">
-                                    <div className="font-semibold">Đã xảy ra lỗi khi tìm kiếm:</div>
-                                    <div className="text-xs text-red-600">{error}</div>
-                                </div>
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+                                <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
+                                <div>{error}</div>
                             </div>
                         )}
 
-                        {/* THANH TAB LỌC KẾT QUẢ THEO NHÓM */}
-                        {results && (
-                            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
-                                    <div>
-                                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                                            <Compass size={18} className="text-[#006971]" />
-                                            Gợi Ý Phù Hợp ({totalPlacesCount} địa điểm)
-                                        </h3>
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                            {results.ranked_by === 'embedding' ? (
-                                                <span className="text-emerald-700 font-medium">
-                                                    ✨ Đã xếp hạng ưu tiên theo mức độ phù hợp ngữ nghĩa câu hỏi của bạn
-                                                </span>
-                                            ) : (
-                                                'Sắp xếp theo độ nổi tiếng & đánh giá người dùng'
-                                            )}
-                                        </p>
-                                    </div>
-                                    {results.applied_filters?.budget_pp && (
-                                        <span className="text-xs px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg self-start sm:self-auto font-medium">
-                                            Ngân sách &le; {results.applied_filters.budget_pp.toLocaleString('vi-VN')} đ
-                                        </span>
-                                    )}
-                                </div>
+                        {/* 8. NÚT TẠO LỊCH TRÌNH AI (BUTTON TO CHÍNH) */}
+                        <div className="pt-2">
+                            <button
+                                type="button"
+                                onClick={handleGeneratePlan}
+                                disabled={loadingPlan}
+                                className="w-full py-3.5 px-6 rounded-2xl bg-[#004e54] hover:bg-[#003c40] active:scale-[0.98] text-white font-extrabold text-sm tracking-wide shadow-md transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {loadingPlan ? (
+                                    <>
+                                        <Loader2 size={18} className="animate-spin text-amber-300" />
+                                        <span>AI Đang Tối Ưu Lịch Trình...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles size={18} className="text-amber-400 fill-amber-400" />
+                                        <span>TẠO LỊCH TRÌNH AI</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
 
-                                {/* Tabs các nhóm */}
-                                <div className="flex flex-wrap gap-2 pt-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveGroupTab('ALL')}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeGroupTab === 'ALL'
-                                                ? 'bg-[#006971] text-white shadow-xs'
-                                                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                                            }`}
-                                    >
-                                        Tất cả ({totalPlacesCount})
-                                    </button>
-                                    {results.groups &&
-                                        Object.entries(results.groups).map(([groupName, places]) => (
-                                            <button
-                                                key={groupName}
-                                                type="button"
-                                                onClick={() => setActiveGroupTab(groupName)}
-                                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeGroupTab === groupName
-                                                        ? 'bg-[#006971] text-white shadow-xs'
-                                                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                                                    }`}
-                                            >
-                                                {groupName} ({places.length})
-                                            </button>
-                                        ))}
-                                </div>
+                    {/* 9. BANNER MASCOT DƯỚI PANEL */}
+                    <div className="pt-4 border-t border-gray-100 flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-2xl bg-amber-100/80 border border-amber-300 flex items-center justify-center text-xl shadow-2xs shrink-0">
+                            🧭
+                        </div>
+                        <div className="space-y-0.5 min-w-0">
+                            <div className="text-xs font-black text-gray-900 truncate">
+                                Khám phá Đà Nẵng cùng AI Plan
                             </div>
-                        )}
+                            <div className="text-2xs text-gray-500 leading-tight">
+                                Tự động sắp xếp cung đường, tính toán chi phí & đồng bộ checklist hành lý.
+                            </div>
+                        </div>
+                    </div>
+                </aside>
 
-                        {/* DANH SÁCH THẺ ĐỊA ĐIỂM (CARDS) */}
-                        {loading ? (
-                            <div className="py-20 flex flex-col items-center justify-center space-y-4 bg-white rounded-2xl border border-gray-100">
-                                <Loader2 size={36} className="text-[#006971] animate-spin" />
-                                <div className="text-center space-y-1">
-                                    <div className="text-sm font-semibold text-gray-800">
-                                        DanaGO AI đang tìm kiếm và đối soát địa điểm...
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                        Mô hình ngôn ngữ đang so khớp nội dung với cơ sở dữ liệu hơn 250 điểm du lịch.
-                                    </div>
-                                </div>
-                            </div>
-                        ) : displayedPlaces.length === 0 ? (
-                            <div className="py-16 text-center bg-white rounded-2xl border border-gray-100 p-6 space-y-3">
-                                <Compass size={40} className="mx-auto text-gray-300" />
-                                <div className="text-base font-bold text-gray-800">
-                                    Chưa có địa điểm nào phù hợp
-                                </div>
-                                <p className="text-xs text-gray-500 max-w-md mx-auto">
-                                    Hãy thử điều chỉnh lại câu mô tả, mở rộng khoảng ngân sách hoặc chọn thêm các nhóm sở thích khác để tìm thêm gợi ý.
-                                </p>
-                            </div>
+                {/* ================= CỘT PHẢI: BẢN ĐỒ INTERACTIVE & KẾT QUẢ LỊCH TRÌNH ================= */}
+                <main className="flex-1 min-w-0 flex flex-col space-y-4">
+                    {/* Thanh công cụ chuyển đổi trên mobile / tablet */}
+                    <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-gray-200/80 shadow-2xs">
+                        <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
+                                <Compass size={17} className="text-[#006971]" />
+                                {plan ? `Lịch Trình AI (${numDays} Ngày)` : 'Bản Đồ Điểm Đến & Nơi Lưu Trú'}
+                            </span>
+                        </div>
+
+                        {/* Nút chuyển đổi view */}
+                        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
+                            <button
+                                type="button"
+                                onClick={() => setMobileRightView('map')}
+                                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                    mobileRightView === 'map'
+                                        ? 'bg-white text-[#006971] shadow-2xs'
+                                        : 'text-gray-500 hover:text-gray-800'
+                                }`}
+                            >
+                                <MapIcon size={13} />
+                                <span>Bản đồ</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMobileRightView('timeline')}
+                                disabled={!plan}
+                                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                                    mobileRightView === 'timeline'
+                                        ? 'bg-white text-[#006971] shadow-2xs'
+                                        : 'text-gray-500 hover:text-gray-800'
+                                }`}
+                            >
+                                <ListFilter size={13} />
+                                <span>Lịch trình chi tiết</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* VÙNG NỘI DUNG CHÍNH CỘT PHẢI */}
+                    <div className="flex-1 min-h-[550px] relative">
+                        {mobileRightView === 'map' ? (
+                            <AiPlanMap
+                                plan={plan}
+                                selectedPlaces={selectedPlaces}
+                                selectedLodgings={selectedLodgings}
+                            />
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {displayedPlaces.map((place) => {
-                                    const isSelected = selectedPlaces.some((p) => p.id === place.id);
-                                    const thumbnail =
-                                        destinationThumbnails[place.id] ||
-                                        FALLBACK_IMAGES[place.groupName] ||
-                                        FALLBACK_IMAGES['Biển & đảo'];
-
-                                    const matchPercent =
-                                        place.match_score !== undefined
-                                            ? Math.round(place.match_score * 100)
-                                            : null;
-
-                                    return (
-                                        <div
-                                            key={`${place.groupName}-${place.id}`}
-                                            className={`group bg-white rounded-2xl border overflow-hidden transition-all flex flex-col justify-between ${isSelected
-                                                    ? 'border-[#006971] ring-2 ring-[#006971]/20 shadow-md'
-                                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                                                }`}
-                                        >
-                                            {/* Phần trên: Ảnh & Badges */}
-                                            <div>
-                                                <div className="relative h-44 w-full bg-gray-100 overflow-hidden">
-                                                    <img
-                                                        src={thumbnail}
-                                                        alt={place.name}
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                        loading="lazy"
-                                                    />
-
-                                                    {/* Nhãn nhóm sở thích */}
-                                                    <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-2xs font-semibold bg-black/60 text-white backdrop-blur-md">
-                                                        {place.groupName}
-                                                    </span>
-
-                                                    {/* Match score (nếu có từ semantic embedding) */}
-                                                    {matchPercent !== null && (
-                                                        <span
-                                                            className={`absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-2xs font-bold shadow-xs backdrop-blur-md ${matchPercent >= 70
-                                                                    ? 'bg-emerald-600 text-white'
-                                                                    : matchPercent >= 50
-                                                                        ? 'bg-teal-600 text-white'
-                                                                        : 'bg-gray-800 text-white'
-                                                                }`}
-                                                        >
-                                                            Phù hợp {matchPercent}%
-                                                        </span>
-                                                    )}
-
-                                                    {/* Khu vực */}
-                                                    {place.region && (
-                                                        <span className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md text-2xs font-medium bg-white/90 text-gray-700 backdrop-blur-md flex items-center gap-1">
-                                                            <MapPin size={10} className="text-[#006971]" />
-                                                            {place.region}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* Phần thân thông tin */}
-                                                <div className="p-4 space-y-2.5">
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <h4 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1 group-hover:text-[#006971] transition-colors">
-                                                            {place.name}
-                                                        </h4>
-                                                        <div className="flex items-center gap-1 text-amber-500 font-bold text-xs shrink-0">
-                                                            <Star size={12} className="fill-amber-400 text-amber-400" />
-                                                            <span>{place.rating ? Number(place.rating).toFixed(1) : '4.5'}</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-2 gap-2 text-2xs text-gray-600 pt-1 border-t border-gray-100">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Coins size={12} className="text-amber-600 shrink-0" />
-                                                            <span>
-                                                                {place.cost_per_person
-                                                                    ? `${Number(place.cost_per_person).toLocaleString('vi-VN')} đ`
-                                                                    : 'Miễn phí'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Clock size={12} className="text-sky-600 shrink-0" />
-                                                            <span>{place.duration_hours || 1.5} giờ</span>
-                                                        </div>
-                                                    </div>
-
-                                                    {place.category && (
-                                                        <div className="text-2xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md line-clamp-1">
-                                                            Phân loại: <span className="font-medium text-gray-700">{place.category}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Phần dưới: Nút tương tác */}
-                                            <div className="p-4 pt-0 flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggleSelectPlace(place)}
-                                                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${isSelected
-                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                            : 'bg-[#006971]/10 text-[#006971] hover:bg-[#006971] hover:text-white'
-                                                        }`}
-                                                >
-                                                    {isSelected ? (
-                                                        <>
-                                                            <Check size={14} className="stroke-[3]" />
-                                                            Đã chọn
-                                                        </>
-                                                    ) : (
-                                                        'Chọn địa điểm'
-                                                    )}
-                                                </button>
-
-                                                <Link
-                                                    href={`/explore/place/${place.id}`}
-                                                    className="p-2 rounded-xl border border-gray-200 hover:border-[#006971] hover:text-[#006971] text-gray-500 transition-colors"
-                                                    title="Xem chi tiết"
-                                                >
-                                                    <ArrowRight size={14} />
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                            <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-sm max-h-[calc(100vh-140px)] overflow-y-auto">
+                                <PlanResultView
+                                    plan={plan}
+                                    startDateStr={startDate}
+                                    endDateStr={endDate}
+                                    onReset={() => setMobileRightView('map')}
+                                />
                             </div>
                         )}
-                    </main>
-                </div>
+                    </div>
+                </main>
             </div>
 
-            {/* ================= THANH CỐ ĐỊNH PHÍA DƯỚI KHI ĐÃ CHỌN ĐỊA ĐIỂM ================= */}
-            {selectedPlaces.length > 0 && (
-                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-4xl bg-gray-900/95 text-white backdrop-blur-md rounded-2xl p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-gray-700">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                            {selectedPlaces.length}
-                        </div>
-                        <div>
-                            <div className="text-sm font-bold">Địa điểm đã chọn</div>
-                            <div className="text-xs text-gray-300 line-clamp-1 max-w-md">
-                                {selectedPlaces.map((p) => p.name).join(', ')}
-                            </div>
-                        </div>
-                    </div>
+            {/* MODALS */}
+            <SelectPlacesModal
+                isOpen={isPlacesModalOpen}
+                onClose={() => setIsPlacesModalOpen(false)}
+                selectedPlaces={selectedPlaces}
+                onConfirmSelection={(places) => setSelectedPlaces(places)}
+            />
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <button
-                            type="button"
-                            onClick={() => setSelectedPlaces([])}
-                            className="px-3 py-2 text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
-                        >
-                            Xóa hết
-                        </button>
-                        <Link
-                            href={{
-                                pathname: '/explore',
-                                query: { selected: selectedPlaces.map((p) => p.id).join(',') },
-                            }}
-                            className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-[#006971] hover:bg-[#00828c] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                        >
-                            <span>Xem trên bản đồ</span>
-                            <ArrowRight size={14} />
-                        </Link>
-                    </div>
-                </div>
-            )}
+            <SelectLodgingModal
+                isOpen={isLodgingModalOpen}
+                onClose={() => setIsLodgingModalOpen(false)}
+                currentRegion={selectedRegion}
+                budgetPp={budget}
+                selectedLodgings={selectedLodgings}
+                onConfirmSelection={(lodgings) => setSelectedLodgings(lodgings)}
+            />
         </div>
     );
 }
