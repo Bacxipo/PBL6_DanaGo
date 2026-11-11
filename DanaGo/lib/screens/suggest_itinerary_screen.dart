@@ -54,7 +54,6 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchAICandidates();
   }
 
   @override
@@ -74,11 +73,11 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
               'query': _promptController.text.trim().isEmpty
                   ? null
                   : _promptController.text.trim(),
-              'interests': _selectedInterests.toList(), // 👈 1. 5 Nhóm sở thích
+              'interests': _selectedInterests.toList(),
               'region': _selectedRegion == 'Tất cả khu vực'
                   ? null
                   : _selectedRegion, // 👈 2. Khu vực
-              'budget_pp': (_budget * 1000000).toInt(), // 👈 3. Ngân sách (VNĐ)
+              'budget_pp': (_budget * 1000000).toInt(),
               'per_group': 6,
               'top_k': 12,
             }),

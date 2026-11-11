@@ -71,7 +71,7 @@ class MyReviewCard extends StatelessWidget {
                     children: [
                       Text(
                         review.placeTitle,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
@@ -95,7 +95,11 @@ class MyReviewCard extends StatelessWidget {
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.neutral, size: 20),
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: AppColors.neutral,
+                  size: 20,
+                ),
                 onSelected: (value) {
                   if (value == 'edit') {
                     onEdit();
@@ -108,11 +112,18 @@ class MyReviewCard extends StatelessWidget {
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 18, color: AppColors.textPrimary),
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 18,
+                          color: AppColors.textPrimary,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Chỉnh sửa',
-                          style: TextStyle(fontFamily: 'Be Vietnam Pro', fontSize: 13),
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -121,7 +132,11 @@ class MyReviewCard extends StatelessWidget {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                        Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                          color: AppColors.error,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Xóa đánh giá',
@@ -153,8 +168,8 @@ class MyReviewCard extends StatelessWidget {
                     index < review.rating.floor()
                         ? Icons.star_rounded
                         : (index < review.rating
-                            ? Icons.star_half_rounded
-                            : Icons.star_outline_rounded),
+                              ? Icons.star_half_rounded
+                              : Icons.star_outline_rounded),
                     color: AppColors.starActive,
                     size: 18,
                   );
@@ -206,7 +221,10 @@ class MyReviewCard extends StatelessWidget {
                         width: 70,
                         height: 70,
                         color: AppColors.bgSecondary,
-                        child: const Icon(Icons.image_not_supported_outlined, color: AppColors.textHint),
+                        child: const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: AppColors.textHint,
+                        ),
                       ),
                     ),
                   );
@@ -241,4 +259,3 @@ class MyReviewCard extends StatelessWidget {
     );
   }
 }
-

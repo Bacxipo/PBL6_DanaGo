@@ -81,6 +81,28 @@ export class DestinationController {
   async getFeature(@Query('limit') limit?: number){
     return this.destinationService.getFeatured(limit ? Number(limit) : 6);
   }
+    @Get('recommended')
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiOperation({ summary: 'Lấy danh sách địa điểm gợi ý theo sở thích người dùng' })
+  async getRecommended(
+    @CurrentUser('sub') userId?: number,
+    @Query('limit') limit?: number,
+  ): Promise<DestinationResponseDto[]> {
+    return this.destinationService.getRecommended(userId, limit ? Number(limit) : 6);
+  }
+  @Get('nearby')
+  @ApiOperation({ summary: 'Lấy danh sách địa điểm gần tọa độ GPS người dùng' })
+  async getNearby(
+    @Query('lat') lat?: number,
+    @Query('lng') lng?: number,
+    @Query('limit') limit?: number,
+  ): Promise<DestinationResponseDto[]> {
+    return this.destinationService.getNearby(
+      lat ? Number(lat) : undefined,
+      lng ? Number(lng) : undefined,
+      limit ? Number(limit) : 6,
+    );
+  }
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   async getById(

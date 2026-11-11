@@ -1,10 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:smarttrip/models/destination_item.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:smarttrip/models/user_review_model.dart';
-import 'package:smarttrip/screens/detail_place_screen.dart';
+import 'package:smarttrip/services/review_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/reviews/my_review_card.dart';
 import 'package:smarttrip/widgets/reviews/review_stats_header.dart';
+import 'package:smarttrip/services/destination_service.dart';
 
 class MyReviewsScreen extends StatefulWidget {
   const MyReviewsScreen({super.key});
@@ -14,20 +17,36 @@ class MyReviewsScreen extends StatefulWidget {
 }
 
 class _MyReviewsScreenState extends State<MyReviewsScreen> {
-  late List<UserReviewModel> _reviews;
+  List<UserReviewModel> _reviews = [];
   String _selectedFilter = 'Tất cả';
 
-  final List<String> _filters = [
-    'Tất cả',
-    '5 sao',
-    '4 sao',
-    'Có hình ảnh',
-  ];
+  final List<String> _filters = ['Tất cả', '5 sao', '4 sao', 'Có hình ảnh'];
 
   @override
   void initState() {
     super.initState();
-    _reviews = List.from(UserReviewModel.mockReviews);
+    _loadMyReviews();
+  }
+
+  Future<void> _loadMyReviews() async {
+    final raw = await ReviewService.instance.getMyReviews();
+    final destinations = await DestinationService.instance.getAll();
+    final destMap = {for (final d in destinations) d.id: d};
+    if (mounted) {
+      setState(() {
+        _reviews = raw.map((json) {
+          final dest = destMap[json['destinationId'].toString()];
+          if (dest != null) {
+            json['destination'] = {
+              'name': dest.title,
+              'district': dest.address,
+              'imageUrl': dest.imageUrl,
+            };
+          }
+          return UserReviewModel.fromJson(json);
+        }).toList();
+      });
+    }
   }
 
   List<UserReviewModel> get _filteredReviews {
@@ -76,10 +95,13 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
+              await ReviewService.instance.deleteReview(review.id);
               setState(() {
                 _reviews.removeWhere((item) => item.id == review.id);
               });
@@ -89,7 +111,10 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
             },
             child: const Text(
               'Xóa',
-              style: TextStyle(fontFamily: 'Be Vietnam Pro', fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontFamily: 'Be Vietnam Pro',
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -99,104 +124,230 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
   void _showEditSheet(UserReviewModel review) {
     final textCtrl = TextEditingController(text: review.content);
+    double selectedRating = review.rating;
+    final List<String> keptPhotos = List.from(review.photos);
+    final List<XFile> newImages = [];
+    bool isSaving = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Sửa đánh giá: ${review.placeTitle}',
-                  style: const TextStyle(
-                    fontFamily: 'Be Vietnam Pro',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Sửa đánh giá: ${review.placeTitle}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (i) {
+                  final star = i + 1.0;
+                  return IconButton(
+                    icon: Icon(
+                      star <= selectedRating ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                      size: 30,
+                    ),
+                    onPressed: () => setModalState(() => selectedRating = star),
+                  );
+                }),
+              ),
+              TextField(
+                controller: textCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.bgSecondary,
+                  hintText: 'Nhập nội dung đánh giá...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(ctx),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final remain = 5 - keptPhotos.length - newImages.length;
+                  if (remain <= 0) return;
+                  final imgs = await ImagePicker().pickMultiImage(
+                    limit: remain,
+                  );
+                  if (imgs.isNotEmpty)
+                    setModalState(() => newImages.addAll(imgs.take(remain)));
+                },
+                icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+                label: Text(
+                  'Thêm ảnh (${keptPhotos.length + newImages.length}/5)',
+                ),
+              ),
+              if (keptPhotos.isNotEmpty || newImages.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 68,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      // Ảnh cũ (trên mạng) -> Bấm X để xóa
+                      ...keptPhotos.asMap().entries.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  e.value,
+                                  width: 68,
+                                  height: 68,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: GestureDetector(
+                                  onTap: () => setModalState(
+                                    () => keptPhotos.removeAt(e.key),
+                                  ),
+                                  child: const CircleAvatar(
+                                    radius: 9,
+                                    backgroundColor: Colors.black54,
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Ảnh mới chọn từ máy -> Bấm X để bỏ
+                      ...newImages.asMap().entries.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(e.value.path),
+                                  width: 68,
+                                  height: 68,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: GestureDetector(
+                                  onTap: () => setModalState(
+                                    () => newImages.removeAt(e.key),
+                                  ),
+                                  child: const CircleAvatar(
+                                    radius: 9,
+                                    backgroundColor: Colors.black54,
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: textCtrl,
-              maxLines: 4,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: AppColors.bgSecondary,
-                hintText: 'Nhập nội dung đánh giá của bạn...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã cập nhật đánh giá thành công!')),
-                  );
-                },
-                child: const Text(
-                  'Lưu thay đổi',
-                  style: TextStyle(
-                    fontFamily: 'Be Vietnam Pro',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    if (isSaving) return;
+                    setModalState(() => isSaving = true);
+                    final ok = await ReviewService.instance.updateReview(
+                      reviewId: review.id,
+                      rating: selectedRating.toInt(),
+                      comment: textCtrl.text.trim(),
+                      keptImageUrls: keptPhotos,
+                      newImagePaths: newImages.map((e) => e.path).toList(),
+                    );
+                    if (!ctx.mounted) return;
+                    Navigator.pop(ctx);
+                    if (ok) {
+                      _loadMyReviews();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Đã cập nhật đánh giá thành công!'),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text(
+                    'Lưu thay đổi',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void _openPlaceDetail(String placeId) {
-    final allPlaces = [
-      ...DestinationItem.featuredItems,
-      ...DestinationItem.recommendedItems,
-      ...DestinationItem.nearbyItems,
-    ];
-    final target = allPlaces.firstWhere(
-      (p) => p.id == placeId,
-      orElse: () => DestinationItem.featuredItems.first,
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => DetailPlaceScreen(item: target)),
-    );
-  }
+  // void _openPlaceDetail(String placeId) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(builder: (_) => DetailPlaceScreen(item: target)),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -204,9 +355,11 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final double avg = _reviews.isEmpty
         ? 0.0
-        : _reviews.map((r) => r.rating).reduce((a, b) => a + b) / _reviews.length;
-    final int totalHelpful =
-        _reviews.isEmpty ? 0 : _reviews.map((r) => r.helpfulCount).reduce((a, b) => a + b);
+        : _reviews.map((r) => r.rating).reduce((a, b) => a + b) /
+              _reviews.length;
+    final int totalHelpful = _reviews.isEmpty
+        ? 0
+        : _reviews.map((r) => r.helpfulCount).reduce((a, b) => a + b);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -275,18 +428,27 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                       labelStyle: TextStyle(
                         fontFamily: 'Be Vietnam Pro',
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSecondary,
                       ),
                       selectedColor: AppColors.primary,
                       backgroundColor: Colors.white,
                       side: BorderSide(
-                        color: isSelected ? AppColors.primary : AppColors.border,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.border,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                     ),
                   );
                 }).toList(),
@@ -346,18 +508,15 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final review = list[index];
-                  return MyReviewCard(
-                    review: review,
-                    onTapPlace: () => _openPlaceDetail(review.placeId),
-                    onEdit: () => _showEditSheet(review),
-                    onDelete: () => _confirmDeleteReview(review),
-                  );
-                },
-                childCount: list.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final review = list[index];
+                return MyReviewCard(
+                  review: review,
+                  onTapPlace: () {},
+                  onEdit: () => _showEditSheet(review),
+                  onDelete: () => _confirmDeleteReview(review),
+                );
+              }, childCount: list.length),
             ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -366,4 +525,3 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     );
   }
 }
-

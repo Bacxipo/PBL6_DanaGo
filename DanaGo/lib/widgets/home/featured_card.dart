@@ -32,7 +32,27 @@ class FeaturedCard extends StatelessWidget {
           child: Stack(
             children: [
               Positioned.fill(
-                child: Image.network(item.imageUrl, fit: BoxFit.cover),
+                child: item.imageUrl.isNotEmpty
+                    ? Image.network(
+                        item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: AppColors.bgSecondary,
+                          child: const Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 40,
+                            color: AppColors.textHint,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: AppColors.bgSecondary,
+                        child: const Icon(
+                          Icons.image_outlined,
+                          size: 40,
+                          color: AppColors.textHint,
+                        ),
+                      ),
               ),
               Positioned.fill(
                 child: Container(
@@ -52,21 +72,26 @@ class FeaturedCard extends StatelessWidget {
               Positioned(
                 top: 12,
                 right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    item.tag,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      item.tag,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -91,10 +116,11 @@ class FeaturedCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       item.title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 17,
+                        fontSize: 15,
+                        height: 1.2,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),

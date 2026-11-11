@@ -24,4 +24,5 @@ export class DestinationEntity {
   createdBy?: number;
   createdAt: Date;
   images?: DestinationImageEntity[];
+  distance?: String;
 }

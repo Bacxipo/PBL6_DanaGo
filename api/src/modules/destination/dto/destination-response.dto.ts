@@ -21,4 +21,5 @@ export class DestinationResponseDto {
   createdBy?: number;
   createdAt: Date;
   images?: DestinationImageDto[];
+  distance? : String;
 }

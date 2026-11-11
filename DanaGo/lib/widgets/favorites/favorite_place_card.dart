@@ -41,7 +41,6 @@ class FavoritePlaceCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Place Image with Category Tag
                 Stack(
                   children: [
                     ClipRRect(
@@ -66,6 +65,7 @@ class FavoritePlaceCard extends StatelessWidget {
                     Positioned(
                       top: 6,
                       left: 6,
+                      right: 6,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 6,
@@ -77,9 +77,10 @@ class FavoritePlaceCard extends StatelessWidget {
                         ),
                         child: Text(
                           item.category,
+                          maxLines: 2,
                           style: const TextStyle(
                             fontFamily: 'Be Vietnam Pro',
-                            fontSize: 9,
+                            fontSize: 8,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
@@ -93,52 +94,69 @@ class FavoritePlaceCard extends StatelessWidget {
                 // Content
                 Expanded(
                   child: SizedBox(
-                    height: 100,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Text(
+                          item.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
                           children: [
-                            Text(
-                              item.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Be Vietnam Pro',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white : AppColors.textPrimary,
-                              ),
+                            const Icon(
+                              Icons.location_on_outlined,
+                              size: 13,
+                              color: AppColors.neutral,
                             ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on_outlined,
-                                  size: 14,
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                item.address ?? 'Đà Nẵng',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'Be Vietnam Pro',
+                                  fontSize: 10,
                                   color: AppColors.neutral,
                                 ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    item.address ?? 'Đà Nẵng',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontFamily: 'Be Vietnam Pro',
-                                      fontSize: 12,
-                                      color: AppColors.neutral,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
-
-                        // Bottom Row: Rating + Tag / Price + Heart Button
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7ED),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            item.tag,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'Be Vietnam Pro',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
                         Row(
                           children: [
                             Container(
@@ -171,34 +189,13 @@ class FavoritePlaceCard extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                item.tag,
-                                style: const TextStyle(
-                                  fontFamily: 'Be Vietnam Pro',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
                             const Spacer(),
-                            // Coral heart button to remove
                             GestureDetector(
                               onTap: onRemoveFavorite,
                               child: Container(
                                 padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFECE6),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFFECE6),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -222,4 +219,3 @@ class FavoritePlaceCard extends StatelessWidget {
     );
   }
 }
-

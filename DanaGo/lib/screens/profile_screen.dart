@@ -7,11 +7,14 @@ import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/screens/my_reviews_screen.dart';
 import 'package:smarttrip/screens/notifications_screen.dart';
 import 'package:smarttrip/screens/user_profile_posts_screen.dart';
+import 'package:smarttrip/services/review_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/profile/profile_header.dart';
 import 'package:smarttrip/widgets/profile/profile_menu_section.dart';
 import 'package:smarttrip/widgets/profile/profile_stats_pill.dart';
 import 'package:smarttrip/theme/theme_controller.dart';
+import 'package:smarttrip/services/auth_service.dart';
+import 'package:smarttrip/services/favorite_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,18 +24,92 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Sample user data
   final Map<String, dynamic> _user = {
-    'name': 'Nguyễn Văn A',
-    'email': 'nguyenvana@gmail.com',
-    'phone': '0901 234 567',
-    'bio': 'Yêu du lịch, thích khám phá văn hóa & ẩm thực Đà Nẵng',
-    'avatar': 'https://i.postimg.cc/tC24nW4N/avt1.jpg',
-    'joinDate': 'Tháng 10, 2026',
-    'tripsCount': 12,
-    'reviewsCount': 28,
-    'favoritesCount': 45,
+    'name': 'Đang tải',
+    'email': '...',
+    'phone': '...',
+    'bio': '...',
+    'avatar': 'assets/images/default-avatar.svg',
+    'joinDate': '...',
+    'tripsCount': 0,
+    'reviewsCount': 0,
+    'favoritesCount': 0,
   };
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+    FavoriteService.instance.addListener(_onFavoritesChanged);
+    ReviewService.instance.addListener(_onFavoritesChanged);
+  }
+
+  @override
+  void dispose() {
+    FavoriteService.instance.removeListener(_onFavoritesChanged);
+    ReviewService.instance.removeListener(_onFavoritesChanged);
+    super.dispose();
+  }
+
+  void _onFavoritesChanged() {
+    if (mounted) {
+      setState(() {
+        _user['favoritesCount'] = FavoriteService.instance.favoriteCount;
+        _user['reviewsCount'] = ReviewService.instance.myReviewsCount;
+      });
+    }
+  }
+
+  Future<void> _loadUserProfile() async {
+    final profile = await AuthService.instance.getProfile();
+    await FavoriteService.instance.getFavorites();
+    await ReviewService.instance.getMyReviews();
+    if (mounted) {
+      setState(() {
+        if (profile != null) {
+          if (profile['fullName'] != null) {
+            _user['name'] = profile['fullName'];
+          }
+          if (profile['email'] != null) {
+            _user['email'] = profile['email'];
+          }
+          if (profile['avatarUrl'] != null &&
+              (profile['avatarUrl'] as String).isNotEmpty) {
+            _user['avatar'] = profile['avatarUrl'];
+          } else {
+            _user['avatar'] = 'assets/images/default-avatar.svg';
+          }
+          if (profile['bio'] != null) {
+            _user['bio'] = profile['bio'];
+          }
+          if (profile['createdAt'] != null) {
+            try {
+              final dt = DateTime.parse(profile['createdAt'] as String);
+              const months = [
+                '',
+                'Tháng 1',
+                'Tháng 2',
+                'Tháng 3',
+                'Tháng 4',
+                'Tháng 5',
+                'Tháng 6',
+                'Tháng 7',
+                'Tháng 8',
+                'Tháng 9',
+                'Tháng 10',
+                'Tháng 11',
+                'Tháng 12',
+              ];
+              _user['joinDate'] = '${months[dt.month]}, ${dt.year}';
+            } catch (_) {
+              _user['joinDate'] = profile['createdAt'];
+            }
+          }
+        }
+        _user['favoritesCount'] = FavoriteService.instance.favoriteCount;
+        _user['reviewsCount'] = ReviewService.instance.myReviewsCount;
+      });
+    }
+  }
 
   void _navigateToEditProfile() async {
     final result = await Navigator.push(
@@ -48,11 +125,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _navigateToFavorites() {
-    Navigator.push(
+  void _navigateToFavorites() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const FavoritesScreen()),
     );
+    if (mounted) {
+      setState(() {
+        _user['favoritesCount'] = FavoriteService.instance.favoriteCount;
+      });
+    }
   }
 
   void _navigateToMyReviews() {
@@ -341,23 +423,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           ElevatedButton(
-              onPressed: () async {
-                try {
-                  await GoogleAuthService.instance.signOut();
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  Navigator.of(this.context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                } catch (_) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Chưa thể đăng xuất. Vui lòng thử lại.')),
-                  );
-                }
-              },
+            onPressed: () async {
+              try {
+                await AuthService.instance.logout();
+                await GoogleAuthService.instance.signOut();
+
+                if (!context.mounted) return;
+                Navigator.pop(context);
+
+                if (!mounted) return;
+
+                Navigator.of(this.context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              } catch (_) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Chưa thể đăng xuất. Vui lòng thử lại.'),
+                  ),
+                );
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,

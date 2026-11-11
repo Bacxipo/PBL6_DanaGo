@@ -18,8 +18,13 @@ class GoogleAuthService extends ChangeNotifier {
   bool _busy = false;
   GoogleLoginStatus status = GoogleLoginStatus.idle;
   String? errorMessage;
+  bool hasPreferences = false;
 
   bool get isBusy => _busy;
+
+  Future<String?> getAccessToken() async {
+    return await _storage.read(key: 'accessToken');
+  }
 
   Future<void> initialize() async {
     if (!AuthConfig.isConfigured) return;
@@ -84,6 +89,30 @@ class GoogleAuthService extends ChangeNotifier {
         return;
       }
       await _storage.write(key: 'accessToken', value: token);
+
+      // Kiểm tra xem người dùng đã thiết lập sở thích chưa
+      hasPreferences = false;
+      try {
+        final prefResponse = await client.get(
+          Uri.parse('$baseUrl/identity/users/me/preferences'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ).timeout(const Duration(seconds: 10));
+        if (prefResponse.statusCode == 200) {
+          final prefBody = jsonDecode(prefResponse.body);
+          if (prefBody is Map<String, dynamic> &&
+              prefBody['categoryIds'] is List) {
+            final List cats = prefBody['categoryIds'];
+            hasPreferences = cats.isNotEmpty;
+          }
+        }
+      } catch (_) {
+        final localPref = await _storage.read(key: 'has_chosen_preferences');
+        hasPreferences = localPref == 'true';
+      }
+
       status = GoogleLoginStatus.authenticated;
     } on GoogleSignInException catch (error) {
       if (error.code == GoogleSignInExceptionCode.canceled) {
@@ -109,9 +138,36 @@ class GoogleAuthService extends ChangeNotifier {
     }
   }
 
+  Future<bool> savePreferences(List<int> categoryIds) async {
+    await _storage.write(key: 'has_chosen_preferences', value: 'true');
+    hasPreferences = true;
+    final token = await _storage.read(key: 'accessToken');
+    if (token == null || token.isEmpty) return true;
+
+    final baseUrl = AuthConfig.apiUrl.replaceFirst(RegExp(r'/+$'), '');
+    final client = http.Client();
+    try {
+      final response = await client.patch(
+        Uri.parse('$baseUrl/identity/users/me/preferences'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'categoryIds': categoryIds}),
+      ).timeout(const Duration(seconds: 15));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close();
+    }
+  }
+
   Future<void> signOut() async {
     if (_busy) throw StateError('Đang xử lý đăng nhập. Vui lòng thử lại.');
     await _storage.delete(key: 'accessToken');
+    await _storage.delete(key: 'has_chosen_preferences');
+    hasPreferences = false;
     errorMessage = null;
     status = GoogleLoginStatus.idle;
     notifyListeners();

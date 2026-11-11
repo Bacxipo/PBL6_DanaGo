@@ -23,6 +23,7 @@ export class DestinationMapper {
       images: entity.images
         ? entity.images.map((img) => ({ id: img.id, imageUrl: img.imageUrl }))
         : undefined,
+      distance: entity.distance ?? undefined,
     };
   }
 }

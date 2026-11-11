@@ -120,7 +120,7 @@ export class ReviewRepository {
         comment: dto.comment,
         status: ContentStatus.APPROVED, 
         images:
-          dto.images && dto.images.length > 0
+          dto.images !== undefined
             ? {
                 deleteMany: {},
                 create: dto.images.map((url) => ({

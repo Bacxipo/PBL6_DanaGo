@@ -82,20 +82,24 @@ export class ReviewService {
 }
 
   // 4. Chỉnh sửa review (Sau khi sửa, chuyển lại PENDING để Admin duyệt lại)
-  async updateReview(
+   async updateReview(
     reviewId: number,
     userId: number,
     dto: UpdateReviewDto,
+    files?: Express.Multer.File[],
   ): Promise<ReviewResponseDto> {
     const review = await this.reviewRepository.findById(reviewId);
-    if (!review) {
-      throw new NotFoundException(`Không tìm thấy đánh giá với id ${reviewId}.`);
+    if (!review) throw new NotFoundException(`Không tìm thấy đánh giá với id ${reviewId}.`);
+    if (review.userId !== userId) throw new ForbiddenException('Bạn không có quyền chỉnh sửa bài đánh giá này.');
+    const keptImages = dto.images ? (Array.isArray(dto.images) ? dto.images : [dto.images]) : [];
+    const uploadedUrls: string[] = [];
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const url = await this.storageService.uploadFile(file, 'review_image', `dest-${review.destinationId}`);
+        uploadedUrls.push(url);
+      }
     }
-
-    // Kiểm tra quyền sở hữu review
-    if (review.userId !== userId) {
-      throw new ForbiddenException('Bạn không có quyền chỉnh sửa bài đánh giá này.');
-    }
+    dto.images = [...keptImages, ...uploadedUrls];
 
     const updated = await this.reviewRepository.update(reviewId, userId, dto);
 

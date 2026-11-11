@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/screens/main_screen.dart';
+import 'package:smarttrip/services/google_auth_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/widgets/interest/interest_card.dart';
@@ -12,19 +13,28 @@ class InterestScreen extends StatefulWidget {
 
 class _InterestScreenState extends State<InterestScreen> {
   final List<Map<String, dynamic>> _interests = [
-    {'id': 'sea', 'title': 'Biển', 'icon': Icons.water},
-    {'id': 'food', 'title': 'Ẩm thực', 'icon': Icons.restaurant},
+    {'id': 'sea', 'catId': 1, 'title': 'Biển', 'icon': Icons.water},
+    {'id': 'food', 'catId': 2, 'title': 'Ẩm thực', 'icon': Icons.restaurant},
     {
       'id': 'history',
+      'catId': 3,
       'title': 'Di tích lịch sử',
       'icon': Icons.account_balance,
     },
-    {'id': 'night', 'title': 'Giải trí ban đêm', 'icon': Icons.nightlife},
-    {'id': 'mountain', 'title': 'Leo núi', 'icon': Icons.hiking},
-    {'id': 'cafe', 'title': 'Cafe check-in', 'icon': Icons.local_cafe},
+    {
+      'id': 'night',
+      'catId': 4,
+      'title': 'Giải trí ban đêm',
+      'icon': Icons.nightlife,
+    },
+    {'id': 'mountain', 'catId': 5, 'title': 'Leo núi', 'icon': Icons.hiking},
+    {'id': 'cafe', 'catId': 6, 'title': 'Cafe check-in', 'icon': Icons.local_cafe},
   ];
   final List<String> _selectedInterests = [];
+  bool _isSaving = false;
+
   void _toggleInterest(String id) {
+    if (_isSaving) return;
     setState(() {
       if (_selectedInterests.contains(id)) {
         _selectedInterests.remove(id);
@@ -34,12 +44,31 @@ class _InterestScreenState extends State<InterestScreen> {
     });
   }
 
-  void _handleComplete() {
+  Future<void> _handleComplete() async {
+    if (_isSaving) return;
     if (_selectedInterests.isEmpty) {
       UiHelpers.showError(context, "Vui lòng chọn ít nhất một sở thích");
       return;
     }
-    UiHelpers.showSuccess(context, 'Đã lưu sở thích thành công');
+
+    setState(() => _isSaving = true);
+
+    // Chuyển danh sách sở thích đã chọn sang categoryIds của backend
+    final categoryIds = _selectedInterests.map((id) {
+      final item = _interests.firstWhere(
+        (i) => i['id'] == id,
+        orElse: () => {'catId': 1},
+      );
+      return item['catId'] as int;
+    }).toList();
+
+    // Lưu sở thích vào backend (và local storage)
+    await GoogleAuthService.instance.savePreferences(categoryIds);
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    UiHelpers.showSuccess(context, 'Đã lưu sở thích thành công!');
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const MainScreen()),
@@ -131,22 +160,36 @@ class _InterestScreenState extends State<InterestScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: _handleComplete,
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Hoàn tất',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                  onPressed: _isSaving ? null : _handleComplete,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Hoàn tất',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ],
                         ),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: 20),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:smarttrip/models/review_item.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
@@ -37,7 +38,9 @@ class DetailReviewsSection extends StatelessWidget {
                   child: Text(
                     '+ Viết đánh giá',
                     style: TextStyle(
-                      color: isDark ? const Color(0xFF2DD4BF) : AppColors.primary,
+                      color: isDark
+                          ? const Color(0xFF2DD4BF)
+                          : AppColors.primary,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -49,7 +52,10 @@ class DetailReviewsSection extends StatelessWidget {
                   onTap: onSeeAll,
                   child: const Text(
                     'Xem tất cả',
-                    style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -82,9 +88,20 @@ class DetailReviewsSection extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundImage: NetworkImage(review.avatarUrl),
+                      ClipOval(
+                        child: review.avatarUrl.endsWith('.svg')
+                            ? SvgPicture.asset(
+                                review.avatarUrl,
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                review.avatarUrl,
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                              ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -96,7 +113,9 @@ class DetailReviewsSection extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
-                                color: isDark ? Colors.white : AppColors.textPrimary,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
                               ),
                             ),
                             Text(
@@ -111,7 +130,11 @@ class DetailReviewsSection extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.star, color: AppColors.starActive, size: 16),
+                          const Icon(
+                            Icons.star,
+                            color: AppColors.starActive,
+                            size: 16,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             review.rating.toStringAsFixed(1),

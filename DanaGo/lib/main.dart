@@ -1,21 +1,23 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:smarttrip/config/auth_config.dart';
-import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/screens/onboarding_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/theme_controller.dart';
+import 'package:smarttrip/screens/main_screen.dart';
+import 'package:smarttrip/services/api_client.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AuthConfig.load();
-
-  // Google SDK initialization happens when the user selects Google login.
-
-  runApp(const MyApp());
+  await ThemeController.loadTheme();
+  final token = await ApiClient.instance.token;
+  runApp(MyApp(isLoggedIn: token != null && token.isNotEmpty));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, this.isLoggedIn = false});
 
   // This widget is the root of your application.
   @override
@@ -50,7 +52,17 @@ class MyApp extends StatelessWidget {
             ),
             cardColor: const Color(0xFF1E293B),
           ),
-          home: const OnboardingScreen(),
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: MediaQuery.of(
+                  context,
+                ).textScaler.clamp(minScaleFactor: 0.85, maxScaleFactor: 1.05),
+              ),
+              child: child!,
+            );
+          },
+          home: isLoggedIn ? const MainScreen() : const OnboardingScreen(),
         );
       },
     );

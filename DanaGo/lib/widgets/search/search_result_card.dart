@@ -48,7 +48,9 @@ class SearchResultCard extends StatelessWidget {
                 errorBuilder: (ctx, err, _) => Container(
                   width: 95,
                   height: 95,
-                  color: isDark ? const Color(0xFF0F172A) : AppColors.bgSecondary,
+                  color: isDark
+                      ? const Color(0xFF0F172A)
+                      : AppColors.bgSecondary,
                   child: const Icon(
                     Icons.broken_image,
                     color: AppColors.textHint,
@@ -73,7 +75,9 @@ class SearchResultCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : AppColors.textPrimary,
+                            color: isDark
+                                ? Colors.white
+                                : AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -128,13 +132,6 @@ class SearchResultCard extends StatelessWidget {
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        ' (${_formatReviewCount(item.reviewCount)})',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
                         ),
                       ),
                       const SizedBox(width: 8),

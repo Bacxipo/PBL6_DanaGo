@@ -15,6 +15,7 @@ class SearchResultItem {
   final String? tagLabel;
   final Color? tagColor;
   final bool isFavorite;
+  final DestinationItem? originalDestination;
 
   const SearchResultItem({
     required this.id,
@@ -29,8 +30,10 @@ class SearchResultItem {
     this.tagLabel,
     this.tagColor,
     this.isFavorite = false,
+    this.originalDestination,
   });
   DestinationItem toDestinationItem() {
+    if (originalDestination != null) return originalDestination!;
     return DestinationItem(
       id: id,
       title: title,
@@ -41,6 +44,24 @@ class SearchResultItem {
     );
   }
 
+  factory SearchResultItem.fromDestination(DestinationItem dest) {
+    return SearchResultItem(
+      id: dest.id,
+      title: dest.title,
+      imageUrl: dest.imageUrl.isNotEmpty
+          ? dest.imageUrl
+          : 'https://jmwoffnpyqqglvvzgzah.supabase.co/storage/v1/object/public/destination_image/dest-18/cau-rong-da-nang%20(7)-min.jpg',
+      badge: dest.category.isNotEmpty ? dest.category : 'ĐỊA ĐIỂM',
+      badgeColor: AppColors.primary,
+      address: dest.address ?? 'Đà Nẵng',
+      rating: dest.rating,
+      reviewCount: 0,
+      distance: dest.distance ?? '',
+      tagLabel: dest.tag,
+      tagColor: AppColors.primary,
+      originalDestination: dest,
+    );
+  }
   factory SearchResultItem.fromJson(Map<String, dynamic> json) {
     return SearchResultItem(
       id: json['id'] ?? '',
@@ -72,52 +93,4 @@ class SearchResultItem {
       'is_favorite': isFavorite,
     };
   }
-
-  static final List<SearchResultItem> mockList = [
-    const SearchResultItem(
-      id: 'place_01',
-      title: 'Bãi biển Mỹ Khê',
-      imageUrl:
-          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500',
-      badge: 'Biển & Đảo',
-      badgeColor: AppColors.primary,
-      address: 'Võ Nguyên Giáp, P. Phước Mỹ',
-      rating: 4.8,
-      reviewCount: 1200,
-      distance: '1.2 km',
-      tagLabel: 'Vé: Miễn phí',
-      tagColor: AppColors.primary,
-      isFavorite: true,
-    ),
-    const SearchResultItem(
-      id: 'place_02',
-      title: 'Quán Hải Sản Bé Mặn',
-      imageUrl:
-          'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500',
-      badge: 'Hải sản tươi',
-      badgeColor: AppColors.accent,
-      address: 'Lô 11 Võ Nguyên Giáp, Mân Thái',
-      rating: 4.6,
-      reviewCount: 850,
-      distance: '1.8 km',
-      tagLabel: 'Mở 09:00 - 23:00',
-      tagColor: AppColors.success,
-      isFavorite: false,
-    ),
-    const SearchResultItem(
-      id: 'place_03',
-      title: 'Cà phê Sơn Trà Marina',
-      imageUrl:
-          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500',
-      badge: 'View Vịnh Biển',
-      badgeColor: AppColors.info,
-      address: 'Bến du thuyền Sơn Trà, Bán đảo Sơn Trà',
-      rating: 4.7,
-      reviewCount: 420,
-      distance: '4.5 km',
-      tagLabel: 'Đang mở cửa',
-      tagColor: AppColors.success,
-      isFavorite: false,
-    ),
-  ];
 }

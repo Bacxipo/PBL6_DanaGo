@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/destination_item.dart';
+import 'package:smarttrip/services/review_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/place_detail/detail_about_section.dart';
 import 'package:smarttrip/widgets/place_detail/detail_botttom_action_bar.dart';
@@ -7,6 +8,9 @@ import 'package:smarttrip/widgets/place_detail/detail_image_header.dart';
 import 'package:smarttrip/widgets/place_detail/detail_info_grid.dart';
 import 'package:smarttrip/widgets/place_detail/detail_reviews_section.dart';
 import 'package:smarttrip/models/review_item.dart';
+import 'package:smarttrip/services/favorite_service.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class DetailPlaceScreen extends StatefulWidget {
   final DestinationItem item;
@@ -18,7 +22,36 @@ class DetailPlaceScreen extends StatefulWidget {
 
 class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
   bool isFavorite = false;
-  late List<ReviewItemModel> _reviews = List.from(ReviewItemModel.mockReviews);
+  @override
+  void initState() {
+    super.initState();
+    _checkFavorite();
+    _loadReviews();
+  }
+
+  Future<void> _checkFavorite() async {
+    if (FavoriteService.instance.isFavorite(widget.item.id)) {
+      setState(() => isFavorite = true);
+    } else {
+      await FavoriteService.instance.getFavorites();
+      if (mounted) {
+        setState(() {
+          isFavorite = FavoriteService.instance.isFavorite(widget.item.id);
+        });
+      }
+    }
+  }
+
+  List<ReviewItemModel> _reviews = [];
+  Future<void> _loadReviews() async {
+    final data = await ReviewService.instance.getDestinationReviews(
+      widget.item.id,
+    );
+    if (mounted) setState(() => _reviews = data);
+  }
+
+  final List<XFile> pickedImages = [];
+  bool isSubmitting = false;
   void _showAddReviewBottomSheet() {
     double selectedRating = 5.0; // Đánh giá mặc định 5 sao
     final TextEditingController commentController = TextEditingController();
@@ -85,8 +118,72 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final imgs = await ImagePicker().pickMultiImage(
+                            limit: 5,
+                          );
+                          if (imgs.isNotEmpty) {
+                            setModalState(
+                              () => pickedImages.addAll(
+                                imgs.take(5 - pickedImages.length),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 18,
+                        ),
+                        label: Text('Thêm ảnh (${pickedImages.length}/5)'),
+                      ),
+                    ],
+                  ),
+                  if (pickedImages.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 64,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: pickedImages.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (_, i) => Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(pickedImages[i].path),
+                                width: 64,
+                                height: 64,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              top: 2,
+                              right: 2,
+                              child: GestureDetector(
+                                onTap: () => setModalState(
+                                  () => pickedImages.removeAt(i),
+                                ),
+                                child: const CircleAvatar(
+                                  radius: 9,
+                                  backgroundColor: Colors.black54,
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 12,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   // Nút Gửi đánh giá
                   SizedBox(
                     width: double.infinity,
@@ -98,31 +195,30 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         if (commentController.text.trim().isEmpty) return;
-
-                        // Thêm bài đánh giá mới lên đầu danh sách
-                        setState(() {
-                          _reviews.insert(
-                            0,
-                            ReviewItemModel(
-                              id: DateTime.now().toString(),
-                              userName: 'Bạn (Bạn đọc)',
-                              avatarUrl: 'https://i.pravatar.cc/150?img=68',
-                              timeAgo: 'Vừa xong',
-                              rating: selectedRating,
+                        if (isSubmitting) return;
+                        setModalState(() => isSubmitting = true);
+                        final created = await ReviewService.instance
+                            .createReview(
+                              destinationId: widget.item.id,
+                              rating: selectedRating.toInt(),
                               comment: commentController.text.trim(),
+                              imagePaths: pickedImages
+                                  .map((e) => e.path)
+                                  .toList(),
+                            );
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                        if (created != null) {
+                          setState(() => _reviews.insert(0, created));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Cảm ơn bạn đã gửi đánh giá!'),
+                              backgroundColor: AppColors.primary,
                             ),
                           );
-                        });
-                        Navigator.pop(context); // Đóng khung Modal
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Cảm ơn bạn đã gửi đánh giá!'),
-                            backgroundColor: AppColors.primary,
-                          ),
-                        );
+                        }
                       },
                       child: const Text(
                         'Gửi đánh giá',
@@ -163,10 +259,30 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
             DetailImageHeader(
               images: widget.item.galleryImages ?? [widget.item.imageUrl],
               isFavorite: isFavorite,
-              onFavoriteToggle: () {
+              onFavoriteToggle: () async {
                 setState(() {
                   isFavorite = !isFavorite;
                 });
+                final newState = await FavoriteService.instance.toggleFavorite(
+                  widget.item.id,
+                );
+                if (mounted) {
+                  setState(() {
+                    isFavorite = newState;
+                  });
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isFavorite
+                            ? 'Đã lưu "${widget.item.title}" vào mục Yêu thích'
+                            : 'Đã bỏ lưu "${widget.item.title}"',
+                      ),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               },
               onShare: () {
                 //sau :))
@@ -216,13 +332,6 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        '( 1.2B đánh giá )',
-                        style: TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 13,
-                        ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -240,7 +349,7 @@ class _DetailPlaceScreenState extends State<DetailPlaceScreen> {
                   ),
                   const SizedBox(height: 24),
                   DetailReviewsSection(
-                    reviews: ReviewItemModel.mockReviews,
+                    reviews: _reviews,
                     onSeeAll: () {},
                     onWriteReview: _showAddReviewBottomSheet,
                   ),

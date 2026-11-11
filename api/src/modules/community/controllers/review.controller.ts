@@ -97,13 +97,15 @@ export class ReviewController {
   // PUT /community/reviews/:id
   @Put(':id')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FilesInterceptor('images', 5))
   async updateReview(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
     @Body() dto: UpdateReviewDto,
+    @UploadedFiles() files?: Express.Multer.File[],
   ): Promise<ReviewResponseDto> {
     const userId = user.sub || user.userId;
-    return this.reviewService.updateReview(id, userId, dto);
+    return this.reviewService.updateReview(id, userId, dto, files);
   }
 
   // 7. [USER/ADMIN] Xóa bài đánh giá

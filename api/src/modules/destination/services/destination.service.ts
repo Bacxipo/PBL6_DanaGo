@@ -112,4 +112,12 @@ export class DestinationService {
       const destinations = await this.destinationRepository.findFeatured(limit);
     return destinations.map((dest)=> DestinationMapper.toResponseDto(dest));
   }
+   async getRecommended(userId?: number, limit = 6): Promise<DestinationResponseDto[]> {
+    const list = await this.destinationRepository.findRecommended(userId, limit);
+    return list.map((dest) => DestinationMapper.toResponseDto(dest));
+  }
+  async getNearby(lat?: number, lng?: number, limit = 6): Promise<DestinationResponseDto[]> {
+    const list = await this.destinationRepository.findNearby(lat, lng, limit);
+    return list.map((dest) => DestinationMapper.toResponseDto(dest));
+  }
 }

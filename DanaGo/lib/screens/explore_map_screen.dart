@@ -11,6 +11,7 @@ import 'package:smarttrip/widgets/explore_map/map_pin_marker.dart';
 import 'package:smarttrip/widgets/explore_map/map_search_header.dart';
 import 'package:smarttrip/widgets/explore_map/map_preview_sheet.dart';
 import 'package:smarttrip/widgets/explore_map/map_draggable_sheet.dart';
+import 'package:smarttrip/services/destination_service.dart';
 import 'package:geolocator/geolocator.dart';
 
 class ExploreMapScreen extends StatefulWidget {
@@ -21,7 +22,6 @@ class ExploreMapScreen extends StatefulWidget {
 }
 
 class _ExploreMapScreenState extends State<ExploreMapScreen> {
-
   final TextEditingController _searchCtrl = TextEditingController();
   final MapController _mapController = MapController();
   SearchFilterModel _currentFilter = const SearchFilterModel();
@@ -99,62 +99,26 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
     }
   }
 
-  final List<MapPlaceItem> _mapPlaces = [
-    MapPlaceItem(
-      location: const LatLng(16.0825, 108.2478),
-      item: const SearchResultItem(
-        id: 'place_02',
-        title: 'Hải Sản Bé Mặn',
-        imageUrl:
-            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500',
-        badge: 'Nhà hàng địa phương',
-        badgeColor: AppColors.primaryLight,
-        address: 'Lô 11 Võ Nguyên Giáp, Mân Thái',
-        rating: 4.6,
-        reviewCount: 128,
-        distance: '0.3 km',
-        tagLabel: 'Đang mở cửa',
-        tagColor: AppColors.primary,
-        isFavorite: false,
-      ),
-    ),
-    MapPlaceItem(
-      location: const LatLng(16.0650, 108.2320),
-      item: const SearchResultItem(
-        id: 'place_03',
-        title: 'The Light Cafe',
-        imageUrl:
-            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500',
-        badge: 'Quán Cafe',
-        badgeColor: AppColors.primaryLight,
-        address: 'Trần Hưng Đạo, Sơn Trà',
-        rating: 4.9,
-        reviewCount: 84,
-        distance: '0.8 km',
-        tagLabel: 'Đang mở cửa',
-        tagColor: AppColors.primary,
-        isFavorite: false,
-      ),
-    ),
-    MapPlaceItem(
-      location: const LatLng(16.0594, 108.2486),
-      item: const SearchResultItem(
-        id: 'place_01',
-        title: 'Biển Mỹ Khê',
-        imageUrl:
-            'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500',
-        badge: 'Biển',
-        badgeColor: AppColors.primaryLight,
-        address: 'Võ Nguyên Giáp, Phước Mỹ',
-        rating: 4.8,
-        reviewCount: 1200,
-        distance: '1.5 km',
-        tagLabel: 'Miễn phí',
-        tagColor: AppColors.primary,
-        isFavorite: true,
-      ),
-    ),
-  ];
+  List<MapPlaceItem> _mapPlaces = [];
+  Future<void> _loadMapPlaces() async {
+    final destinations = await DestinationService.instance.getAll();
+    final items = <MapPlaceItem>[];
+    for (final d in destinations) {
+      final lat = d.latitude ?? 16.0614;
+      final lng = d.longitude ?? 108.2272;
+      items.add(
+        MapPlaceItem(
+          location: LatLng(lat, lng),
+          item: SearchResultItem.fromDestination(d),
+        ),
+      );
+    }
+    if (mounted) {
+      setState(() {
+        _mapPlaces = items;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -163,9 +127,92 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
     super.dispose();
   }
 
+  bool _matchesSearchQuery(SearchResultItem item, String query) {
+    if (query.isEmpty) return true;
+    final title = item.title.toLowerCase();
+    final addr = item.address.toLowerCase();
+    final badge = item.badge.toLowerCase();
+    final desc = (item.originalDestination?.description ?? '').toLowerCase();
+    if (title.contains(query) ||
+        addr.contains(query) ||
+        badge.contains(query) ||
+        desc.contains(query)) {
+      return true;
+    }
+    if ((query.contains('quán ăn') ||
+            query.contains('nhà hàng') ||
+            query.contains('đồ ăn') ||
+            query.contains('ăn uống')) &&
+        badge.contains('ẩm thực')) {
+      return true;
+    }
+    if ((query.contains('cafe') ||
+            query.contains('coffee') ||
+            query.contains('quán nước') ||
+            query.contains('trà')) &&
+        badge.contains('cà phê')) {
+      return true;
+    }
+    if ((query.contains('khách sạn') ||
+            query.contains('homestay') ||
+            query.contains('resort') ||
+            query.contains('nhà nghỉ')) &&
+        badge.contains('lưu trú')) {
+      return true;
+    }
+    return false;
+  }
+
+  bool _matchesCategoryFilter(String badge, String filterCategory) {
+    if (filterCategory == 'Tất cả') return true;
+    final b = badge.toLowerCase();
+    switch (filterCategory) {
+      case 'Thiên nhiên':
+        return b.contains('thiên nhiên') ||
+            b.contains('thắng cảnh') ||
+            b.contains('danh lam') ||
+            b.contains('bãi biển');
+      case 'Ăn uống':
+        return b.contains('ăn uống') ||
+            b.contains('ẩm thực') ||
+            b.contains('đặc sản') ||
+            b.contains('cà phê') ||
+            b.contains('tiệm trà');
+      case 'Văn hóa':
+        return b.contains('văn hóa') ||
+            b.contains('di tích') ||
+            b.contains('lịch sử') ||
+            b.contains('lễ hội');
+      case 'Vui chơi':
+        return b.contains('vui chơi') ||
+            b.contains('giải trí') ||
+            b.contains('mua sắm') ||
+            b.contains('chợ đêm');
+      default:
+        return b.contains(filterCategory.toLowerCase());
+    }
+  }
+
   List<MapPlaceItem> get _filteredPlaces {
+    final query = _searchCtrl.text.trim().toLowerCase();
     return _mapPlaces.where((mapPlace) {
       final item = mapPlace.item;
+      if (!_matchesSearchQuery(item, query)) {
+        return false;
+      }
+      if (!_matchesCategoryFilter(item.badge, _currentFilter.category)) {
+        return false;
+      }
+      if (_currentFilter.area != 'Tất cả quận/huyện' &&
+          !item.address.toLowerCase().contains(
+            _currentFilter.area.toLowerCase(),
+          )) {
+        return false;
+      }
+      if (_currentFilter.minRating != 'any') {
+        final minRate = double.tryParse(_currentFilter.minRating) ?? 0.0;
+        if (item.rating < minRate) return false;
+      }
       if (_activeChips.contains('Đánh giá 4.5+') && item.rating < 4.5) {
         return false;
       }
@@ -203,6 +250,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _loadMapPlaces();
   }
 
   void _openFilterBottomSheet() {
@@ -244,14 +292,14 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                   userAgentPackageName: 'com.smarttrip.app',
                   tileBuilder: isDark
                       ? (context, tileWidget, tile) => ColorFiltered(
-                            colorFilter: const ColorFilter.matrix(<double>[
-                              -0.15, -0.45, -0.05, 0, 165, // R
-                              -0.15, -0.45, -0.05, 0, 175, // G
-                              -0.15, -0.45, -0.05, 0, 195, // B
-                               0.00,  0.00,  0.00, 1,   0, // A
-                            ]),
-                            child: tileWidget,
-                          )
+                          colorFilter: const ColorFilter.matrix(<double>[
+                            -0.15, -0.45, -0.05, 0, 165, // R
+                            -0.15, -0.45, -0.05, 0, 175, // G
+                            -0.15, -0.45, -0.05, 0, 195, // B
+                            0.00, 0.00, 0.00, 1, 0, // A
+                          ]),
+                          child: tileWidget,
+                        )
                       : null,
                 ),
                 MarkerLayer(
@@ -266,7 +314,8 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                             width: 22,
                             height: 22,
                             decoration: BoxDecoration(
-                              color: AppColors.info, // Xanh dương GPS chuẩn Google Maps
+                              color: AppColors
+                                  .info, // Xanh dương GPS chuẩn Google Maps
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: Colors.white,
@@ -318,7 +367,9 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.3 : 0.12,
+                      ),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -345,6 +396,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
               controller: _searchCtrl,
               onFilterTap: _openFilterBottomSheet,
               activeChips: _activeChips,
+              onSearchChanged: (_) => setState(() {}),
               onChipToggle: (label) {
                 setState(() {
                   _activeChips.contains(label)

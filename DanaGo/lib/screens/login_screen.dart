@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/screens/interest_screen.dart';
 import 'package:smarttrip/services/google_auth_service.dart';
 import 'package:smarttrip/screens/register_screen.dart';
 import 'package:smarttrip/screens/forgot_password_screen.dart';
@@ -6,9 +7,10 @@ import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/app_styles.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
-import 'package:smarttrip/utils/validators.dart';
 import 'package:smarttrip/widgets/common/custom_text_field.dart';
-import 'package:smarttrip/screens/interest_screen.dart';
+import 'package:smarttrip/services/auth_service.dart';
+import 'package:smarttrip/services/api_client.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -20,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isObscure = true; //hide mk
+  bool _isLoading = false;
 
   final _googleAuth = GoogleAuthService.instance;
   bool _googleNavigationScheduled = false;
@@ -39,7 +42,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {});
     final error = _googleAuth.errorMessage;
     if (_googleAuth.status == GoogleLoginStatus.failed &&
-        error != null && error != _lastGoogleError) {
+        error != null &&
+        error != _lastGoogleError) {
       _lastGoogleError = error;
       UiHelpers.showError(context, error);
     } else if (_googleAuth.status != GoogleLoginStatus.failed) {
@@ -50,16 +54,33 @@ class _LoginScreenState extends State<LoginScreen> {
       _googleNavigationScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const InterestScreen()),
-        );
+        if (_googleAuth.hasPreferences) {
+          UiHelpers.showSuccess(
+            context,
+            'Đăng nhập thành công! Chào mừng quay trở lại',
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const MainScreen()),
+            (route) => false,
+          );
+        } else {
+          UiHelpers.showSuccess(
+            context,
+            'Chào mừng bạn đến với DanaGo! Hãy chọn sở thích của bạn',
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const InterestScreen()),
+          );
+        }
       });
     }
   }
 
   Future<void> _handleGoogleLogin() {
     _lastGoogleError = null;
+    _googleNavigationScheduled = false;
     return _googleAuth.signIn();
   }
 
@@ -71,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     final String email = _emailController.text.trim();
     final String password = _passwordController.text;
 
@@ -79,15 +100,35 @@ class _LoginScreenState extends State<LoginScreen> {
       UiHelpers.showError(context, "Vui lòng nhập đầy đủ Email và Mật khẩu!");
       return;
     }
-    if (!Validators.isValidEmail(email)) {
-      UiHelpers.showError(context, "Địa chỉ Email không đúng định dạng!");
-      return;
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.instance.login(
+        emailOrUsername: email,
+        password: password,
+      );
+      if (!mounted) return;
+      UiHelpers.showSuccess(context, 'Đăng nhập thành công! Chào mừng bạn');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
+      );
+    } on ApiException catch (e) {
+      if (mounted) {
+        UiHelpers.showError(context, e.message);
+      }
+    } catch (_) {
+      if (mounted) {
+        UiHelpers.showError(
+          context,
+          'Không thể kết nối máy chủ. Vui lòng thử lại',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    UiHelpers.showSuccess(context, 'Đăng nhập thành công!');
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
-    );
   }
 
   @override
@@ -227,15 +268,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: _handleLogin,
-                  child: const Text(
-                    'Đăng nhập',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  onPressed: _isLoading ? null : _handleLogin,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Đăng nhập',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 16),

@@ -29,15 +29,35 @@ class DestinationTile extends StatelessWidget {
           ],
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                item.imageUrl,
-                width: 72,
-                height: 72,
-                fit: BoxFit.cover,
-              ),
+              child: item.imageUrl.isNotEmpty
+                  ? Image.network(
+                      item.imageUrl,
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 72,
+                        height: 72,
+                        color: AppColors.bgSecondary,
+                        child: const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      width: 72,
+                      height: 72,
+                      color: AppColors.bgSecondary,
+                      child: const Icon(
+                        Icons.image_outlined,
+                        color: AppColors.textHint,
+                      ),
+                    ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -56,12 +76,34 @@ class DestinationTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     item.title,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 13,
+                      height: 1.25,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      item.distance ?? item.tag,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -84,21 +126,6 @@ class DestinationTile extends StatelessWidget {
                     ],
                   ),
                 ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                item.distance ?? item.tag,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
               ),
             ),
           ],

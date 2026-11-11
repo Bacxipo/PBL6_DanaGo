@@ -4,6 +4,7 @@ import 'package:smarttrip/screens/detail_place_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/favorites/favorite_empty_state.dart';
 import 'package:smarttrip/widgets/favorites/favorite_place_card.dart';
+import 'package:smarttrip/services/favorite_service.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -14,28 +15,31 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
-  late List<DestinationItem> _favorites;
+  List<DestinationItem> _favorites = [];
+  bool _isLoading = true;
+
   String _selectedCategory = 'Tất cả';
 
-  final List<String> _categories = [
+  List<String> get _categories => [
     'Tất cả',
-    'BIỂU TƯỢNG',
-    'KHU DU LỊCH',
-    'ẨM THỰC',
-    'BÃI BIỂN',
-    'DI TÍCH',
-    'MUA SẮM',
+    ..._favorites.map((e) => e.category).where((c) => c.isNotEmpty).toSet(),
   ];
 
   @override
   void initState() {
     super.initState();
-    // Initialize mock favorite items
-    _favorites = [
-      ...DestinationItem.featuredItems,
-      ...DestinationItem.recommendedItems,
-      ...DestinationItem.nearbyItems,
-    ];
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    setState(() => _isLoading = true);
+    final data = await FavoriteService.instance.getFavorites();
+    if (mounted) {
+      setState(() {
+        _favorites = data;
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -47,22 +51,25 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   List<DestinationItem> get _filteredFavorites {
     final query = _searchCtrl.text.trim().toLowerCase();
     return _favorites.where((item) {
-      final matchesQuery = query.isEmpty ||
+      final matchesQuery =
+          query.isEmpty ||
           item.title.toLowerCase().contains(query) ||
           (item.address ?? '').toLowerCase().contains(query);
 
-      final matchesCategory = _selectedCategory == 'Tất cả' ||
-          item.category.toUpperCase() == _selectedCategory.toUpperCase();
+      final matchesCategory =
+          _selectedCategory == 'Tất cả' ||
+          item.category.toUpperCase().contains(_selectedCategory.toUpperCase());
 
       return matchesQuery && matchesCategory;
     }).toList();
   }
 
-  void _removeFavorite(DestinationItem item, int index) {
+  void _removeFavorite(DestinationItem item, int index) async {
     setState(() {
       _favorites.remove(item);
     });
-
+    await FavoriteService.instance.removeFavorite(item.id);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -70,10 +77,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         action: SnackBarAction(
           label: 'Hoàn tác',
           textColor: AppColors.accent,
-          onPressed: () {
+          onPressed: () async {
             setState(() {
               _favorites.insert(index.clamp(0, _favorites.length), item);
             });
+            await FavoriteService.instance.addFavorite(item.id);
           },
         ),
         duration: const Duration(seconds: 3),
@@ -130,7 +138,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 Container(
                   height: 44,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0F172A) : AppColors.bgSecondary,
+                    color: isDark
+                        ? const Color(0xFF0F172A)
+                        : AppColors.bgSecondary,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
@@ -195,18 +205,27 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           labelStyle: TextStyle(
                             fontFamily: 'Be Vietnam Pro',
                             fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                             color: isSelected
                                 ? Colors.white
-                                : (isDark ? Colors.grey.shade300 : AppColors.textSecondary),
+                                : (isDark
+                                      ? Colors.grey.shade300
+                                      : AppColors.textSecondary),
                           ),
                           selectedColor: AppColors.primary,
-                          backgroundColor: isDark ? const Color(0xFF0F172A) : AppColors.bgSecondary,
+                          backgroundColor: isDark
+                              ? const Color(0xFF0F172A)
+                              : AppColors.bgSecondary,
                           side: BorderSide.none,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -237,10 +256,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
           // Content List or Empty State
           Expanded(
-            child: list.isEmpty
-                ? FavoriteEmptyState(
-                    onExploreTap: () => Navigator.pop(context),
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   )
+                : list.isEmpty
+                ? FavoriteEmptyState(onExploreTap: () => Navigator.pop(context))
                 : ListView.builder(
                     padding: const EdgeInsets.only(top: 4, bottom: 24),
                     physics: const BouncingScrollPhysics(),
@@ -249,13 +270,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       final item = list[index];
                       return FavoritePlaceCard(
                         item: item,
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => DetailPlaceScreen(item: item),
                             ),
                           );
+                          _loadFavorites();
                         },
                         onRemoveFavorite: () => _removeFavorite(item, index),
                       );
@@ -267,4 +289,3 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 }
-
