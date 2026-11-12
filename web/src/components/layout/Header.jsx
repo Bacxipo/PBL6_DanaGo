@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Sparkles } from 'lucide-react';
 import UserAvatar from '@/components/comon/ui/UserAvatar';
 import { getMyProfile } from '@/lib/feed-api';
 import { useEffect, useState } from 'react';
@@ -69,8 +70,16 @@ export default function Header() {
                     <Link href="/community" className={getLinkClass('/community')}>
                         Cộng đồng
                     </Link>
-                    <Link href="/ai-plan" className={getLinkClass('/ai-plan')}>
-                        AI Gợi ý
+                    <Link
+                        href="/ai-plan"
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                            pathname === '/ai-plan'
+                                ? 'bg-[#006971] text-white shadow-xs'
+                                : 'bg-[#e6f4f5] text-[#006971] hover:bg-[#d4eff1]'
+                        }`}
+                    >
+                        <Sparkles size={13} className="text-amber-500 fill-amber-400" />
+                        <span>AI Plan</span>
                     </Link>
                 </nav>
                 <div className="flex min-w-24 items-center justify-end">

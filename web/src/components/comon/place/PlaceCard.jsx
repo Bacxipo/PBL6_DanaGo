@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Rating from '../ui/Rating';
 import Image from 'next/image';
 
-export default function PlaceCard({ id, name, img, des, stars, price, category, address, favoriteState }) {
+export default function PlaceCard({ id, name, img, des, stars, price, category, address, favoriteState, matchScore }) {
     const isFav = favoriteState?.favorites.some((item) => item.destinationId === Number(id)) || false;
     const disabled = !favoriteState || favoriteState.loading || favoriteState.saving || (favoriteState.signedIn && Boolean(favoriteState.error)) || !Number.isSafeInteger(Number(id)) || Number(id) <= 0;
     const error = favoriteState?.error;
@@ -34,7 +34,7 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                         />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
-                    
+
                     {category && (
                         <span className="absolute top-3 left-3 bg-[#006971]/85 backdrop-blur-md text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                             {category}
@@ -52,13 +52,18 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                         title={isFav ? "Bỏ yêu thích" : "Yêu thích"}
                     >
                         <Heart
-                            className={`w-4 h-4 transition-all duration-200 ${
-                                isFav
-                                    ? 'fill-red-500 text-red-500 scale-110'
-                                    : 'text-white/90 hover:text-red-400'
-                            }`}
+                            className={`w-4 h-4 transition-all duration-200 ${isFav
+                                ? 'fill-red-500 text-red-500 scale-110'
+                                : 'text-white/90 hover:text-red-400'
+                                }`}
                         />
                     </button>
+
+                    {matchScore !== undefined && matchScore !== null && (
+                        <span className="absolute bottom-3 left-3 bg-emerald-600/90 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 z-10">
+                            ✨ Phù hợp {Math.round(matchScore * 100)}%
+                        </span>
+                    )}
 
                     {price && (
                         <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold text-[#006971] shadow-sm">
@@ -85,11 +90,10 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                         title={isFav ? "Bỏ yêu thích" : "Yêu thích"}
                     >
                         <Heart
-                            className={`w-4 h-4 transition-all duration-200 ${
-                                isFav
-                                    ? 'fill-red-500 text-red-500 scale-110'
-                                    : 'text-gray-400 hover:text-red-400'
-                            }`}
+                            className={`w-4 h-4 transition-all duration-200 ${isFav
+                                ? 'fill-red-500 text-red-500 scale-110'
+                                : 'text-gray-400 hover:text-red-400'
+                                }`}
                         />
                     </button>
 
@@ -130,8 +134,8 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                     </div>
 
                     <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md text-amber-700 font-semibold border border-amber-200/50">
-                        <Rating rating={stars}/>
-                    </div>  
+                        <Rating rating={stars} />
+                    </div>
                 </div>
             </div>
         </>
