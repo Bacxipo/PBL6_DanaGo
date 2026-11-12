@@ -50,6 +50,10 @@ export class SaveFullItineraryDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  coverImg?: string;
+
+  @IsOptional()
   @IsNumber()
   budget?: number;
 

@@ -171,13 +171,15 @@ model DestinationImage {
 }
 
 model Itinerary {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  title     String   @db.VarChar(150)
-  startDate DateTime @map("start_date") @db.Date
-  endDate   DateTime @map("end_date") @db.Date
-  budget    Decimal? @default(0) @db.Decimal(12, 0)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  title       String   @db.VarChar(150)
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime @map("end_date") @db.Date
+  budget      Decimal? @default(0) @db.Decimal(12, 0)
+  description String?  @db.Text
+  coverImg    String?  @map("cover_img") @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp()
 
   user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   items ItineraryItem[]
@@ -188,13 +190,22 @@ model Itinerary {
 model ItineraryItem {
   id            Int      @id @default(autoincrement())
   itineraryId   Int      @map("itinerary_id")
-  destinationId Int      @map("destination_id")
+  destinationId Int?     @map("destination_id")
+  lodgingId     BigInt?  @map("lodging_id")
   dayIndex      Int      @map("day_index")
   orderIndex    Int      @default(0) @map("order_index")
   budget        Decimal? @default(0) @db.Decimal(12, 0)
+  name          String?  @db.VarChar(255)
+  itemType      String?  @map("item_type") @db.VarChar(50)
+  startTime     String?  @map("start_time") @db.VarChar(20)
+  endTime       String?  @map("end_time") @db.VarChar(20)
+  tag           String?  @db.VarChar(100)
+  location      String?  @db.VarChar(255)
+  notes         String?  @db.Text
 
   itinerary   Itinerary       @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
-  destination Destination     @relation(fields: [destinationId], references: [id])
+  destination Destination?    @relation(fields: [destinationId], references: [id])
+  lodging     Lodging?        @relation(fields: [lodgingId], references: [id])
   checklists  ChecklistItem[]
 
   @@map("itinerary_item")
@@ -396,4 +407,39 @@ model EventFavorite {
 
   @@id([userId, eventId])
   @@map("event_favorite")
+}
+
+model Lodging {
+  id            BigInt    @id @default(autoincrement())
+  name          String
+  type          String
+  district      String?
+  latitude      Decimal   @db.Decimal
+  longitude     Decimal   @db.Decimal
+  pricePerNight Int       @map("price_per_night")
+  maxGuests     Int       @map("max_guests") @db.SmallInt
+  checkin       DateTime  @db.Time
+  checkout      DateTime  @db.Time
+  avgRating     Decimal?  @map("avg_rating") @db.Decimal
+  description   String?   @db.Text
+  status        String
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  addressUrl    String?   @map("address_url") @db.Text
+  website       String?   @db.Text
+
+  images        LodgingImage[]
+  itineraryItems ItineraryItem[]
+
+  @@map("lodging")
+}
+
+model LodgingImage {
+  id        Int      @id @default(autoincrement())
+  lodgingId BigInt   @map("lodging_id")
+  imageUrl  String   @map("image_url") @db.VarChar
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  lodging Lodging @relation(fields: [lodgingId], references: [id], onDelete: Cascade)
+
+  @@map("lodging_image")
 }

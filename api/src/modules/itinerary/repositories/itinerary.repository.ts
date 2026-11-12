@@ -4,7 +4,7 @@ import { CreateChecklistDto, UpdateChecklistDto, SaveFullItineraryDto } from '..
 
 @Injectable()
 export class ItineraryRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findByUserId(userId: number) {
     return this.prisma.itinerary.findMany({
@@ -12,7 +12,16 @@ export class ItineraryRepository {
       include: {
         items: {
           include: {
-            destination: true,
+            destination: {
+              include: {
+                images: true,
+              },
+            },
+            lodging: {
+              include: {
+                images: true,
+              },
+            },
             checklists: true,
           },
           orderBy: { orderIndex: 'asc' },
@@ -28,7 +37,16 @@ export class ItineraryRepository {
       include: {
         items: {
           include: {
-            destination: true,
+            destination: {
+              include: {
+                images: true,
+              },
+            },
+            lodging: {
+              include: {
+                images: true,
+              },
+            },
             checklists: true,
           },
           orderBy: { orderIndex: 'asc' },
@@ -102,6 +120,12 @@ export class ItineraryRepository {
     });
   }
 
+  async deleteItinerary(id: number) {
+    return this.prisma.itinerary.delete({
+      where: { id },
+    });
+  }
+
   /**
    * Lưu toàn bộ lịch trình cùng danh sách hoạt động và checklist items vào Database
    */
@@ -113,11 +137,7 @@ export class ItineraryRepository {
       userId = defaultUser ? defaultUser.id : 1;
     }
 
-    // 2. Lấy một destinationId mặc định đề phòng custom activities không có placeId
-    const fallbackDest = await this.prisma.destination.findFirst({ select: { id: true } });
-    const fallbackDestId = fallbackDest ? fallbackDest.id : 1;
-
-    // 3. Tạo hoặc cập nhật Itinerary
+    // 2. Tạo hoặc cập nhật Itinerary
     let itineraryId = dto.id && !isNaN(Number(dto.id)) ? Number(dto.id) : null;
     let itinerary;
 
@@ -131,6 +151,8 @@ export class ItineraryRepository {
             startDate: new Date(dto.startDate),
             endDate: new Date(dto.endDate),
             budget: dto.budget ? Number(dto.budget) : 0,
+            description: dto.description || null,
+            coverImg: dto.coverImg || null,
           },
         });
         // Xóa các items cũ để làm mới cấu trúc
@@ -148,34 +170,72 @@ export class ItineraryRepository {
           startDate: new Date(dto.startDate),
           endDate: new Date(dto.endDate),
           budget: dto.budget ? Number(dto.budget) : 0,
+          description: dto.description || null,
+          coverImg: dto.coverImg || null,
         },
       });
       itineraryId = itinerary.id;
     }
 
-    // 4. Duyệt qua từng ngày và từng hoạt động để tạo itineraryItem và checklistItem
+    // 3. Duyệt qua từng ngày và từng hoạt động để tạo itineraryItem và checklistItem
     if (dto.days && typeof dto.days === 'object') {
       for (const [dayKey, activities] of Object.entries(dto.days)) {
         const dayIndex = parseInt(dayKey, 10) || 1;
         if (Array.isArray(activities)) {
           for (let orderIndex = 0; orderIndex < activities.length; orderIndex++) {
             const act = activities[orderIndex];
-            const destId = act.placeId || act.destinationId || fallbackDestId;
+            const itemType = act.tag || act.type || act.itemType || 'attraction';
 
-            // Kiểm tra xem destinationId có tồn tại không
-            const destExists = await this.prisma.destination.findUnique({
-              where: { id: Number(destId) },
-              select: { id: true },
-            });
-            const validDestId = destExists ? destExists.id : fallbackDestId;
+            // Phân biệt destinationId vs lodgingId
+            let validDestId: number | null = null;
+            let validLodgingId: bigint | null = null;
+
+            const isLodgingType =
+              ['checkin', 'checkout', 'return', 'lodging'].includes(itemType) ||
+              act.type === 'checkin' ||
+              act.type === 'checkout' ||
+              act.type === 'return' ||
+              Boolean(act.label && act.label.toLowerCase().includes('khách sạn'));
+
+            if (isLodgingType) {
+              const loId = act.lodgingId || act.placeId || act.id;
+              if (loId && !isNaN(Number(loId))) {
+                const loExists = await this.prisma.lodging.findUnique({
+                  where: { id: BigInt(loId) },
+                  select: { id: true },
+                });
+                if (loExists) {
+                  validLodgingId = loExists.id;
+                }
+              }
+            } else {
+              const destId = act.destinationId || act.placeId || act.id;
+              if (destId && !isNaN(Number(destId))) {
+                const destExists = await this.prisma.destination.findUnique({
+                  where: { id: Number(destId) },
+                  select: { id: true },
+                });
+                if (destExists) {
+                  validDestId = destExists.id;
+                }
+              }
+            }
 
             const createdItem = await this.prisma.itineraryItem.create({
               data: {
                 itineraryId: itinerary.id,
                 destinationId: validDestId,
+                lodgingId: validLodgingId,
                 dayIndex: dayIndex,
                 orderIndex: orderIndex,
-                budget: act.budget ? Number(act.budget) : 0,
+                budget: act.budget || act.priceEst ? Number(act.budget || act.priceEst) : 0,
+                name: act.name || act.title || null,
+                itemType: itemType,
+                startTime: act.time || act.startTime || '08:00',
+                endTime: act.endTime || act.end || '10:00',
+                tag: act.tag || act.type || null,
+                location: act.location || act.address || null,
+                notes: act.note || act.notes || null,
               },
             });
 
@@ -204,7 +264,16 @@ export class ItineraryRepository {
       include: {
         items: {
           include: {
-            destination: true,
+            destination: {
+              include: {
+                images: true,
+              },
+            },
+            lodging: {
+              include: {
+                images: true,
+              },
+            },
             checklists: true,
           },
           orderBy: { orderIndex: 'asc' },

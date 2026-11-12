@@ -10,6 +10,22 @@ export interface ChecklistItemData {
   dayIndex?: number;
 }
 
+export function getCurrentUserId(): number | null {
+  if (typeof window === 'undefined') return null;
+  const token = sessionStorage.getItem('accessToken');
+  if (!token) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length >= 2) {
+      const payload = JSON.parse(atob(parts[1]));
+      return payload.sub ? Number(payload.sub) : null;
+    }
+  } catch (e) {
+    console.warn('Không thể giải mã access token:', e);
+  }
+  return null;
+}
+
 export async function saveItineraryFull(itineraryData: any) {
   try {
     return await fetchApi('/itineraries/save-full', {
@@ -18,6 +34,26 @@ export async function saveItineraryFull(itineraryData: any) {
     });
   } catch (err) {
     console.warn('Lưu vào API backend thất bại (sử dụng local fallback):', err);
+    return null;
+  }
+}
+
+export async function fetchItinerariesByUser(userId: number | string = 1) {
+  try {
+    return await fetchApi<any[]>(`/itineraries/user/${userId}`);
+  } catch (err) {
+    console.warn(`Lấy danh sách lịch trình của user #${userId} thất bại:`, err);
+    return [];
+  }
+}
+
+export async function deleteItineraryApi(id: number | string) {
+  try {
+    return await fetchApi(`/itineraries/${id}`, {
+      method: 'DELETE',
+    });
+  } catch (err) {
+    console.warn(`Xóa lịch trình #${id} thất bại:`, err);
     return null;
   }
 }
