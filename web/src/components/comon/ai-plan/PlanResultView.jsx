@@ -23,7 +23,9 @@ export default function PlanResultView({
     plan,
     startDateStr = '',
     endDateStr = '',
-    onReset = () => {},
+    onReset = () => { },
+    includeMeals = true,
+    includeLodging = true,
 }) {
     const router = useRouter();
     const [activeDayTab, setActiveDayTab] = useState(0); // 0 = all days
@@ -33,6 +35,18 @@ export default function PlanResultView({
 
     const daysCount = plan.num_days || plan.days.length;
     const nightsCount = Math.max(0, daysCount - 1);
+
+    // Kiểm tra ngân sách dư nhiều (> 40% tổng) và chủ yếu chỉ có vé tham quan
+    const budgetLeftRatio = plan.budget_pp > 0 ? (plan.budget_left_pp / plan.budget_pp) : 0;
+    const showBudgetSurplusHint = budgetLeftRatio > 0.4 && (!includeMeals || !includeLodging);
+
+    // Label quy chuẩn ngân sách
+    const budgetStandardLabel = (() => {
+        const parts = ['Vé tham quan'];
+        if (includeMeals) parts.push('Ăn uống');
+        if (includeLodging) parts.push('Nơi nghỉ');
+        return `Bao gồm: ${parts.join(', ')}`;
+    })();
 
     // Lưu toàn bộ lịch trình AI tạo ra vào danh sách Lịch trình cá nhân (Itinerary)
     const handleSaveToItinerary = () => {
@@ -125,8 +139,36 @@ export default function PlanResultView({
         ? plan.days
         : plan.days.filter((d) => d.day === activeDayTab);
 
+    // Kiểm tra xem có ngày nào không xếp được điểm tham quan do ngân sách / tiêu chí không
+    const hasEmptyDays = plan.days.some(
+        (d) => !d.items || d.items.length === 0 || d.items.filter((it) => it.type === 'attraction').length === 0
+    );
+
     return (
         <div className="space-y-6">
+            {/* THÔNG BÁO NỔI BẬT NẾU CÓ NGÀY THIẾU HOẠT ĐỘNG */}
+            {hasEmptyDays && (
+                <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 space-y-2.5 shadow-xs">
+                    <div className="flex items-center gap-2 font-bold text-sm text-rose-800">
+                        <AlertTriangle className="text-rose-600 w-5 h-5 shrink-0" />
+                        <span>Có ngày chưa thể xếp lịch tham quan do ngân sách quá ít hoặc tiêu chí quá chặt!</span>
+                    </div>
+                    <p className="text-xs text-rose-700 leading-relaxed">
+                        Ngân sách hiện tại không đủ để chi trả cho các điểm tham quan hoặc nơi nghỉ trong ngày này. Bạn hãy thử <strong>tăng ngân sách</strong>, hoặc <strong>tắt tùy chọn ăn uống / nơi lưu trú để tự túc (giảm chi phí)</strong>, hoặc chọn <strong>"Tất cả khu vực"</strong> để AI có thể tự do lên lịch tối ưu.
+                    </p>
+                    <div className="pt-1">
+                        <button
+                            type="button"
+                            onClick={onReset}
+                            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer shadow-xs"
+                        >
+                            <RotateCcw size={14} />
+                            Điều chỉnh & Tạo lại lịch trình
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Thanh tổng quan & Thống kê tài chính */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
@@ -153,11 +195,10 @@ export default function PlanResultView({
                             type="button"
                             onClick={handleSaveToItinerary}
                             disabled={savedSuccess}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 ${
-                                savedSuccess
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-[#006971] hover:bg-[#00555c] text-white active:scale-95'
-                            }`}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 ${savedSuccess
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-[#006971] hover:bg-[#00555c] text-white active:scale-95'
+                                }`}
                         >
                             <Save size={14} />
                             {savedSuccess ? 'Đang chuyển sang Lịch trình...' : 'Lưu & Xem trong Lịch trình'}
@@ -182,10 +223,23 @@ export default function PlanResultView({
                     <div className="p-3 bg-teal-50/40 rounded-xl border border-teal-100 col-span-2 sm:col-span-1">
                         <span className="text-2xs text-teal-800 font-medium block mb-1">Quy chuẩn ngân sách</span>
                         <span className="text-xs font-semibold text-teal-900 block truncate">
-                            Bao gồm: Vé tham quan, Ăn uống, Nơi nghỉ
+                            {budgetStandardLabel}
                         </span>
                     </div>
                 </div>
+
+                {/* Gợi ý khi ngân sách dư nhiều do tắt meals/lodging */}
+                {showBudgetSurplusHint && (
+                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-800 flex gap-2 items-start">
+                        <span className="text-lg leading-none">💡</span>
+                        <div>
+                            <span className="font-bold">Ngân sách còn dư nhiều!</span> Bạn đang tự túc{!includeMeals ? ' ăn uống' : ''}{!includeLodging ? ' & nơi nghỉ' : ''}. AI đã ưu tiên chọn các địa điểm <strong>trải nghiệm premium</strong> (vé có phí) để tận dụng ngân sách. Bạn cũng có thể{' '}
+                            <button type="button" onClick={onReset} className="underline font-semibold hover:text-blue-600">
+                                bật lại tùy chọn ăn uống / nơi nghỉ
+                            </button>{' '}để AI lên lịch đầy đủ hơn.
+                        </div>
+                    </div>
+                )}
 
                 {/* Cảnh báo từ thuật toán (nếu có) */}
                 {plan.warnings && plan.warnings.length > 0 && (
@@ -208,11 +262,10 @@ export default function PlanResultView({
                 <button
                     type="button"
                     onClick={() => setActiveDayTab(0)}
-                    className={`px-4 py-2 rounded-xl font-bold whitespace-nowrap transition-all ${
-                        activeDayTab === 0
-                            ? 'bg-[#006971] text-white shadow-xs'
-                            : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`px-4 py-2 rounded-xl font-bold whitespace-nowrap transition-all ${activeDayTab === 0
+                        ? 'bg-[#006971] text-white shadow-xs'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                        }`}
                 >
                     Toàn bộ chuyến đi ({daysCount} ngày)
                 </button>
@@ -221,11 +274,10 @@ export default function PlanResultView({
                         key={d.day}
                         type="button"
                         onClick={() => setActiveDayTab(d.day)}
-                        className={`px-4 py-2 rounded-xl font-bold whitespace-nowrap transition-all ${
-                            activeDayTab === d.day
-                                ? 'bg-[#006971] text-white shadow-xs'
-                                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
-                        }`}
+                        className={`px-4 py-2 rounded-xl font-bold whitespace-nowrap transition-all ${activeDayTab === d.day
+                            ? 'bg-[#006971] text-white shadow-xs'
+                            : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                            }`}
                     >
                         Ngày {d.day} ({d.region || 'Đà Nẵng'})
                     </button>
@@ -265,62 +317,80 @@ export default function PlanResultView({
 
                         {/* Timeline các hoạt động */}
                         <div className="p-5 space-y-4">
-                            <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gray-200">
-                                {(dayData.items || []).map((item, idx) => {
-                                    const isMeal = item.type === 'breakfast' || item.type === 'lunch' || item.type === 'dinner';
-                                    const isHotel = item.type === 'checkin' || item.type === 'checkout' || item.type === 'return';
+                            {
+                                !dayData.items || dayData.items.length === 0 ? (
+                                    <div className="p-6 bg-rose-50/50 border border-dashed border-rose-200 rounded-2xl text-center space-y-2.5">
+                                        <AlertTriangle className="mx-auto text-rose-500 w-7 h-7" />
+                                        <h4 className="text-xs font-bold text-rose-800">Không thể xếp lịch khả thi cho ngày này</h4>
+                                        <p className="text-2xs text-rose-600 max-w-sm mx-auto">
+                                            Ngân sách không đủ hoặc các tiêu chí quá chặt. Bạn vui lòng tăng ngân sách hoặc chuyển sang hình thức tự túc ăn uống / nơi ở để AI xếp đủ lịch.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={onReset}
+                                            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-2xs font-bold rounded-xl transition-all cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                                        >
+                                            <RotateCcw size={12} />
+                                            Đổi thông số & Tạo lại
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gray-200">
+                                        {(dayData.items || []).map((item, idx) => {
+                                            const isMeal = item.type === 'breakfast' || item.type === 'lunch' || item.type === 'dinner';
+                                            const isHotel = item.type === 'checkin' || item.type === 'checkout' || item.type === 'return';
 
-                                    return (
-                                        <div key={idx} className="relative group">
-                                            {/* Node icon trên timeline */}
-                                            <span
-                                                className={`absolute -left-6 top-1.5 w-5 h-5 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-white text-2xs font-bold ${
-                                                    isHotel
-                                                        ? 'bg-purple-600'
-                                                        : isMeal
-                                                        ? 'bg-amber-500'
-                                                        : 'bg-[#006971]'
-                                                }`}
-                                            >
-                                                {isHotel ? '🏨' : isMeal ? '🍽️' : idx + 1}
-                                            </span>
-
-                                            {/* Thẻ hoạt động */}
-                                            <div className="p-3.5 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200 hover:shadow-xs transition-all space-y-1.5">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <span className="text-xs font-bold text-[#006971] flex items-center gap-1">
-                                                        <Clock size={12} />
-                                                        {item.start} - {item.end}
+                                            return (
+                                                <div key={idx} className="relative group">
+                                                    {/* Node icon trên timeline */}
+                                                    <span
+                                                        className={`absolute -left-6 top-1.5 w-5 h-5 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-white text-2xs font-bold ${isHotel
+                                                            ? 'bg-purple-600'
+                                                            : isMeal
+                                                                ? 'bg-amber-500'
+                                                                : 'bg-[#006971]'
+                                                            }`}
+                                                    >
+                                                        {isHotel ? '🏨' : isMeal ? '🍽️' : idx + 1}
                                                     </span>
-                                                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-white border border-gray-200 text-gray-700">
-                                                        {item.label || item.type}
-                                                    </span>
-                                                </div>
 
-                                                <div className="font-bold text-gray-900 text-sm">
-                                                    {item.name}
-                                                </div>
+                                                    {/* Thẻ hoạt động */}
+                                                    <div className="p-3.5 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200 hover:shadow-xs transition-all space-y-1.5">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <span className="text-xs font-bold text-[#006971] flex items-center gap-1">
+                                                                <Clock size={12} />
+                                                                {item.start} - {item.end}
+                                                            </span>
+                                                            <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-white border border-gray-200 text-gray-700">
+                                                                {item.label || item.type}
+                                                            </span>
+                                                        </div>
 
-                                                <div className="flex flex-wrap items-center justify-between gap-2 text-2xs text-gray-500 pt-1 border-t border-gray-100">
-                                                    <span className="flex items-center gap-1">
-                                                        <MapPin size={11} className="text-[#006971]" />
-                                                        {item.district ? `${item.district}, ${item.region || ''}` : 'Đà Nẵng'}
-                                                    </span>
-                                                    {item.price_est > 0 ? (
-                                                        <span className="text-amber-700 font-bold">
-                                                            ~{item.price_est.toLocaleString('vi-VN')} đ/người
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-400">
-                                                            {item.price_text || 'Miễn phí'}
-                                                        </span>
-                                                    )}
+                                                        <div className="font-bold text-gray-900 text-sm">
+                                                            {item.name}
+                                                        </div>
+
+                                                        <div className="flex flex-wrap items-center justify-between gap-2 text-2xs text-gray-500 pt-1 border-t border-gray-100">
+                                                            <span className="flex items-center gap-1">
+                                                                <MapPin size={11} className="text-[#006971]" />
+                                                                {item.district ? `${item.district}, ${item.region || ''}` : 'Đà Nẵng'}
+                                                            </span>
+                                                            {item.price_est > 0 ? (
+                                                                <span className="text-amber-700 font-bold">
+                                                                    ~{item.price_est.toLocaleString('vi-VN')} đ/người
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-gray-400">
+                                                                    {item.price_text || 'Miễn phí'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
 
                             {/* Khối nơi nghỉ đêm */}
                             {dayData.night && (
@@ -353,11 +423,10 @@ export default function PlanResultView({
                     type="button"
                     onClick={handleSaveToItinerary}
                     disabled={savedSuccess}
-                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${
-                        savedSuccess
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-[#006971] hover:bg-[#00555c] text-white active:scale-95'
-                    }`}
+                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${savedSuccess
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-[#006971] hover:bg-[#00555c] text-white active:scale-95'
+                        }`}
                 >
                     <Save size={16} />
                     {savedSuccess ? 'Đang chuyển sang Lịch trình...' : 'Lưu Vào Lịch Trình Của Tôi'}

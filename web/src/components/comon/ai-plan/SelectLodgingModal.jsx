@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Search, Check, Hotel, Star, Users, Clock, ExternalLink } from 'lucide-react';
+import { X, Search, Check, Hotel, Star, Users, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const AI_API_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000';
+const ITEMS_PER_PAGE = 15;
 
 export default function SelectLodgingModal({
     isOpen,
@@ -16,23 +17,29 @@ export default function SelectLodgingModal({
     const [lodgings, setLodgings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedType, setSelectedType] = useState('ALL');
+    const [currentPage, setCurrentPage] = useState(1);
     const [localSelected, setLocalSelected] = useState([]);
 
     useEffect(() => {
         if (isOpen) {
             setLocalSelected([...selectedLodgings]);
+            setCurrentPage(1);
             fetchLodgingList();
         }
     }, [isOpen, currentRegion, budgetPp]);
+
+    // Khi đổi từ khoá tìm kiếm hoặc loại, reset về trang 1
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedType]);
 
     const fetchLodgingList = async () => {
         setLoading(true);
         try {
             const queryParams = new URLSearchParams();
             if (currentRegion) queryParams.set('region', currentRegion);
-            if (budgetPp && budgetPp > 0) queryParams.set('budget_pp', String(Math.round(budgetPp / 2))); // Ước tính cho mỗi đêm
-            queryParams.set('top_k', '30');
-
+            // Lấy tất cả nơi nghỉ trong bảng (không giới hạn top_k 30)
             const res = await fetch(`${AI_API_URL}/lodging?${queryParams.toString()}`, {
                 method: 'POST',
             });
@@ -49,19 +56,30 @@ export default function SelectLodgingModal({
 
     if (!isOpen) return null;
 
+    const lodgingTypes = ['ALL', 'Khách sạn', 'Homestay', 'Villa', 'Nhà nghỉ'];
+
     const toggleLodging = (lo) => {
         const exists = localSelected.some((item) => item.id === lo.id);
         if (exists) {
             setLocalSelected(localSelected.filter((item) => item.id !== lo.id));
         } else {
-            // Có thể chọn 1 hoặc nhiều nơi nghỉ
             setLocalSelected([lo]); // Chọn 1 nơi nghỉ chính cho chuyến đi
         }
     };
 
-    const filtered = lodgings.filter((l) =>
-        l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (l.district && l.district.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filtered = lodgings.filter((l) => {
+        const matchSearch =
+            l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (l.district && l.district.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchType = selectedType === 'ALL' || l.type === selectedType;
+        return matchSearch && matchType;
+    });
+
+    // Phân trang danh sách nơi nghỉ (15 items/trang)
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const paginatedItems = filtered.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
     );
 
     const handleSave = () => {
@@ -97,9 +115,9 @@ export default function SelectLodgingModal({
                     </button>
                 </div>
 
-                {/* Tìm kiếm */}
-                <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex gap-2">
-                    <div className="relative flex-1">
+                {/* Tìm kiếm & Bộ lọc loại nơi nghỉ */}
+                <div className="p-4 border-b border-gray-100 bg-gray-50/50 space-y-2.5">
+                    <div className="relative">
                         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
@@ -109,6 +127,32 @@ export default function SelectLodgingModal({
                             className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006971]/30 focus:border-[#006971]"
                         />
                     </div>
+                    {/* Filter tabs theo loại nơi nghỉ */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                        {lodgingTypes.map((typeKey) => {
+                            const isTypeActive = selectedType === typeKey;
+                            const count = typeKey === 'ALL'
+                                ? lodgings.length
+                                : lodgings.filter((l) => l.type === typeKey).length;
+                            return (
+                                <button
+                                    key={typeKey}
+                                    type="button"
+                                    onClick={() => setSelectedType(typeKey)}
+                                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${isTypeActive
+                                        ? 'bg-[#006971] text-white shadow-2xs'
+                                        : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                                        }`}
+                                >
+                                    <span>{typeKey === 'ALL' ? 'Tất cả' : typeKey}</span>
+                                    <span className={`text-2xs px-1.5 py-0.2 rounded-full ${isTypeActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                                        }`}>
+                                        {count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* Danh sách nơi nghỉ */}
@@ -117,20 +161,19 @@ export default function SelectLodgingModal({
                         <div className="py-12 text-center text-sm text-gray-500">Đang tìm nơi nghỉ phù hợp...</div>
                     ) : filtered.length === 0 ? (
                         <div className="py-12 text-center text-sm text-gray-500">
-                            Không tìm thấy nơi nghỉ nào trong khoảng ngân sách này. Hãy thử tăng ngân sách hoặc để AI tự chọn.
+                            Không tìm thấy nơi nghỉ nào trong danh mục này. Hãy thử chọn danh mục khác hoặc để AI tự chọn.
                         </div>
                     ) : (
-                        filtered.map((lo) => {
+                        paginatedItems.map((lo) => {
                             const isSelected = localSelected.some((item) => item.id === lo.id);
                             return (
                                 <div
                                     key={lo.id}
                                     onClick={() => toggleLodging(lo)}
-                                    className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all ${
-                                        isSelected
-                                            ? 'border-[#006971] bg-teal-50/60 ring-2 ring-[#006971]/20'
-                                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                                    }`}
+                                    className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all ${isSelected
+                                        ? 'border-[#006971] bg-teal-50/60 ring-2 ring-[#006971]/20'
+                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                        }`}
                                 >
                                     <div className="space-y-1.5 flex-1">
                                         <div className="flex items-center gap-2">
@@ -165,11 +208,10 @@ export default function SelectLodgingModal({
                                         </div>
                                         <button
                                             type="button"
-                                            className={`mt-1 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
-                                                isSelected
-                                                    ? 'bg-[#006971] text-white'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                            }`}
+                                            className={`mt-1 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${isSelected
+                                                ? 'bg-[#006971] text-white'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                }`}
                                         >
                                             {isSelected ? (
                                                 <>
@@ -185,6 +227,36 @@ export default function SelectLodgingModal({
                         })
                     )}
                 </div>
+
+                {/* Thanh chuyển trang (Pagination) */}
+                {filtered.length > ITEMS_PER_PAGE && (
+                    <div className="px-6 py-2.5 border-t border-gray-100 bg-white flex items-center justify-between text-xs text-gray-600">
+                        <div className="text-2xs text-gray-500">
+                            Hiển thị {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} trên tổng số {filtered.length} nơi nghỉ
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft size={14} />
+                            </button>
+                            <span className="px-3 py-1 font-bold text-gray-700 bg-gray-100 rounded-lg text-2xs">
+                                Trang {currentPage} / {totalPages}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Footer */}
                 <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50">

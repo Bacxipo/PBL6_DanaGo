@@ -10,9 +10,18 @@ export default function AiPlanMap({
     plan = null,
     selectedPlaces = [],
     selectedLodgings = [],
-    activeDay = null, // null = all days
-    onMarkerClick = null,
+    activeDay: controlledActiveDay = null,
+    onActiveDayChange = null,
 }) {
+    const [internalActiveDay, setInternalActiveDay] = React.useState(null);
+    const activeDay = controlledActiveDay !== undefined && controlledActiveDay !== null ? controlledActiveDay : internalActiveDay;
+
+    const handleSelectDay = (day) => {
+        setInternalActiveDay(day);
+        if (onActiveDayChange) {
+            onActiveDayChange(day);
+        }
+    };
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const markersLayerRef = useRef(null);
@@ -30,11 +39,10 @@ export default function AiPlanMap({
                 zoomControl: true,
             });
 
-            // Sử dụng CartoDB Voyager tiles (màu sắc trong sáng, nhẹ nhàng giống Mapbox)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            // Sử dụng OpenStreetMap tile miễn phí, không yêu cầu API key
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 19,
-                subdomains: 'abcd',
             }).addTo(map);
 
             const markersLayer = L.layerGroup().addTo(map);
@@ -192,6 +200,47 @@ export default function AiPlanMap({
         <div className="relative w-full h-full min-h-[500px] lg:min-h-full rounded-2xl overflow-hidden shadow-inner border border-gray-200">
             {/* Vùng chứa bản đồ */}
             <div ref={mapContainerRef} className="w-full h-full min-h-[500px]" style={{ zIndex: 1 }} />
+
+            {/* Thanh chọn xem theo từng ngày trên bản đồ (hiện khi có lịch trình plan) */}
+            {plan && plan.days && plan.days.length > 0 && (
+                <div
+                    className="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-2 py-1.5 rounded-2xl shadow-lg border border-gray-200/80 flex items-center gap-1 pointer-events-auto"
+                    style={{ zIndex: 400 }}
+                >
+                    <button
+                        type="button"
+                        onClick={() => handleSelectDay(null)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeDay === null
+                            ? 'bg-[#006971] text-white shadow-2xs'
+                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            }`}
+                    >
+                        Tất cả ngày ({plan.days.length})
+                    </button>
+                    {plan.days.map((d) => {
+                        const isDayActive = activeDay === d.day;
+                        const dayColor = DAY_COLORS[(d.day - 1) % DAY_COLORS.length];
+                        return (
+                            <button
+                                key={d.day}
+                                type="button"
+                                onClick={() => handleSelectDay(d.day)}
+                                className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${isDayActive
+                                    ? 'bg-white text-gray-900 shadow-2xs ring-2'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                style={isDayActive ? { ringColor: dayColor, color: dayColor } : {}}
+                            >
+                                <span
+                                    className="w-2 h-2 rounded-full inline-block"
+                                    style={{ backgroundColor: dayColor }}
+                                />
+                                <span>Ngày {d.day}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Chú giải góc dưới bản đồ (Map Legend) */}
             <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl shadow-md border border-gray-200 text-2xs font-sans text-gray-700 space-y-1 pointer-events-auto" style={{ zIndex: 400 }}>

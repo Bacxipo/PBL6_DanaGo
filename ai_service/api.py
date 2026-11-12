@@ -46,9 +46,31 @@ async def lifespan(app):
     yield
 
 
+import re
+
+def normalize_query(query: str) -> str:
+    """Chuẩn hoá câu query tìm kiếm tiếng Việt và mở rộng các từ viết tắt phổ biến."""
+    if not query:
+        return ""
+    q = query.strip()
+    patterns = [
+        (r'\bcf\b', 'cà phê'),
+        (r'\bcafe\b', 'cà phê'),
+        (r'\bks\b', 'khách sạn'),
+        (r'\bđn\b', 'Đà Nẵng'),
+        (r'\bha\b', 'Hội An'),
+        (r'\bqn\b', 'Quảng Nam'),
+        (r'\bq\.?ăn\b', 'quán ăn'),
+    ]
+    for pattern, repl in patterns:
+        q = re.sub(pattern, repl, q, flags=re.IGNORECASE)
+    return q
+
+
 def query_scores(query):
     model, mat, _ = EMB
-    q = model.encode([query], normalize_embeddings=True)[0]
+    expanded = normalize_query(query)
+    q = model.encode([expanded], normalize_embeddings=True)[0]
     sims = mat @ q
     return {int(i): float(sims[k]) for k, i in enumerate(DF["id"])}
 
@@ -74,8 +96,9 @@ class CandidatesIn(BaseModel):
     interests: List[str] = Field(default_factory=list, description="Nhóm sở thích, rỗng = tất cả")
     budget_pp: Optional[int] = Field(default=None, gt=0, description="Ngân sách mỗi người (VND), không bắt buộc")
     region: Optional[str] = None
-    per_group: int = Field(default=6, ge=1, le=20)
-    top_k: int = Field(default=10, ge=1, le=50)
+    per_group: int = Field(default=6, ge=1, le=30)
+    top_k: int = Field(default=10, ge=1, le=100)
+    include_food: bool = Field(default=True, description="Bao gồm quán ăn, quán cà phê trong kết quả")
 
 
 class PlanIn(BaseModel):
@@ -85,6 +108,10 @@ class PlanIn(BaseModel):
     region: Optional[str] = None
     selected_ids: List[int] = Field(default_factory=list, description="Điểm tham quan người dùng đã chọn")
     lodging_ids: List[int] = Field(default_factory=list, description="Nơi nghỉ người dùng đã chọn, theo thứ tự từng đêm")
+    include_meals: bool = Field(default=True, description="Có xếp các quán ăn/quán cà phê vào bữa sáng, trưa, tối hay không")
+    include_lodging: bool = Field(default=True, description="Có tính chi phí và xếp nơi lưu trú hay không")
+    guests_per_room: int = Field(default=2, ge=1, le=10, description="Số người ở chung mỗi phòng (1 = đi 1 người / phòng riêng)")
+    randomize: bool = Field(default=True, description="Đa dạng hoá kết quả để mỗi lần tạo lịch trình ra phương án mới")
 
 
 @app.get("/health")
@@ -94,16 +121,20 @@ def health():
 
 
 @app.post("/lodging", dependencies=[Depends(require_key)])
-def lodging(budget_pp: Optional[int] = None, region: Optional[str] = None, top_k: int = 10):
-    """Danh sách nơi nghỉ để người dùng chọn, xếp theo đánh giá, lọc theo ngân sách một người mỗi đêm."""
+def lodging(budget_pp: Optional[int] = None, region: Optional[str] = None, type: Optional[str] = None, top_k: Optional[int] = None):
+    """Danh sách nơi nghỉ để người dùng chọn, xếp theo đánh giá, lọc theo ngân sách và loại nơi nghỉ."""
     if LODGING is None:
         raise HTTPException(status_code=503, detail="Chưa có dữ liệu nơi nghỉ")
     d = LODGING
     if region:
         d = d[d["region"] == region]
+    if type:
+        d = d[d["type"] == type]
     if budget_pp is not None:
         d = d[d["price_pp_night"] <= budget_pp]
-    d = d.sort_values(["avg_rating", "id"], ascending=[False, True]).head(top_k)
+    d = d.sort_values(["avg_rating", "id"], ascending=[False, True])
+    if top_k is not None and top_k > 0:
+        d = d.head(top_k)
     cols = ["id", "name", "type", "region", "district", "latitude", "longitude", "price_per_night",
             "price_pp_night", "max_guests", "checkin", "checkout", "avg_rating", "address_url"]
     return {"count": len(d), "items": d[cols].to_dict("records")}
@@ -122,7 +153,8 @@ def candidates(body: CandidatesIn):
         scores = query_scores(q)
     try:
         res = tp.get_candidates(DF, interests, body.budget_pp, body.region,
-                                body.per_group, scores, body.top_k)
+                                body.per_group, scores, body.top_k,
+                                include_food=body.include_food)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"query": q or None, "budget_pp": body.budget_pp,
@@ -137,7 +169,15 @@ def plan(body: PlanIn):
             bad = [i for i in body.interests if i not in tp.INTERESTS]
             if bad:
                 raise ValueError(f"Nhóm sở thích không hợp lệ: {bad}")
-        return tp.make_plan(DF, body.num_days, body.budget_pp, body.interests, body.region,
-                            body.selected_ids, lodging_df=LODGING, lodging_ids=body.lodging_ids)
+        return tp.make_plan(
+            DF, body.num_days, body.budget_pp, body.interests, body.region,
+            body.selected_ids,
+            lodging_df=LODGING if body.include_lodging else None,
+            lodging_ids=body.lodging_ids,
+            include_meals=body.include_meals,
+            include_lodging=body.include_lodging,
+            guests_per_room=body.guests_per_room,
+            randomize=body.randomize,
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

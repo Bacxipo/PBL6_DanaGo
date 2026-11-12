@@ -20,6 +20,8 @@ import {
     Compass,
     Check,
     ChevronDown,
+    Utensils,
+    Users,
 } from 'lucide-react';
 
 import SelectPlacesModal from '@/components/comon/ai-plan/SelectPlacesModal';
@@ -105,6 +107,11 @@ export default function AiPlanPage() {
     const [selectedLodgings, setSelectedLodgings] = useState([]);
     const [isLodgingModalOpen, setIsLodgingModalOpen] = useState(false);
 
+    // Tùy chọn dịch vụ ăn uống & nơi lưu trú
+    const [includeMeals, setIncludeMeals] = useState(true);
+    const [includeLodging, setIncludeLodging] = useState(true);
+    const [guestsPerRoom, setGuestsPerRoom] = useState(2); // 1 = Đi 1 mình / phòng đơn, 2 = 2 người/phòng, v.v.
+
     // 2. KẾT QUẢ VÀ TRẠNG THÁI LẬP LỊCH
     const [loadingPlan, setLoadingPlan] = useState(false);
     const [error, setError] = useState(null);
@@ -115,9 +122,27 @@ export default function AiPlanPage() {
 
     // Toggle nhóm sở thích
     const toggleInterest = (id) => {
-        setSelectedInterests((prev) =>
-            prev.includes(id) ? (prev.length > 1 ? prev.filter((i) => i !== id) : prev) : [...prev, id]
-        );
+        setSelectedInterests((prev) => {
+            const isCurrentlySelected = prev.includes(id);
+            if (isCurrentlySelected) {
+                return prev.length > 1 ? prev.filter((i) => i !== id) : prev;
+            } else {
+                // Nếu người dùng chọn "Khám phá ẩm thực địa phương", tự động tick bật dịch vụ ăn uống
+                if (id === 'Ẩm thực') {
+                    setIncludeMeals(true);
+                }
+                return [...prev, id];
+            }
+        });
+    };
+
+    // Khi người dùng tắt "Dịch vụ ăn uống", nếu đang chọn "Khám phá ẩm thực địa phương" thì thông báo hoặc nhắc nhở
+    const handleToggleIncludeMeals = (checked) => {
+        if (!checked && selectedInterests.includes('Ẩm thực')) {
+            // Tự động bỏ chọn hoặc cảnh báo nhẹ
+            setSelectedInterests((prev) => prev.length > 1 ? prev.filter((i) => i !== 'Ẩm thực') : ['Văn hóa & lịch sử']);
+        }
+        setIncludeMeals(checked);
     };
 
     // Đặt lại form về mặc định
@@ -129,6 +154,8 @@ export default function AiPlanPage() {
         setSelectedRegion('');
         setSelectedPlaces([]);
         setSelectedLodgings([]);
+        setIncludeMeals(true);
+        setIncludeLodging(true);
         setPlan(null);
         setError(null);
     };
@@ -140,13 +167,22 @@ export default function AiPlanPage() {
         setError(null);
 
         try {
+            const nights = Math.max(0, numDays - 1);
+            // Nếu người dùng chọn 1 nơi nghỉ, áp dụng nơi nghỉ đó cho tất cả các đêm của chuyến đi
+            const lodgingIds = includeLodging && selectedLodgings.length > 0
+                ? Array(nights).fill(selectedLodgings[0].id)
+                : [];
+
             const payload = {
                 num_days: numDays,
                 budget_pp: budget,
                 interests: selectedInterests,
                 region: selectedRegion || null,
                 selected_ids: selectedPlaces.map((p) => p.id),
-                lodging_ids: selectedLodgings.map((l) => l.id),
+                lodging_ids: lodgingIds,
+                include_meals: includeMeals,
+                include_lodging: includeLodging,
+                guests_per_room: Number(guestsPerRoom) || 2,
             };
 
             const res = await fetch(`${AI_API_URL}/plan`, {
@@ -215,9 +251,6 @@ export default function AiPlanPage() {
                                 <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
                                     Thời Gian Chuyến Đi
                                 </label>
-                                <span className="text-2xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
-                                    👑 Tối đa 7 ngày (AI Pro)
-                                </span>
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -307,20 +340,18 @@ export default function AiPlanPage() {
                                             key={style.id}
                                             type="button"
                                             onClick={() => toggleInterest(style.id)}
-                                            className={`w-full p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
-                                                isSelected
-                                                    ? 'border-[#006971] bg-teal-50/70 text-[#006971] shadow-2xs'
-                                                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
-                                            }`}
+                                            className={`w-full p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${isSelected
+                                                ? 'border-[#006971] bg-teal-50/70 text-[#006971] shadow-2xs'
+                                                : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                                                }`}
                                         >
                                             <span className="flex items-center gap-2">
                                                 <span>{style.icon}</span>
                                                 <span>{style.label}</span>
                                             </span>
                                             <span
-                                                className={`w-4 h-4 rounded-md flex items-center justify-center text-white ${
-                                                    isSelected ? 'bg-[#006971]' : 'border border-gray-300'
-                                                }`}
+                                                className={`w-4 h-4 rounded-md flex items-center justify-center text-white ${isSelected ? 'bg-[#006971]' : 'border border-gray-300'
+                                                    }`}
                                             >
                                                 {isSelected && <Check size={11} strokeWidth={3} />}
                                             </span>
@@ -395,43 +426,114 @@ export default function AiPlanPage() {
                         </div>
 
                         {/* 7. NƠI Ở / KHÁCH SẠN */}
-                        <div className="pt-2 border-t border-gray-100">
-                            <div className="flex items-center justify-between mb-2">
+                        <div className="pt-2 border-t border-gray-100 space-y-2">
+                            <div className="flex items-center justify-between">
                                 <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400">
                                     Nơi Lưu Trú Mong Muốn
                                 </label>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsLodgingModalOpen(true)}
-                                    className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1 cursor-pointer"
-                                >
-                                    <Plus size={13} /> {selectedLodgings.length > 0 ? 'Đổi nơi ở' : 'Chọn nơi ở'}
-                                </button>
-                            </div>
-
-                            {selectedLodgings.length === 0 ? (
-                                <div
-                                    onClick={() => setIsLodgingModalOpen(true)}
-                                    className="p-3 border border-dashed border-purple-200 rounded-xl text-center text-xs text-purple-600/80 bg-purple-50/30 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                                >
-                                    <Hotel size={13} />
-                                    <span>Để AI tự động tối ưu hoặc click chọn nơi ở</span>
-                                </div>
-                            ) : (
-                                <div className="p-2.5 rounded-xl border border-purple-200 bg-purple-50/50 flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-2 truncate">
-                                        <Hotel size={14} className="text-purple-600 shrink-0" />
-                                        <span className="font-bold text-purple-900 truncate">
-                                            {selectedLodgings[0].name}
-                                        </span>
-                                    </div>
+                                {includeLodging && (
                                     <button
                                         type="button"
-                                        onClick={() => setSelectedLodgings([])}
-                                        className="text-purple-500 hover:text-red-600 shrink-0"
+                                        onClick={() => setIsLodgingModalOpen(true)}
+                                        className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1 cursor-pointer"
                                     >
-                                        <X size={13} />
+                                        <Plus size={13} /> {selectedLodgings.length > 0 ? 'Đổi nơi ở' : 'Chọn nơi ở'}
                                     </button>
+                                )}
+                            </div>
+
+                            {/* Checkbox bật/tắt nơi lưu trú */}
+                            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={includeLodging}
+                                    onChange={(e) => setIncludeLodging(e.target.checked)}
+                                    className="w-4 h-4 rounded text-[#006971] focus:ring-[#006971] accent-[#006971] cursor-pointer"
+                                />
+                                <span>Bao gồm nơi lưu trú trong lịch trình & ngân sách</span>
+                            </label>
+
+                            {includeLodging ? (
+                                <>
+                                    {/* Tuỳ chọn số người / phòng để tính chi phí và chọn loại phòng phù hợp */}
+                                    <div className="flex items-center justify-between p-2.5 bg-purple-50/60 rounded-xl border border-purple-100 text-xs">
+                                        <div className="space-y-0.5">
+                                            <div className="font-bold text-gray-800 flex items-center gap-1.5">
+                                                <Users size={13} className="text-purple-600" />
+                                                <span>Hình thức lưu trú:</span>
+                                            </div>
+                                            <div className="text-2xs text-gray-500">
+                                                {guestsPerRoom === 1 ? 'Đi 1 mình (bao phòng đơn, không xếp villa lớn)' : `Chia sẻ phòng (${guestsPerRoom} người/phòng)`}
+                                            </div>
+                                        </div>
+                                        <select
+                                            value={guestsPerRoom}
+                                            onChange={(e) => setGuestsPerRoom(Number(e.target.value))}
+                                            className="px-2.5 py-1.5 bg-white border border-purple-200 rounded-lg text-xs font-bold text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-400 cursor-pointer"
+                                        >
+                                            <option value={1}>1 người (Phòng riêng/Đơn)</option>
+                                            <option value={2}>2 người / phòng (Cặp đôi/Bạn bè)</option>
+                                            <option value={3}>3 người / phòng</option>
+                                            <option value={4}>4 người / phòng (Gia đình/Nhóm)</option>
+                                        </select>
+                                    </div>
+
+                                    {selectedLodgings.length === 0 ? (
+                                        <div
+                                            onClick={() => setIsLodgingModalOpen(true)}
+                                            className="p-3 border border-dashed border-purple-200 rounded-xl text-center text-xs text-purple-600/80 bg-purple-50/30 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                        >
+                                            <Hotel size={13} />
+                                            <span>Để AI tự động tối ưu hoặc click chọn nơi ở</span>
+                                        </div>
+                                    ) : (
+                                        <div className="p-2.5 rounded-xl border border-purple-200 bg-purple-50/50 flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-2 truncate">
+                                                <Hotel size={14} className="text-purple-600 shrink-0" />
+                                                <span className="font-bold text-purple-900 truncate">
+                                                    {selectedLodgings[0].name}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedLodgings([])}
+                                                className="text-purple-500 hover:text-red-600 shrink-0"
+                                            >
+                                                <X size={13} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-2xs text-gray-500 flex items-center gap-1.5">
+                                    <Hotel size={13} className="text-gray-400 shrink-0" />
+                                    <span>Tự túc nơi ở: Lịch trình sẽ không tính chi phí phòng nghỉ vào ngân sách (0đ).</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 8. DỊCH VỤ ĂN UỐNG (BỮA SÁNG, TRƯA, TỐI) */}
+                        <div className="pt-2 border-t border-gray-100 space-y-2">
+                            <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400 block">
+                                Dịch Vụ Ăn Uống (Sáng, Trưa, Tối)
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={includeMeals}
+                                    onChange={(e) => handleToggleIncludeMeals(e.target.checked)}
+                                    className="w-4 h-4 rounded text-[#006971] focus:ring-[#006971] accent-[#006971] cursor-pointer"
+                                />
+                                <span>AI gợi ý và xếp các quán ăn / cà phê vào các bữa</span>
+                            </label>
+                            {!includeMeals ? (
+                                <div className="p-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-2xs text-amber-800 flex items-center gap-1.5">
+                                    <Utensils size={13} className="text-amber-600 shrink-0" />
+                                    <span>Tự túc ăn uống: Lịch trình vẫn giữ khung giờ ăn nhưng không gắn quán và không tính chi phí (0đ).</span>
+                                </div>
+                            ) : (
+                                <div className="text-2xs text-gray-400 pl-6">
+                                    Bao gồm bữa sáng, trưa, tối tại các hàng quán & cà phê đặc trưng theo vùng.
                                 </div>
                             )}
                         </div>
@@ -499,11 +601,10 @@ export default function AiPlanPage() {
                             <button
                                 type="button"
                                 onClick={() => setMobileRightView('map')}
-                                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                                    mobileRightView === 'map'
-                                        ? 'bg-white text-[#006971] shadow-2xs'
-                                        : 'text-gray-500 hover:text-gray-800'
-                                }`}
+                                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${mobileRightView === 'map'
+                                    ? 'bg-white text-[#006971] shadow-2xs'
+                                    : 'text-gray-500 hover:text-gray-800'
+                                    }`}
                             >
                                 <MapIcon size={13} />
                                 <span>Bản đồ</span>
@@ -512,11 +613,10 @@ export default function AiPlanPage() {
                                 type="button"
                                 onClick={() => setMobileRightView('timeline')}
                                 disabled={!plan}
-                                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                                    mobileRightView === 'timeline'
-                                        ? 'bg-white text-[#006971] shadow-2xs'
-                                        : 'text-gray-500 hover:text-gray-800'
-                                }`}
+                                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${mobileRightView === 'timeline'
+                                    ? 'bg-white text-[#006971] shadow-2xs'
+                                    : 'text-gray-500 hover:text-gray-800'
+                                    }`}
                             >
                                 <ListFilter size={13} />
                                 <span>Lịch trình chi tiết</span>
@@ -539,6 +639,8 @@ export default function AiPlanPage() {
                                     startDateStr={startDate}
                                     endDateStr={endDate}
                                     onReset={() => setMobileRightView('map')}
+                                    includeMeals={includeMeals}
+                                    includeLodging={includeLodging}
                                 />
                             </div>
                         )}
