@@ -16,6 +16,7 @@ import {
     RotateCcw,
     CheckCircle2,
 } from 'lucide-react';
+import { saveItineraryFull, getCurrentUserId } from '@/lib/itinerary-api';
 
 const STORAGE_KEY = 'danago_itineraries';
 
@@ -49,7 +50,7 @@ export default function PlanResultView({
     })();
 
     // Lưu toàn bộ lịch trình AI tạo ra vào danh sách Lịch trình cá nhân (Itinerary)
-    const handleSaveToItinerary = () => {
+    const handleSaveToItinerary = async () => {
         try {
             const start = startDateStr || new Date().toISOString().split('T')[0];
             const end = endDateStr || (() => {
@@ -66,6 +67,10 @@ export default function PlanResultView({
 
                 (dayData.items || []).forEach((it, idx) => {
                     // Tạo sẵn các checklist vật dụng cho hoạt động
+                    const isLodgingItem =
+                        ['checkin', 'checkout', 'return', 'lodging'].includes(it.type) ||
+                        Boolean(it.label && it.label.toLowerCase().includes('khách sạn'));
+
                     const checklists = [];
                     if (it.type === 'attraction') {
                         checklists.push(
@@ -73,12 +78,12 @@ export default function PlanResultView({
                             { id: Date.now() + idx * 10 + 2, itemName: 'Điện thoại, sạc dự phòng & máy ảnh', isChecked: false },
                             { id: Date.now() + idx * 10 + 3, itemName: 'Mũ nón, kính râm & kem chống nắng', isChecked: false }
                         );
-                    } else if (it.type === 'breakfast' || it.type === 'lunch' || it.type === 'dinner') {
+                    } else if (it.type === 'breakfast' || it.type === 'lunch' || it.type === 'dinner' || it.type === 'food') {
                         checklists.push(
                             { id: Date.now() + idx * 10 + 1, itemName: 'Khăn ướt / Nước rửa tay', isChecked: false },
                             { id: Date.now() + idx * 10 + 2, itemName: 'Tiền mặt hoặc ứng dụng thanh toán', isChecked: false }
                         );
-                    } else if (it.type === 'checkin' || it.type === 'checkout') {
+                    } else if (it.type === 'checkin' || it.type === 'checkout' || isLodgingItem) {
                         checklists.push(
                             { id: Date.now() + idx * 10 + 1, itemName: 'CCCD / Hộ chiếu nhận phòng', isChecked: false },
                             { id: Date.now() + idx * 10 + 2, itemName: 'Kiểm tra hành lý & đồ đạc cá nhân', isChecked: false }
@@ -87,13 +92,17 @@ export default function PlanResultView({
 
                     itemsList.push({
                         id: it.id || Date.now() + idx,
+                        placeId: it.id || null,
+                        destinationId: !isLodgingItem ? (it.id || null) : null,
+                        lodgingId: isLodgingItem ? (it.id || null) : null,
                         name: it.name,
                         location: it.district ? `${it.district}, ${it.region || 'Đà Nẵng'}` : 'Đà Nẵng',
                         time: it.start || '08:00',
                         endTime: it.end || '10:00',
                         tag: it.label || it.type,
+                        type: it.type || 'attraction',
                         priceEst: it.price_est || 0,
-                        img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=600&q=80',
+                        budget: it.price_est || 0,
                         checklists: checklists,
                     });
                 });
@@ -101,17 +110,33 @@ export default function PlanResultView({
                 daysMap[dayNum] = itemsList;
             });
 
+            const currentUserId = getCurrentUserId();
             const newItinerary = {
-                id: Date.now(),
+                userId: currentUserId || undefined,
                 title: `Lịch trình AI Đà Nẵng ${daysCount} Ngày ${nightsCount} Đêm`,
                 startDate: start,
                 endDate: end,
                 description: `Lịch trình tự động tối ưu hóa bởi DanaGO AI với tổng chi phí ước tính ${Number(plan.total_cost_pp || 0).toLocaleString('vi-VN')} đ/người.`,
                 coverImg: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+                budget: plan.total_cost_pp || 0,
                 days: daysMap,
             };
 
-            // Lấy danh sách lịch trình cũ từ localStorage và chèn thêm
+            // 1. Lưu vào Database PostgreSQL qua API Backend
+            let savedDb = null;
+            try {
+                savedDb = await saveItineraryFull(newItinerary);
+            } catch (err) {
+                console.warn('Lưu vào Database thất bại:', err);
+            }
+
+            // Gán id từ backend (nếu có)
+            const finalItinerary = {
+                ...newItinerary,
+                id: savedDb && savedDb.id ? savedDb.id : Date.now(),
+            };
+
+            // 2. Đồng bộ thêm vào localStorage
             let existing = [];
             const savedStr = localStorage.getItem(STORAGE_KEY);
             if (savedStr) {
@@ -123,13 +148,13 @@ export default function PlanResultView({
                 }
             }
 
-            const updated = [newItinerary, ...existing];
+            const updated = [finalItinerary, ...existing];
             localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 
             setSavedSuccess(true);
             setTimeout(() => {
                 router.push('/itinerary');
-            }, 1200);
+            }, 1000);
         } catch (err) {
             console.error('Lỗi khi lưu lịch trình sang Itinerary:', err);
         }

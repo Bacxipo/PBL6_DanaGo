@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 // Màu sắc cho các ngày
 const DAY_COLORS = ['#006971', '#d97706', '#7c3aed', '#db2777', '#2563eb', '#059669', '#dc2626'];
