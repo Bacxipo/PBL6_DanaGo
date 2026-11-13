@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import PlaceCard from '../components/comon/place/PlaceCard';
+import UpcomingEvents from '../components/comon/event/UpcomingEvents';
 import { getMyFavorites, addFavorite, removeFavorite } from '@/lib/favorite-api';
 import { getFeaturedDestinations } from '../../lib/destination-api';
 import { getRecommendedDestinations } from '@/lib/recommendation-api';
@@ -290,6 +291,8 @@ export default function Home() {
                     </div>
                 )}
             </div>
+            {/* Sự kiện sắp diễn ra (tự ẩn khi chưa có sự kiện) */}
+            <UpcomingEvents />
             {/* Featured Places Section Recommended */}
             {recommendationsSignedIn && (
             <div className="w-full max-w-7xl mx-auto px-2">
