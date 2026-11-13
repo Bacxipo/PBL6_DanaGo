@@ -585,16 +585,51 @@ class _AiPlanMapViewState extends State<AiPlanMapView> {
                     '📍 ${item.district}',
                     style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
+                if (item.priceExcluded && item.description != null && item.description!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      item.description!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                    ),
+                  ),
               ],
             ),
           ),
-          if (item.priceEst > 0)
+          if (item.priceExcluded)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.deepOrange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'Tùy món ăn',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepOrange,
+                ),
+              ),
+            )
+          else if (item.priceEst > 0)
             Text(
               _formatVND(item.priceEst),
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: Colors.deepOrange,
+              ),
+            )
+          else
+            Text(
+              'Miễn phí',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.green[700],
               ),
             ),
           IconButton(

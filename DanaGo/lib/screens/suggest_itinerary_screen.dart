@@ -27,7 +27,9 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
 
   double _budget = 4200000; // VND
   final Set<String> _selectedInterests = {'Văn hóa & lịch sử'};
-  String _selectedRegion = '';
+  final Set<String> _selectedRegions = {};
+  bool _isStyleExpanded = false;
+  bool _isRegionExpanded = false;
 
   List<DestinationItem> _selectedPlaces = [];
   AiPlanLodging? _selectedLodging;
@@ -35,6 +37,29 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
   bool _includeMeals = true;
   bool _includeLodging = true;
   int _guestsPerRoom = 2;
+  String _lodgingPriceTier = 'mid'; // 'low' | 'mid' | 'high'
+  int _placesPerDay = 3; // 2 hoặc 3 địa điểm / ngày
+
+  final List<Map<String, String>> _lodgingPriceTiers = [
+    {
+      'id': 'low',
+      'label': 'Thấp',
+      'sub': '< 500k/đêm',
+      'desc': 'Homestay, khách sạn bình dân (~25-32% ngân sách)',
+    },
+    {
+      'id': 'mid',
+      'label': 'Trung bình',
+      'sub': '500k - 1.3tr',
+      'desc': 'Khách sạn 3-4 sao, boutique (~35-45% ngân sách)',
+    },
+    {
+      'id': 'high',
+      'label': 'Cao',
+      'sub': '> 1.3tr/đêm',
+      'desc': 'Resort, khách sạn 5 sao, villa (~50-60% ngân sách)',
+    },
+  ];
 
   // 2. State & Result
   bool _isLoadingPlan = false;
@@ -188,13 +213,27 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
     }
   }
 
+  void _toggleRegion(String val) {
+    setState(() {
+      if (val.isEmpty) {
+        _selectedRegions.clear();
+        return;
+      }
+      if (_selectedRegions.contains(val)) {
+        _selectedRegions.remove(val);
+      } else {
+        _selectedRegions.add(val);
+      }
+    });
+  }
+
   Future<void> _openSelectLodgingModal() async {
     final result = await showModalBottomSheet<dynamic>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => SelectLodgingSheet(
-        currentRegion: _selectedRegion,
+        currentRegion: _selectedRegions.join(','),
         budgetPp: _budget.toInt(),
         initialSelected: _selectedLodging,
       ),
@@ -215,12 +254,14 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
       _budget = 4200000;
       _selectedInterests.clear();
       _selectedInterests.add('Văn hóa & lịch sử');
-      _selectedRegion = '';
+      _selectedRegions.clear();
       _selectedPlaces.clear();
       _selectedLodging = null;
       _includeMeals = true;
       _includeLodging = true;
       _guestsPerRoom = 2;
+      _lodgingPriceTier = 'mid';
+      _placesPerDay = 3;
       _planResult = null;
       _errorMessage = null;
     });
@@ -243,7 +284,8 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
         numDays: _numDays,
         budgetPp: _budget.toInt(),
         interests: _selectedInterests.toList(),
-        region: _selectedRegion,
+        region: _selectedRegions.join(','),
+        regions: _selectedRegions.toList(),
         selectedIds: _selectedPlaces
             .map((p) => int.tryParse(p.id))
             .whereType<int>()
@@ -252,6 +294,8 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
         includeMeals: _includeMeals,
         includeLodging: _includeLodging,
         guestsPerRoom: _guestsPerRoom,
+        lodgingPriceTier: _lodgingPriceTier,
+        placesPerDay: _placesPerDay,
       );
 
       setState(() {
@@ -467,37 +511,36 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Destination
-          _buildSectionLabel('ĐIỂM ĐẾN (TỈNH / THÀNH PHỐ)'),
+          // 1. Slogan Banner Du Lịch Đà Nẵng
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[850] : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF004D54), Color(0xFF006971), Color(0xFF00897B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.location_on_rounded,
-                    color: AppColors.primary, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _destinationCtrl,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Nhập điểm đến...',
-                    ),
-                  ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.22),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
-                Icon(Icons.explore_outlined, color: Colors.grey[400], size: 20),
               ],
+            ),
+            child: const Center(
+              child: Text(
+                'Đà Nẵng - Thành Phố Đáng Sống, Điểm Đến Diệu Kỳ',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  height: 1.3,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 18),
@@ -594,6 +637,115 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          // Chọn số địa điểm du lịch mỗi ngày: 2 hoặc 3 địa điểm/ngày
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.teal.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.teal.withValues(alpha: 0.2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.explore_rounded,
+                        color: AppColors.primary, size: 16),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Số điểm tham quan / ngày:',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    Text(
+                      _placesPerDay == 2
+                          ? 'Thong thả, chuyên sâu'
+                          : 'Khám phá nhiều điểm',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    {
+                      'count': 2,
+                      'title': '2 địa điểm / ngày',
+                      'desc': 'Thong thả, dư dả thời gian',
+                    },
+                    {
+                      'count': 3,
+                      'title': '3 địa điểm / ngày',
+                      'desc': 'Đi nhiều điểm (Sáng - Chiều - Tối)',
+                    },
+                  ].map((opt) {
+                    final count = opt['count'] as int;
+                    final isSelected = _placesPerDay == count;
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: count == 2 ? 8 : 0),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _placesPerDay = count),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 9, horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : (isDark ? Colors.grey[850] : Colors.white),
+                              borderRadius: BorderRadius.circular(11),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.teal.withValues(alpha: 0.25),
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  opt['title'] as String,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                            ? Colors.grey[200]
+                                            : Colors.grey[800]),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  opt['desc'] as String,
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.teal[50]
+                                        : Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 18),
 
           // 3. Budget
@@ -623,7 +775,16 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
               min: 1000000,
               max: 15000000,
               divisions: 70,
-              onChanged: (val) => setState(() => _budget = val),
+              onChanged: (val) => setState(() {
+                _budget = val;
+                if (val <= 2500000) {
+                  _lodgingPriceTier = 'low';
+                } else if (val <= 5000000) {
+                  _lodgingPriceTier = 'mid';
+                } else {
+                  _lodgingPriceTier = 'high';
+                }
+              }),
             ),
           ),
           Row(
@@ -636,104 +797,307 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
           ),
           const SizedBox(height: 18),
 
-          // 4. Style & Interests
-          _buildSectionLabel('CẢM XÚC & PHONG CÁCH'),
-          Column(
-            children: _styleOptions.map((st) {
-              final isSelected = _selectedInterests.contains(st['id']);
-              return GestureDetector(
-                onTap: () => _toggleInterest(st['id']),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Colors.teal.withValues(alpha: 0.08)
-                        : (isDark ? Colors.grey[850] : Colors.white),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : (isDark ? Colors.grey[800]! : Colors.grey[200]!),
-                      width: isSelected ? 1.5 : 1,
+          // 4. Style & Interests (Collapsible Dropdown)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionLabel('CẢM XÚC & PHONG CÁCH'),
+              Text(
+                'Đã chọn (${_selectedInterests.length})',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          InkWell(
+            onTap: () => setState(() => _isStyleExpanded = !_isStyleExpanded),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[850] : Colors.grey[50],
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _isStyleExpanded
+                      ? AppColors.primary
+                      : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Text('🎨', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _selectedInterests.isEmpty
+                          ? 'Chọn phong cách du lịch...'
+                          : _selectedInterests.join(', '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey[200] : Colors.grey[800],
+                      ),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Text(st['icon'], style: const TextStyle(fontSize: 18)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          st['label'],
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isSelected
-                                ? AppColors.primary
-                                : (isDark ? Colors.grey[200] : Colors.grey[800]),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : Colors.transparent,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : Colors.grey[400]!,
-                          ),
-                        ),
-                        child: isSelected
-                            ? const Icon(Icons.check,
-                                color: Colors.white, size: 14)
-                            : null,
-                      ),
-                    ],
+                  Icon(
+                    _isStyleExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: _isStyleExpanded ? AppColors.primary : Colors.grey[500],
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 14),
-
-          // 5. Region Dropdown
-          _buildSectionLabel('KHU VỰC TRỌNG TÂM'),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[850] : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                ],
               ),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedRegion,
-                isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                items: _regionOptions.map((opt) {
-                  return DropdownMenuItem<String>(
-                    value: opt['value'],
-                    child: Text(
-                      opt['label']!,
-                      style: const TextStyle(fontSize: 13),
+          ),
+          if (_isStyleExpanded) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[900] : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: _styleOptions.map((st) {
+                  final isSelected = _selectedInterests.contains(st['id']);
+                  return GestureDetector(
+                    onTap: () => _toggleInterest(st['id']),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.teal.withValues(alpha: 0.08)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.transparent,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(st['icon'],
+                              style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              st['label'],
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (isDark
+                                        ? Colors.grey[200]
+                                        : Colors.grey[800]),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.grey[400]!,
+                              ),
+                            ),
+                            child: isSelected
+                                ? const Icon(Icons.check,
+                                    color: Colors.white, size: 12)
+                                : null,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }).toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedRegion = val);
-                },
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+
+          // 5. Multi-Region Selection (Collapsible Dropdown)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionLabel('KHU VỰC TRỌNG TÂM'),
+              if (_selectedRegions.isNotEmpty)
+                InkWell(
+                  onTap: () => setState(() => _selectedRegions.clear()),
+                  child: const Text(
+                    'Chọn tất cả',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                )
+              else
+                const Text(
+                  'Tất cả khu vực',
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+            ],
+          ),
+          InkWell(
+            onTap: () => setState(() => _isRegionExpanded = !_isRegionExpanded),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[850] : Colors.grey[50],
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _isRegionExpanded
+                      ? AppColors.primary
+                      : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on_rounded,
+                      size: 16, color: AppColors.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _selectedRegions.isEmpty
+                          ? 'Tất cả khu vực (AI tự cân đối)'
+                          : _selectedRegions.join(', '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey[200] : Colors.grey[800],
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _isRegionExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: _isRegionExpanded ? AppColors.primary : Colors.grey[500],
+                  ),
+                ],
               ),
             ),
           ),
+          if (_isRegionExpanded) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[900] : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: _regionOptions.map((opt) {
+                  final val = opt['value'] ?? '';
+                  final isAll = val.isEmpty;
+                  final isSelected = isAll
+                      ? _selectedRegions.isEmpty
+                      : _selectedRegions.contains(val);
+                  return GestureDetector(
+                    onTap: () => _toggleRegion(val),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.teal.withValues(alpha: 0.08)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.transparent,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              opt['label']!,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (isDark
+                                        ? Colors.grey[200]
+                                        : Colors.grey[800]),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.grey[400]!,
+                              ),
+                            ),
+                            child: isSelected
+                                ? const Icon(Icons.check,
+                                    color: Colors.white, size: 12)
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
 
           // 6. Selected Places
@@ -849,6 +1213,114 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
             },
           ),
           if (_includeLodging) ...[
+            // Chọn mức độ giá tiền nơi lưu trú: Thấp / Trung bình / Cao
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.purple.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.purple.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.monetization_on_rounded,
+                          color: Colors.purple, size: 16),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Mức giá phòng:',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      Flexible(
+                        child: Text(
+                          _lodgingPriceTiers
+                                  .firstWhere(
+                                    (t) => t['id'] == _lodgingPriceTier,
+                                    orElse: () => _lodgingPriceTiers[1],
+                                  )['desc'] ??
+                              '',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.purple,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: _lodgingPriceTiers.map((tier) {
+                      final isSelected = _lodgingPriceTier == tier['id'];
+                      return Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            right: tier['id'] != 'high' ? 6 : 0,
+                          ),
+                          child: GestureDetector(
+                            onTap: () => setState(
+                                () => _lodgingPriceTier = tier['id']!),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 6),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.purple[700]
+                                    : (isDark
+                                        ? Colors.grey[850]
+                                        : Colors.white),
+                                borderRadius: BorderRadius.circular(11),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.purple[700]!
+                                      : Colors.purple.withValues(alpha: 0.25),
+                                  width: isSelected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    tier['label']!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDark
+                                              ? Colors.grey[200]
+                                              : Colors.grey[800]),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    tier['sub']!,
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected
+                                          ? Colors.purple[100]
+                                          : Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
@@ -1001,6 +1473,10 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
               'AI gợi ý và xếp các quán ăn / cà phê vào các bữa',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
+            subtitle: const Text(
+              'Chi phí ăn uống tùy theo món gọi, không tính vào ngân sách',
+              style: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
             onChanged: (val) {
               if (val != null) {
                 setState(() {
@@ -1033,6 +1509,27 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
                     child: Text(
                       'Tự túc ăn uống: Lịch trình vẫn giữ khung giờ ăn nhưng không gắn quán (0đ).',
                       style: TextStyle(fontSize: 11, color: Colors.orange),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: Colors.deepOrange),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'AI sẽ gợi ý các quán ăn ngon & cà phê chuẩn vị địa phương. Chi phí ăn uống phụ thuộc vào món bạn gọi (không tính trừ vào ngân sách chuyến đi).',
+                      style: TextStyle(fontSize: 11, color: Colors.deepOrange),
                     ),
                   ),
                 ],
@@ -1182,7 +1679,16 @@ class _SuggestItineraryScreenState extends State<SuggestItineraryScreen> {
   Widget _buildBudgetPresetBtn(String label, double value) {
     final isSelected = (_budget - value).abs() < 10000;
     return InkWell(
-      onTap: () => setState(() => _budget = value),
+      onTap: () => setState(() {
+        _budget = value;
+        if (value <= 2500000) {
+          _lodgingPriceTier = 'low';
+        } else if (value <= 5000000) {
+          _lodgingPriceTier = 'mid';
+        } else {
+          _lodgingPriceTier = 'high';
+        }
+      }),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

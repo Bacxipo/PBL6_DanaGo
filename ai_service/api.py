@@ -96,6 +96,7 @@ class CandidatesIn(BaseModel):
     interests: List[str] = Field(default_factory=list, description="Nhóm sở thích, rỗng = tất cả")
     budget_pp: Optional[int] = Field(default=None, gt=0, description="Ngân sách mỗi người (VND), không bắt buộc")
     region: Optional[str] = None
+    regions: List[str] = Field(default_factory=list, description="Danh sách khu vực trọng tâm người dùng chọn")
     per_group: int = Field(default=6, ge=1, le=30)
     top_k: int = Field(default=10, ge=1, le=100)
     include_food: bool = Field(default=True, description="Bao gồm quán ăn, quán cà phê trong kết quả")
@@ -106,11 +107,14 @@ class PlanIn(BaseModel):
     budget_pp: int = Field(gt=0, description="Ngân sách mỗi người cho cả chuyến (VND)")
     interests: List[str] = Field(default_factory=list)
     region: Optional[str] = None
+    regions: List[str] = Field(default_factory=list, description="Danh sách khu vực trọng tâm người dùng chọn (rỗng = tất cả khu vực)")
     selected_ids: List[int] = Field(default_factory=list, description="Điểm tham quan người dùng đã chọn")
     lodging_ids: List[int] = Field(default_factory=list, description="Nơi nghỉ người dùng đã chọn, theo thứ tự từng đêm")
-    include_meals: bool = Field(default=True, description="Có xếp các quán ăn/quán cà phê vào bữa sáng, trưa, tối hay không")
+    include_meals: bool = Field(default=True, description="Có gợi ý quán ăn/quán cà phê cho bữa sáng, trưa, tối hay không (chi phí ăn uống tùy theo món, không tính vào ngân sách)")
     include_lodging: bool = Field(default=True, description="Có tính chi phí và xếp nơi lưu trú hay không")
     guests_per_room: int = Field(default=2, ge=1, le=10, description="Số người ở chung mỗi phòng (1 = đi 1 người / phòng riêng)")
+    lodging_price_tier: Optional[str] = Field(default="auto", description="Phân khúc giá nơi lưu trú: auto, low (<=500k/đêm), mid (450k-1.3tr/đêm), high (>1.2tr/đêm)")
+    places_per_day: int = Field(default=3, ge=2, le=3, description="Số địa điểm tham quan mỗi ngày: 2 hoặc 3")
     randomize: bool = Field(default=True, description="Đa dạng hoá kết quả để mỗi lần tạo lịch trình ra phương án mới")
 
 
@@ -121,17 +125,29 @@ def health():
 
 
 @app.post("/lodging", dependencies=[Depends(require_key)])
-def lodging(budget_pp: Optional[int] = None, region: Optional[str] = None, type: Optional[str] = None, top_k: Optional[int] = None):
-    """Danh sách nơi nghỉ để người dùng chọn, xếp theo đánh giá, lọc theo ngân sách và loại nơi nghỉ."""
+def lodging(
+    budget_pp: Optional[int] = None,
+    region: Optional[str] = None,
+    type: Optional[str] = None,
+    price_tier: Optional[str] = None,
+    top_k: Optional[int] = None,
+):
+    """Danh sách nơi nghỉ để người dùng chọn, xếp theo đánh giá, lọc theo ngân sách, phân khúc giá và loại nơi nghỉ."""
     if LODGING is None:
         raise HTTPException(status_code=503, detail="Chưa có dữ liệu nơi nghỉ")
     d = LODGING
-    if region:
-        d = d[d["region"] == region]
+    reg_list = tp._normalize_regions(region)
+    if reg_list:
+        d = d[d["region"].isin(reg_list)]
     if type:
         d = d[d["type"] == type]
     if budget_pp is not None:
         d = d[d["price_pp_night"] <= budget_pp]
+    if price_tier and price_tier in tp.LODGING_TIERS:
+        tier_cfg = tp.LODGING_TIERS[price_tier]
+        sub = d[(d["price_per_night"] >= tier_cfg["min"]) & (d["price_per_night"] <= tier_cfg["max"])]
+        if not sub.empty:
+            d = sub
     d = d.sort_values(["avg_rating", "id"], ascending=[False, True])
     if top_k is not None and top_k > 0:
         d = d.head(top_k)
@@ -151,8 +167,9 @@ def candidates(body: CandidatesIn):
         if EMB is None:
             raise HTTPException(status_code=503, detail=f"Chưa nạp được model embedding: {EMB_ERROR}")
         scores = query_scores(q)
+    effective_regions = body.regions if body.regions else body.region
     try:
-        res = tp.get_candidates(DF, interests, body.budget_pp, body.region,
+        res = tp.get_candidates(DF, interests, body.budget_pp, effective_regions,
                                 body.per_group, scores, body.top_k,
                                 include_food=body.include_food)
     except ValueError as e:
@@ -169,14 +186,17 @@ def plan(body: PlanIn):
             bad = [i for i in body.interests if i not in tp.INTERESTS]
             if bad:
                 raise ValueError(f"Nhóm sở thích không hợp lệ: {bad}")
+        effective_regions = body.regions if body.regions else body.region
         return tp.make_plan(
-            DF, body.num_days, body.budget_pp, body.interests, body.region,
+            DF, body.num_days, body.budget_pp, body.interests, effective_regions,
             body.selected_ids,
             lodging_df=LODGING if body.include_lodging else None,
             lodging_ids=body.lodging_ids,
             include_meals=body.include_meals,
             include_lodging=body.include_lodging,
             guests_per_room=body.guests_per_room,
+            lodging_price_tier=body.lodging_price_tier or "auto",
+            places_per_day=body.places_per_day,
             randomize=body.randomize,
         )
     except ValueError as e:
