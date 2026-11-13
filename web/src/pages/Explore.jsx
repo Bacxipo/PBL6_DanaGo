@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Rating from '../components/comon/ui/Rating';
 import PlaceList from "../components/comon/place/PlaceList";
 import PlaceCardSkeleton from '../components/home/PlaceCardSkeleton';
-import { RefreshCw, AlertCircle, Search, X } from 'lucide-react';
+import { RefreshCw, AlertCircle, Search, X, Loader2, Send, Sparkles } from 'lucide-react';
 import { getRawDestinations, getDestinationCategories, normalizeDestinationCard } from "@/lib/destination-api";
 
 import { searchPlaces } from '@/utils/filterPlace';

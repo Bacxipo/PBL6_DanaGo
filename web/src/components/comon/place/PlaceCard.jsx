@@ -16,6 +16,7 @@ export default function PlaceCard({
     category,
     address,
     distance,
+    matchScore,
     favoriteState,
 }) {
     const isFav =

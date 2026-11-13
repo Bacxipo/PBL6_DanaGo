@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Sparkles, MapPin, Clock, Coins, Star, Compass, Check, AlertCircle, Loader2, RotateCcw, SlidersHorizontal, Waves, Utensils, Landmark, Trees, FerrisWheel, ArrowRight, Send, CornerDownLeft, } from 'lucide-react';
+import { Hotel, ListFilter, Map as MapIcon, Plus, Users, X } from 'lucide-react';
+import { Sparkles, MapPin, Compass, Check, AlertCircle, Loader2, Utensils, ChevronDown, } from 'lucide-react';
 
 import SelectPlacesModal from '@/components/comon/ai-plan/SelectPlacesModal';
 import SelectLodgingModal from '@/components/comon/ai-plan/SelectLodgingModal';
