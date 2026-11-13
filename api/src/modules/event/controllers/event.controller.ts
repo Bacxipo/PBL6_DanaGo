@@ -20,38 +20,55 @@ import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
 import { UpdateEventStatusDto } from '../dto/update-event-status.dto';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../../shared/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
+import { EventNotFoundException } from '../exceptions/event-not-found.exception';
 import { UserRole, ContentStatus } from '@prisma/client';
 
 @Controller('events')
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
+  // Token ký với { sub, username, role } nên mã người dùng lấy từ 'sub' (không phải 'userId')
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(
     @Body() dto: CreateEventDto,
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') userId: number,
   ) {
     return this.eventService.createEvent(dto, userId);
   }
 
+  // Công khai: khách chỉ thấy sự kiện đã duyệt; ADMIN/STAFF (có token) mới lọc được theo trạng thái khác.
+  // Có token thì trả thêm isFavorited của người đang đăng nhập.
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   async getAll(
     @Query('status') status?: ContentStatus,
-    @CurrentUser('userId') currentUserId?: number,
+    @CurrentUser('role') role?: UserRole,
+    @CurrentUser('sub') currentUserId?: number,
   ) {
-    return this.eventService.getAllEvents(status, currentUserId);
+    const canModerate = role === UserRole.ADMIN || role === UserRole.STAFF;
+    const targetStatus = canModerate ? status || ContentStatus.APPROVED : ContentStatus.APPROVED;
+    return this.eventService.getAllEvents(targetStatus, currentUserId);
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   async getById(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser('userId') currentUserId?: number,
+    @CurrentUser('role') role?: UserRole,
+    @CurrentUser('sub') currentUserId?: number,
   ) {
-    return this.eventService.getEventById(id, currentUserId);
+    const event = await this.eventService.getEventById(id, currentUserId);
+    const canModerate = role === UserRole.ADMIN || role === UserRole.STAFF;
+    // Sự kiện chưa duyệt/bị từ chối: giấu với khách (trả 404 như không tồn tại)
+    if (event.status !== ContentStatus.APPROVED && !canModerate) {
+      throw new EventNotFoundException(id);
+    }
+    return event;
   }
 
   @Put(':id')
@@ -85,14 +102,15 @@ export class EventController {
   @UseGuards(JwtAuthGuard)
   async toggleFavorite(
     @Param('id', ParseIntPipe) eventId: number,
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') userId: number,
   ) {
     return this.eventService.toggleFavorite(eventId, userId);
   }
 
   // --- Upload và quản lý ảnh của sự kiện (giống destination.controller.ts) ---
   @Post(':id/images')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
   @UseInterceptors(FilesInterceptor('images', 10))
   async uploadImages(
     @Param('id', ParseIntPipe) id: number,
