@@ -78,6 +78,9 @@ export default function Header() {
                     <Link href="/explore" className={getLinkClass('/explore')}>
                         Khám phá
                     </Link>
+                    <Link href="/lodging" className={getLinkClass('/lodging')}>
+                        Nơi lưu trú
+                    </Link>
                     {authReady && isLoggedIn && (
                         <Link
                             href="/itinerary"

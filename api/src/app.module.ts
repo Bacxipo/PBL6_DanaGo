@@ -12,6 +12,7 @@ import { FeedModule } from './modules/feed/feed.module';
 import { AiModule } from './modules/ai/ai.module';
 import { EventModule } from './modules/event/event.module';
 import { FavoriteModule } from './modules/favorite/favorite.module';
+import { LodgingModule } from './modules/lodging/lodging.module';
 @Module({
   imports: [
     DatabaseModule,
@@ -25,6 +26,7 @@ import { FavoriteModule } from './modules/favorite/favorite.module';
     AiModule,
     EventModule,
     FavoriteModule,
+    LodgingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

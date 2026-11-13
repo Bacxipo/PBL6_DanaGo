@@ -9,6 +9,11 @@ export function formatDate(value: string) {
   return `${d}/${m}/${y}`;
 }
 
+export function formatVND(amount?: number | null) {
+  const num = Number(amount) || 0;
+  return `${num.toLocaleString('vi-VN')} ₫`;
+}
+
 export function todayIso() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

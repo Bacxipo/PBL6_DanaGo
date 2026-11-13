@@ -3,6 +3,7 @@ import AnalyticsPage from '@/views/AnalyticsPage';
 import CategoriesPage from '@/views/CategoriesPage';
 import DashboardPage from '@/views/DashboardPage';
 import DestinationsPage from '@/views/DestinationsPage';
+import LodgingsPage from '@/views/LodgingsPage';
 import EventsPage from '@/views/EventsPage';
 import ModerationPage from '@/views/ModerationPage';
 import UsersPage from '@/views/UsersPage';
@@ -11,6 +12,7 @@ import UsersPage from '@/views/UsersPage';
 const SCREENS: Record<string, React.ComponentType> = {
   dashboard: DashboardPage,
   destinations: DestinationsPage,
+  lodgings: LodgingsPage,
   categories: CategoriesPage,
   moderation: ModerationPage,
   users: UsersPage,

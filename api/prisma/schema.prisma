@@ -410,26 +410,28 @@ model EventFavorite {
 }
 
 model Lodging {
-  id            BigInt    @id @default(autoincrement())
-  name          String
-  type          String
-  district      String?
-  latitude      Decimal   @db.Decimal
-  longitude     Decimal   @db.Decimal
-  pricePerNight Int       @map("price_per_night")
-  maxGuests     Int       @map("max_guests") @db.SmallInt
-  checkin       DateTime  @db.Time
-  checkout      DateTime  @db.Time
-  avgRating     Decimal?  @map("avg_rating") @db.Decimal
-  description   String?   @db.Text
-  status        String
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  addressUrl    String?   @map("address_url") @db.Text
-  website       String?   @db.Text
+  id               BigInt           @id @default(autoincrement())
+  name             String
+  type             String
+  district         String?
+  latitude         Decimal          @db.Decimal(9, 6)
+  longitude        Decimal          @db.Decimal(9, 6)
+  pricePerNight    Int              @map("price_per_night")
+  maxGuests        Int              @default(2) @map("max_guests") @db.SmallInt
+  checkin          DateTime         @default(dbgenerated("'14:00:00'::time without time zone")) @db.Time(6)
+  checkout         DateTime         @default(dbgenerated("'12:00:00'::time without time zone")) @db.Time(6)
+  avgRating        Decimal?         @map("avg_rating") @db.Decimal(2, 1)
+  description      String?          @db.Text
+  status           String           @default("APPROVED")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  addressUrl       String?          @map("address_url") @db.Text
+  website          String?          @db.Text
 
-  images        LodgingImage[]
-  itineraryItems ItineraryItem[]
+  images           LodgingImage[]
+  itineraryItems   ItineraryItem[]
+  lodgingAmenities LodgingAmenity[]
 
+  @@index([status], map: "idx_lodging_status")
   @@map("lodging")
 }
 
@@ -437,9 +439,30 @@ model LodgingImage {
   id        Int      @id @default(autoincrement())
   lodgingId BigInt   @map("lodging_id")
   imageUrl  String   @map("image_url") @db.VarChar
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  lodging Lodging @relation(fields: [lodgingId], references: [id], onDelete: Cascade)
+  lodging Lodging @relation(fields: [lodgingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("lodging_image")
+}
+
+model Amenity {
+  id               Int              @id @db.SmallInt
+  code             String           @unique
+  nameVi           String           @map("name_vi")
+  category         String
+  lodgingAmenities LodgingAmenity[]
+
+  @@map("amenity")
+}
+
+model LodgingAmenity {
+  lodgingId BigInt  @map("id_lodging")
+  amenityId Int     @map("amenity_id") @db.SmallInt
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lodging   Lodging @relation(fields: [lodgingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([lodgingId, amenityId])
+  @@index([amenityId], map: "idx_lodging_amenity_amenity")
+  @@map("lodging_amenity")
 }
