@@ -114,6 +114,7 @@ export default function PlaceList({ places = [], placesPerPage = 9, favoriteStat
                                 price={place.priceDisplay ?? place.price}
                                 category={place.category}
                                 address={place.address}
+                                matchScore={place.matchScore}
                             />
                         ))}
                     </div>

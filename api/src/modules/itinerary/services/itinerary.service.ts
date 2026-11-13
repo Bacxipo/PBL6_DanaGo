@@ -46,6 +46,10 @@ export class ItineraryService {
       return this.itineraryRepository.deleteChecklistItem(id);
     }
 
+  async deleteItinerary(id: number) {
+      return this.itineraryRepository.deleteItinerary(id);
+    }
+
   async saveFullItinerary(dto: SaveFullItineraryDto) {
       return this.itineraryRepository.saveFullItinerary(dto);
     }

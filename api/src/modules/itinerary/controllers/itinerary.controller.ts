@@ -35,6 +35,11 @@ export class ItineraryController {
       return this.itineraryService.saveFullItinerary(dto);
     }
 
+    @Delete(':id')
+    async deleteItinerary(@Param('id', ParseIntPipe) id: number) {
+      return this.itineraryService.deleteItinerary(id);
+    }
+
     @Get(':itineraryId/checklists')
     async getChecklistsByItinerary(@Param('itineraryId', ParseIntPipe) itineraryId: number) {
       return this.itineraryService.getChecklistsByItinerary(itineraryId);

@@ -9,7 +9,14 @@ import PlaceDetailModal from '../place/PlaceDetailModal';
 import ConfirmLeaveModal from './ConfirmLeaveModal';
 
 import { sampleItineraries, quickSearchPlacesData } from '@/database/data';
-import { saveItineraryFull, updateChecklistItemApi, deleteChecklistItemApi } from '@/lib/itinerary-api';
+import {
+    saveItineraryFull,
+    updateChecklistItemApi,
+    deleteChecklistItemApi,
+    fetchItinerariesByUser,
+    deleteItineraryApi,
+    getCurrentUserId,
+} from '@/lib/itinerary-api';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const STORAGE_KEY = 'danago_itineraries';
@@ -85,6 +92,86 @@ export default function ItineraryDetail({ isStandalone = false }) {
 
     // Dữ liệu tìm kiếm nhanh từ backend
     const [searchPlaces, setSearchPlaces] = useState(quickSearchPlacesData);
+
+    // Tải lịch trình từ Backend PostgreSQL khi vào trang
+    useEffect(() => {
+        const syncItinerariesFromDb = async () => {
+            try {
+                const currentUserId = getCurrentUserId() || 1;
+                const dbList = await fetchItinerariesByUser(currentUserId);
+                if (Array.isArray(dbList) && dbList.length > 0) {
+                    // Chuyển đổi dữ liệu từ PostgreSQL sang định dạng UI
+                    const mappedDbItineraries = dbList.map((dbIt) => {
+                        const daysMap = {};
+                        (dbIt.items || []).forEach((item) => {
+                            const dayIndex = item.dayIndex || 1;
+                            if (!daysMap[dayIndex]) daysMap[dayIndex] = [];
+
+                            // Ảnh đại diện lấy từ destination.images hoặc lodging.images
+                            let imgUrl = 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=600&q=80';
+                            if (item.destination && item.destination.images && item.destination.images.length > 0) {
+                                imgUrl = item.destination.images[0].imageUrl || imgUrl;
+                            } else if (item.lodging && item.lodging.images && item.lodging.images.length > 0) {
+                                imgUrl = item.lodging.images[0].imageUrl || imgUrl;
+                            }
+
+                            // Tọa độ latitude/longitude lấy từ destination hoặc lodging
+                            const lat = item.destination?.latitude ?? item.lodging?.latitude ?? null;
+                            const lng = item.destination?.longitude ?? item.lodging?.longitude ?? null;
+                            const loc = item.location || (item.destination?.district ? `${item.destination.district}, Đà Nẵng` : item.lodging?.district ? `${item.lodging.district}, Đà Nẵng` : 'Đà Nẵng');
+                            const titleName = item.name || item.destination?.name || item.lodging?.name || 'Hoạt động / Điểm đến';
+
+                            daysMap[dayIndex].push({
+                                id: item.id,
+                                destinationId: item.destinationId,
+                                lodgingId: item.lodgingId ? Number(item.lodgingId) : null,
+                                placeId: item.destinationId || (item.lodgingId ? Number(item.lodgingId) : null),
+                                name: titleName,
+                                location: loc,
+                                time: item.startTime || '08:00',
+                                endTime: item.endTime || '10:00',
+                                tag: item.tag || item.itemType || 'Tham quan',
+                                type: item.itemType || 'attraction',
+                                priceEst: Number(item.budget || 0),
+                                budget: Number(item.budget || 0),
+                                img: imgUrl,
+                                latitude: lat !== null ? Number(lat) : null,
+                                longitude: lng !== null ? Number(lng) : null,
+                                checklists: (item.checklists || []).map((c) => ({
+                                    id: c.id,
+                                    itineraryItemId: c.itineraryItemId,
+                                    itemName: c.itemName,
+                                    isChecked: Boolean(c.isChecked),
+                                })),
+                            });
+                        });
+
+                        return {
+                            id: dbIt.id,
+                            title: dbIt.title,
+                            startDate: dbIt.startDate ? String(dbIt.startDate).split('T')[0] : '2026-11-14',
+                            endDate: dbIt.endDate ? String(dbIt.endDate).split('T')[0] : '2026-11-16',
+                            budget: Number(dbIt.budget || 0),
+                            description: dbIt.description || `Lịch trình lưu trữ tại cơ sở dữ liệu (Mã #${dbIt.id})`,
+                            coverImg: dbIt.coverImg || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+                            days: daysMap,
+                        };
+                    });
+
+                    // Gộp với lịch trình từ localStorage (ưu tiên DB id trùng)
+                    setItineraries((prev) => {
+                        const dbIds = new Set(mappedDbItineraries.map((it) => it.id));
+                        const filteredLocal = prev.filter((it) => !dbIds.has(it.id));
+                        return [...mappedDbItineraries, ...filteredLocal];
+                    });
+                }
+            } catch (err) {
+                console.warn('Không thể đồng bộ lịch trình từ Database backend:', err);
+            }
+        };
+
+        syncItinerariesFromDb();
+    }, []);
 
     // Lưu vào localStorage khi itineraries thay đổi
     useEffect(() => {
@@ -239,7 +326,7 @@ export default function ItineraryDetail({ isStandalone = false }) {
     };
 
     // Xóa một lịch trình khỏi danh sách
-    const handleDeleteItinerary = (id, e) => {
+    const handleDeleteItinerary = async (id, e) => {
         e.stopPropagation();
         if (confirm('Bạn có chắc chắn muốn xóa lịch trình này?')) {
             setItineraries((prev) => prev.filter((it) => it.id !== id));
@@ -247,6 +334,10 @@ export default function ItineraryDetail({ isStandalone = false }) {
                 setSelectedItineraryId(null);
                 setWorkingItinerary(null);
                 setHasUnsavedChanges(false);
+            }
+            // Gọi API xoá trong PostgreSQL nếu có trên DB
+            if (typeof id === 'number' && id < 1000000000000) {
+                await deleteItineraryApi(id);
             }
         }
     };

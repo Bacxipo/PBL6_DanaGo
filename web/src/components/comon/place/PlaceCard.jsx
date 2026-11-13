@@ -74,13 +74,18 @@ export default function PlaceCard({
                         title={isFav ? 'Bỏ yêu thích' : 'Yêu thích'}
                     >
                         <Heart
-                            className={`w-4 h-4 transition-all duration-200 ${
-                                isFav
-                                    ? 'fill-red-500 text-red-500 scale-110'
-                                    : 'text-white/90 hover:text-red-400'
-                            }`}
+                            className={`w-4 h-4 transition-all duration-200 ${isFav
+                                ? 'fill-red-500 text-red-500 scale-110'
+                                : 'text-white/90 hover:text-red-400'
+                                }`}
                         />
                     </button>
+
+                    {matchScore !== undefined && matchScore !== null && (
+                        <span className="absolute bottom-3 left-3 bg-emerald-600/90 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 z-10">
+                            ✨ Phù hợp {Math.round(matchScore * 100)}%
+                        </span>
+                    )}
 
                     {price && (
                         <div
@@ -112,11 +117,10 @@ export default function PlaceCard({
                         title={isFav ? 'Bỏ yêu thích' : 'Yêu thích'}
                     >
                         <Heart
-                            className={`w-4 h-4 transition-all duration-200 ${
-                                isFav
-                                    ? 'fill-red-500 text-red-500 scale-110'
-                                    : 'text-gray-400 hover:text-red-400'
-                            }`}
+                            className={`w-4 h-4 transition-all duration-200 ${isFav
+                                ? 'fill-red-500 text-red-500 scale-110'
+                                : 'text-gray-400 hover:text-red-400'
+                                }`}
                         />
                     </button>
 
