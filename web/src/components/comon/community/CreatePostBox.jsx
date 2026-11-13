@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { User, Image as ImageIcon } from 'lucide-react';
+import React from 'react';
+import { Image as ImageIcon } from 'lucide-react';
+import UserAvatar from '@/components/comon/ui/UserAvatar';
 
 export default function CreatePostBox({ onOpenModal, currentUser }) {
-  const [failedAvatar, setFailedAvatar] = useState(null);
-  const avatarUrl = currentUser?.avatarUrl;
   return (
     <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100 flex flex-col gap-4 mb-6">
       {/* Top row: Avatar & Placeholder input */}
@@ -14,21 +12,7 @@ export default function CreatePostBox({ onOpenModal, currentUser }) {
         onClick={onOpenModal}
         className="flex items-center gap-3 cursor-pointer group"
       >
-        <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 overflow-hidden group-hover:border-teal-500 transition-colors">
-          {avatarUrl && failedAvatar !== avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={`Ảnh đại diện của ${currentUser.fullName || currentUser.username || 'bạn'}`}
-              width={40}
-              height={40}
-              unoptimized
-              onError={() => setFailedAvatar(avatarUrl)}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <User className="w-6 h-6" />
-          )}
-        </div>
+        <UserAvatar user={currentUser} size={40} />
         <span className="text-slate-400 font-medium text-base select-none group-hover:text-slate-500 transition-colors">
           Lưu lại dấu chân mới nhất của bạn nào!
         </span>

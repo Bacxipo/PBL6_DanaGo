@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { User, MoreVertical, Heart, MessageCircle, Store, HelpCircle } from 'lucide-react';
-import Image from 'next/image';
+import { MoreVertical, Heart, MessageCircle, Store, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -10,6 +9,7 @@ import ContentPost from './ContentPost';
 import NewPlacePost from './NewPlacePost';
 import PostCommentSection from './PostCommentSection';
 import EditPostForm from './EditPostForm';
+import UserAvatar from '@/components/comon/ui/UserAvatar';
 
 import { toggleFeedLike, deleteFeedPost, updateFeedPost, } from '@/lib/feed-api';
 
@@ -103,26 +103,9 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
     }
   };
 
-  const renderAvatar = () => {
-    if (post?.user?.avatar) {
-      return (
-        <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0">
-          <Image
-            src={post.user.avatar}
-            alt={post.user.name || 'User'}
-            width={40}
-            height={40}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      );
-    }
-    return (
-      <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center shrink-0">
-        <User className="w-6 h-6" />
-      </div>
-    );
-  };
+  const renderAvatar = () => (
+    <UserAvatar user={{ avatarUrl: post?.user?.avatar, fullName: post?.user?.name }} size={40} />
+  );
 
   const handleDelete = async () => {
     if (isDeleting) return;

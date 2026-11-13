@@ -490,7 +490,7 @@ export default function Explore() {
                             </button>
                         </div>
                     ) : (
-                        <PlaceList places={filteredPlaces} placesPerPage={9} />
+                        <PlaceList places={filteredPlaces} placesPerPage={20} />
                     )}
                 </div>
             </div>
