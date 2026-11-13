@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/screens/suggest_itinerary_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
 class CreateItinerarySheet extends StatefulWidget {
@@ -410,7 +411,52 @@ class _CreateItinerarySheetState extends State<CreateItinerarySheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
+
+            // Nút Tạo bằng AI Plan
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SuggestItineraryScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF004E54), Color(0xFF006971)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.auto_awesome, color: Colors.amber, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tạo lịch trình thông minh với DanaGo AI',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
 
             // 4. Hai nút bấm: Hủy & Tạo lịch trình
             Row(
