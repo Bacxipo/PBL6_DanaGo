@@ -13,7 +13,59 @@ export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
   APPROVED: 'Đã duyệt',
   REJECTED: 'Từ chối'
 };
-export const DISTRICTS = ['Hải Châu', 'Sơn Trà', 'Ngũ Hành Sơn', 'Thanh Khê', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'];
+export const DISTRICTS = ['Hải Châu', 'Sơn Trà', 'Ngũ Hành Sơn', 'Thanh Khê', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang', 'Hội An', 'Điện Bàn', 'Duy Xuyên', 'Tam Kỳ', 'Núi Thành'];
+export const LODGING_TYPES = ['Khách sạn', 'Homestay', 'Villa', 'Nhà nghỉ', 'Resort'];
+
+// ───────── lodging ─────────
+export interface AmenityItem {
+  id: number;
+  code: string;
+  nameVi: string;
+  category: string;
+}
+
+export interface Lodging {
+  id: number;
+  name: string;
+  type: string;
+  district?: string;
+  region?: string;
+  latitude: number;
+  longitude: number;
+  pricePerNight: number;
+  pricePpNight?: number;
+  maxGuests: number;
+  checkin: string;
+  checkout: string;
+  avgRating: number;
+  description?: string;
+  status: ContentStatus;
+  createdAt: string;
+  addressUrl?: string;
+  website?: string;
+  images?: (string | DestinationImage)[];
+  amenities?: string[];
+  amenityIds?: number[];
+}
+
+export interface LodgingInput {
+  name: string;
+  type: string;
+  district?: string;
+  latitude?: number;
+  longitude?: number;
+  pricePerNight: number;
+  maxGuests?: number;
+  checkin?: string;
+  checkout?: string;
+  avgRating?: number;
+  description?: string;
+  addressUrl?: string;
+  website?: string;
+  status?: ContentStatus;
+  amenityIds?: number[];
+  amenities?: string[];
+}
 
 // ───────── identity ─────────
 export interface User {

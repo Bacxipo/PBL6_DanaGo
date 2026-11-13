@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Hotel, ListFilter, Map as MapIcon, Plus, Users, X } from 'lucide-react';
+import { Hotel, ListFilter, Map as MapIcon, Plus, Users, X, Coins } from 'lucide-react';
 import { Sparkles, MapPin, Compass, Check, AlertCircle, Loader2, Utensils, ChevronDown, } from 'lucide-react';
 
 import SelectPlacesModal from '@/components/comon/ai-plan/SelectPlacesModal';
@@ -392,11 +392,10 @@ export default function AiPlanPage() {
                             <button
                                 type="button"
                                 onClick={() => setIsStyleDropdownOpen((prev) => !prev)}
-                                className={`w-full p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer bg-gray-50/60 ${
-                                    isStyleDropdownOpen
-                                        ? 'border-[#006971] ring-2 ring-[#006971]/20 bg-white'
-                                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                                }`}
+                                className={`w-full p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer bg-gray-50/60 ${isStyleDropdownOpen
+                                    ? 'border-[#006971] ring-2 ring-[#006971]/20 bg-white'
+                                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                    }`}
                             >
                                 <div className="flex items-center gap-1.5 overflow-hidden pr-2">
                                     <span className="shrink-0 text-sm">🎨</span>
@@ -408,9 +407,8 @@ export default function AiPlanPage() {
                                 </div>
                                 <ChevronDown
                                     size={16}
-                                    className={`text-gray-400 shrink-0 transition-transform duration-200 ${
-                                        isStyleDropdownOpen ? 'rotate-180 text-[#006971]' : ''
-                                    }`}
+                                    className={`text-gray-400 shrink-0 transition-transform duration-200 ${isStyleDropdownOpen ? 'rotate-180 text-[#006971]' : ''
+                                        }`}
                                 />
                             </button>
 
@@ -424,20 +422,18 @@ export default function AiPlanPage() {
                                                 key={style.id}
                                                 type="button"
                                                 onClick={() => toggleInterest(style.id)}
-                                                className={`w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
-                                                    isSelected
-                                                        ? 'border-[#006971] bg-teal-50/70 text-[#006971]'
-                                                        : 'border-transparent hover:bg-gray-50 text-gray-700'
-                                                }`}
+                                                className={`w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${isSelected
+                                                    ? 'border-[#006971] bg-teal-50/70 text-[#006971]'
+                                                    : 'border-transparent hover:bg-gray-50 text-gray-700'
+                                                    }`}
                                             >
                                                 <span className="flex items-center gap-2">
                                                     <span>{style.icon}</span>
                                                     <span>{style.label}</span>
                                                 </span>
                                                 <span
-                                                    className={`w-4 h-4 rounded-md flex items-center justify-center text-white ${
-                                                        isSelected ? 'bg-[#006971]' : 'border border-gray-300'
-                                                    }`}
+                                                    className={`w-4 h-4 rounded-md flex items-center justify-center text-white ${isSelected ? 'bg-[#006971]' : 'border border-gray-300'
+                                                        }`}
                                                 >
                                                     {isSelected && <Check size={11} strokeWidth={3} />}
                                                 </span>
@@ -471,11 +467,10 @@ export default function AiPlanPage() {
                             <button
                                 type="button"
                                 onClick={() => setIsRegionDropdownOpen((prev) => !prev)}
-                                className={`w-full p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer bg-gray-50/60 ${
-                                    isRegionDropdownOpen
-                                        ? 'border-[#006971] ring-2 ring-[#006971]/20 bg-white'
-                                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                                }`}
+                                className={`w-full p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer bg-gray-50/60 ${isRegionDropdownOpen
+                                    ? 'border-[#006971] ring-2 ring-[#006971]/20 bg-white'
+                                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                    }`}
                             >
                                 <div className="flex items-center gap-1.5 overflow-hidden pr-2">
                                     <MapPin size={14} className="text-[#006971] shrink-0" />
@@ -487,9 +482,8 @@ export default function AiPlanPage() {
                                 </div>
                                 <ChevronDown
                                     size={16}
-                                    className={`text-gray-400 shrink-0 transition-transform duration-200 ${
-                                        isRegionDropdownOpen ? 'rotate-180 text-[#006971]' : ''
-                                    }`}
+                                    className={`text-gray-400 shrink-0 transition-transform duration-200 ${isRegionDropdownOpen ? 'rotate-180 text-[#006971]' : ''
+                                        }`}
                                 />
                             </button>
 
@@ -506,19 +500,17 @@ export default function AiPlanPage() {
                                                 key={opt.value || 'ALL'}
                                                 type="button"
                                                 onClick={() => toggleRegion(opt.value)}
-                                                className={`w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer text-left ${
-                                                    isSelected
-                                                        ? 'border-[#006971] bg-teal-50/70 text-[#006971]'
-                                                        : 'border-transparent hover:bg-gray-50 text-gray-700'
-                                                }`}
+                                                className={`w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer text-left ${isSelected
+                                                    ? 'border-[#006971] bg-teal-50/70 text-[#006971]'
+                                                    : 'border-transparent hover:bg-gray-50 text-gray-700'
+                                                    }`}
                                             >
                                                 <span className="flex items-center gap-2 pr-2">
                                                     <span className="leading-snug">{opt.label}</span>
                                                 </span>
                                                 <span
-                                                    className={`w-4 h-4 rounded-md shrink-0 flex items-center justify-center text-white ${
-                                                        isSelected ? 'bg-[#006971]' : 'border border-gray-300'
-                                                    }`}
+                                                    className={`w-4 h-4 rounded-md shrink-0 flex items-center justify-center text-white ${isSelected ? 'bg-[#006971]' : 'border border-gray-300'
+                                                        }`}
                                                 >
                                                     {isSelected && <Check size={11} strokeWidth={3} />}
                                                 </span>
