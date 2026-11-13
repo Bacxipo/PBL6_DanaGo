@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, MapPin, ShieldCheck, Users, BarChart3, Calendar, Tags, LogOut, Compass, ExternalLink, type LucideIcon } from 'lucide-react';
 import { useAuth, usePending } from '@/lib/context';
 import { ROLE_LABEL } from '@/lib/types';
+import Avatar from '@/components/Avatar';
+import ProfileModal from '@/components/ProfileModal';
 
 const WEB_USER_URL = process.env.NEXT_PUBLIC_WEB_USER_URL || 'http://localhost:3000';
 
@@ -20,6 +23,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { counts, moderation } = usePending();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const navItems: NavItem[] = [
     { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
@@ -75,18 +79,20 @@ export default function Sidebar() {
           <ExternalLink className="w-3.5 h-3.5" /> Xem Web Du Khách
         </a>
         <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#e2e8f0]/80 shadow-xs">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-lg bg-[#006971] text-white flex items-center justify-center font-bold text-sm shrink-0">{user?.fullName.charAt(0).toUpperCase()}</div>
+          <button type="button" onClick={() => setProfileOpen(true)} title="Hồ sơ & đổi ảnh đại diện" aria-label="Mở hồ sơ của tôi" className="flex items-center gap-2.5 overflow-hidden text-left rounded-lg hover:bg-[#e6f4f2]/60 transition-colors cursor-pointer min-w-0">
+            <Avatar src={user?.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover bg-[#e6f4f2] border border-gray-200 shrink-0" />
             <div className="truncate">
               <p className="text-xs font-bold text-gray-900 truncate">{user?.fullName}</p>
               <p className="text-[10px] text-[#006971] font-semibold">{user && ROLE_LABEL[user.role]}</p>
             </div>
-          </div>
+          </button>
           <button onClick={logout} title="Đăng xuất" aria-label="Đăng xuất" className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer">
             <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
     </aside>
   );
 }

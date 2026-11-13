@@ -93,6 +93,7 @@ interface AuthState {
   ready: boolean; // đã kiểm tra xong token lưu sẵn
   login: (emailOrUsername: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (user: User) => void; // cập nhật thông tin đang hiển thị (vd sau khi đổi ảnh đại diện)
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -127,7 +128,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.user);
   }, []);
 
-  return <AuthContext.Provider value={{ user, ready, login, logout }}>{children}</AuthContext.Provider>;
+  const updateUser = useCallback((next: User) => {
+    const token = tokenStorage.get();
+    if (token) tokenStorage.set(token, next);
+    setUser(next);
+  }, []);
+
+  return <AuthContext.Provider value={{ user, ready, login, logout, updateUser }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

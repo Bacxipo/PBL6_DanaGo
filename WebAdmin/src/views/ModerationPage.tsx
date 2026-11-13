@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import { StatusBadge, StatusFilter, AsyncContent, EmptyState } from '@/components/ui';
-import { useApi, removeById, avatarFallback, timeAgo, getImageUrl, getImageId } from '@/lib/utils';
+import { useApi, removeById, timeAgo, getImageUrl, getImageId } from '@/lib/utils';
+import Avatar from '@/components/Avatar';
 import { useAction, useAuth, usePending } from '@/lib/context';
 import type { ContentStatus } from '@/lib/types';
 import { CheckCircle2, XCircle, ExternalLink, MapPin, MessageSquare, Heart, Star } from 'lucide-react';
@@ -94,7 +95,7 @@ export default function ModerationPage() {
                   {list.map((r) => (
                     <div key={r.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-xs hover:border-[#006971]/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex items-start gap-4 min-w-0">
-                        <img src={r.user?.avatarUrl || avatarFallback(r.user?.fullName ?? String(r.userId))} alt="" className="w-11 h-11 rounded-full bg-[#e6f4f2] border border-gray-200 shrink-0 object-cover" />
+                        <Avatar src={r.user?.avatarUrl} className="w-11 h-11 rounded-full bg-[#e6f4f2] border border-gray-200 shrink-0 object-cover" />
                         <div className="space-y-1.5 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-gray-900 text-sm">{r.user?.fullName ?? `Tài khoản #${r.userId}`}</span>
@@ -172,7 +173,7 @@ export default function ModerationPage() {
                   {list.map((p) => (
                     <div key={p.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex items-start gap-4 min-w-0">
-                        <img src={p.user.avatarUrl || avatarFallback(p.user.username)} alt="" className="w-11 h-11 rounded-full bg-[#e6f4f2] border border-gray-200 shrink-0 object-cover" />
+                        <Avatar src={p.user.avatarUrl} className="w-11 h-11 rounded-full bg-[#e6f4f2] border border-gray-200 shrink-0 object-cover" />
                         <div className="space-y-1.5 min-w-0">
                           <p className="text-sm"><b className="text-gray-900">{p.user.fullName}</b> <span className="text-xs text-gray-400">• {timeAgo(p.createdAt)}</span></p>
                           <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{p.content}</p>

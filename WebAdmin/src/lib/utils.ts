@@ -32,7 +32,12 @@ export const splitLines = (text: string) => text.split('\n').map((s) => s.trim()
 // Chuỗi rỗng -> undefined (không gửi field trống lên API)
 export const orUndefined = (v: string) => v.trim() || undefined;
 
-export const avatarFallback = (seed: string) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
+// Ảnh đại diện mặc định khi người dùng chưa tải ảnh (file nằm ở WebAdmin/public)
+export const DEFAULT_AVATAR = '/default-avatar.svg';
+
+// Bỏ dấu tiếng Việt + chữ thường để tìm kiếm "ngu hanh son" ra "Ngũ Hành Sơn"
+export const normalizeSearch = (text: string) =>
+  text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().trim();
 
 // Trích xuất an toàn URL của ảnh từ chuỗi string hoặc object { imageUrl }
 export const getImageUrl = (img: unknown): string => {

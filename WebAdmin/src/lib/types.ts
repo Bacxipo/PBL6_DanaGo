@@ -21,7 +21,7 @@ export interface User {
   username: string;
   fullName: string;
   email: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   bio?: string;
   role: UserRole;
   status: UserStatus;
@@ -69,6 +69,7 @@ export interface Destination {
   openHours?: string;
   avgRating: number;
   status: ContentStatus;
+  isFeatured?: boolean;
   createdBy?: number;
   createdAt: string;
   images?: (string | DestinationImage)[];

@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import { Modal, Field, ModalActions, inputClass, PageHeading, searchInputClass, selectClass, StatusBadge, AsyncContent, EmptyState } from '@/components/ui';
 import { useApi, upsertById, removeById, formatDate, orUndefined, getImageUrl, getImageId, todayIso } from '@/lib/utils';
 import { useAction, usePending } from '@/lib/context';
+import SearchSelect, { type SearchSelectOption } from '@/components/SearchSelect';
 import { CONTENT_STATUS_LABEL, CONTENT_STATUSES, getTimeline, TIMELINE_LABEL, type ContentStatus, type EventItem, type EventTimeline, type DestinationImage } from '@/lib/types';
 import { Calendar, Search, MapPin, Edit, Trash2, ImageOff, Ticket, CheckCircle2, XCircle, Upload, X } from 'lucide-react';
 import { destinationApi, eventApi } from '@/lib/api';
@@ -41,7 +42,10 @@ export default function EventsPage() {
   const [pendingFiles, setPendingFiles] = useState<PendingUploadFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const approvedDestinations = useMemo(() => (destinations ?? []).filter((d) => d.status === 'APPROVED'), [destinations]);
+  const destinationOptions = useMemo<SearchSelectOption[]>(
+    () => (destinations ?? []).filter((d) => d.status === 'APPROVED').map((d) => ({ value: String(d.id), label: d.name, hint: d.district })),
+    [destinations]
+  );
 
   const rows = useMemo(() => {
     const q = search.toLowerCase();
@@ -253,12 +257,17 @@ export default function EventsPage() {
             <div className={`p-3 rounded-xl border space-y-3 ${noLocation ? 'bg-rose-50/50 border-rose-200' : 'bg-[#e6f4f2]/50 border-[#006971]/20'}`}>
               <p className="text-xs font-bold text-[#006971]">Địa điểm tổ chức (chọn điểm đến, ghi chú, hoặc cả hai)</p>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Tại điểm đến có sẵn">
-                  <select value={form.destinationId} onChange={(e) => set({ destinationId: e.target.value })} className={inputClass}>
-                    <option value="">— Không gắn —</option>
-                    {approvedDestinations.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
-                </Field>
+                <div>
+                  <span className="block text-xs font-semibold text-gray-700 mb-1">Tại điểm đến có sẵn</span>
+                  <SearchSelect
+                    value={form.destinationId}
+                    onChange={(value) => set({ destinationId: value })}
+                    options={destinationOptions}
+                    placeholder="— Không gắn —"
+                    searchPlaceholder="Gõ tên điểm đến hoặc quận..."
+                    emptyLabel="— Không gắn —"
+                  />
+                </div>
                 <Field label="Ghi chú địa điểm"><input type="text" maxLength={255} value={form.locationNote} onChange={(e) => set({ locationNote: e.target.value })} placeholder="VD: Công viên Biển Đông" className={inputClass} /></Field>
               </div>
               {noLocation && <p className="text-[11px] text-rose-600">Cần chọn điểm đến hoặc nhập ghi chú địa điểm.</p>}
