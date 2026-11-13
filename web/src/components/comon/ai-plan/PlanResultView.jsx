@@ -37,16 +37,17 @@ export default function PlanResultView({
     const daysCount = plan.num_days || plan.days.length;
     const nightsCount = Math.max(0, daysCount - 1);
 
-    // Kiểm tra ngân sách dư nhiều (> 40% tổng) và chủ yếu chỉ có vé tham quan
-    const budgetLeftRatio = plan.budget_pp > 0 ? (plan.budget_left_pp / plan.budget_pp) : 0;
-    const showBudgetSurplusHint = budgetLeftRatio > 0.4 && (!includeMeals || !includeLodging);
+    // Kiểm tra ngân sách còn dư nhiều (>= 500k và > 20% tổng ngân sách) để thông báo rõ cho người dùng
+    const budgetLeft = Number(plan.budget_left_pp || 0);
+    const budgetLeftRatio = plan.budget_pp > 0 ? (budgetLeft / plan.budget_pp) : 0;
+    const showBudgetSurplusHint = budgetLeft >= 500000 && budgetLeftRatio >= 0.2;
+    const dailyAllowanceLeft = Math.round(budgetLeft / Math.max(1, daysCount));
 
-    // Label quy chuẩn ngân sách
+    // Label quy chuẩn ngân sách (ăn uống không tính vào ngân sách - tùy theo món)
     const budgetStandardLabel = (() => {
         const parts = ['Vé tham quan'];
-        if (includeMeals) parts.push('Ăn uống');
         if (includeLodging) parts.push('Nơi nghỉ');
-        return `Bao gồm: ${parts.join(', ')}`;
+        return `Bao gồm: ${parts.join(', ')}${includeMeals ? ' (ăn uống tùy theo món, không tính)' : ''}`;
     })();
 
     // Lưu toàn bộ lịch trình AI tạo ra vào danh sách Lịch trình cá nhân (Itinerary)
@@ -103,6 +104,7 @@ export default function PlanResultView({
                         type: it.type || 'attraction',
                         priceEst: it.price_est || 0,
                         budget: it.price_est || 0,
+                        notes: it.description || (it.price_excluded ? 'Tùy theo món ăn' : null),
                         checklists: checklists,
                     });
                 });
@@ -253,15 +255,25 @@ export default function PlanResultView({
                     </div>
                 </div>
 
-                {/* Gợi ý khi ngân sách dư nhiều do tắt meals/lodging */}
+                {/* Thông báo giải thích khi ngân sách còn dư nhiều */}
                 {showBudgetSurplusHint && (
-                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-800 flex gap-2 items-start">
-                        <span className="text-lg leading-none">💡</span>
-                        <div>
-                            <span className="font-bold">Ngân sách còn dư nhiều!</span> Bạn đang tự túc{!includeMeals ? ' ăn uống' : ''}{!includeLodging ? ' & nơi nghỉ' : ''}. AI đã ưu tiên chọn các địa điểm <strong>trải nghiệm premium</strong> (vé có phí) để tận dụng ngân sách. Bạn cũng có thể{' '}
-                            <button type="button" onClick={onReset} className="underline font-semibold hover:text-blue-600">
-                                bật lại tùy chọn ăn uống / nơi nghỉ
-                            </button>{' '}để AI lên lịch đầy đủ hơn.
+                    <div className="p-3.5 bg-teal-50/70 rounded-xl border border-teal-200/80 text-xs text-teal-950 flex gap-2.5 items-start">
+                        <span className="text-base leading-none mt-0.5">💡</span>
+                        <div className="space-y-1 leading-relaxed">
+                            <div>
+                                <span className="font-extrabold text-[#006971]">
+                                    Ngân sách còn dư {budgetLeft.toLocaleString('vi-VN')} đ/người (~{dailyAllowanceLeft.toLocaleString('vi-VN')} đ/ngày):
+                                </span>{' '}
+                                AI đã chọn tối đa số điểm tham quan có vé và nơi lưu trú phù hợp nhất trong {daysCount} ngày.
+                            </div>
+                            <div className="text-2xs text-teal-800">
+                                • Do lịch trình <strong>chưa tính tiền ăn uống (tùy món)</strong> và <strong>chi phí di chuyển/mua sắm</strong>, khoản dư này là quỹ dự phòng lý tưởng cho các bữa hải sản, đặc sản và đi lại của bạn.
+                                {!includeLodging ? (
+                                    <> Bạn cũng có thể <button type="button" onClick={onReset} className="underline font-bold text-[#006971] cursor-pointer">bật lại nơi lưu trú</button> để AI tính thêm khách sạn.</>
+                                ) : (
+                                    <> Nếu muốn chi tiêu hết vào nghỉ dưỡng, bạn có thể chọn mức giá phòng <strong>Cao</strong> hoặc bấm <strong>Chọn nơi ở</strong> để chỉ định Resort/Villa cao cấp hơn.</>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -360,58 +372,117 @@ export default function PlanResultView({
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gray-200">
+                                    <div className="relative pl-6 space-y-2.5 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:border-l-2 before:border-dashed before:border-gray-300">
                                         {(dayData.items || []).map((item, idx) => {
                                             const isMeal = item.type === 'breakfast' || item.type === 'lunch' || item.type === 'dinner';
                                             const isHotel = item.type === 'checkin' || item.type === 'checkout' || item.type === 'return';
+                                            const prevItem = idx > 0 ? dayData.items[idx - 1] : null;
+                                            let travelMin = item.travel_min;
+                                            if (travelMin === undefined && prevItem?.end && item?.start) {
+                                                const [ph, pm] = String(prevItem.end).split(':').map(Number);
+                                                const [ch, cm] = String(item.start).split(':').map(Number);
+                                                if (!isNaN(ph) && !isNaN(ch)) {
+                                                    travelMin = Math.max(0, (ch * 60 + cm) - (ph * 60 + pm));
+                                                }
+                                            }
 
                                             return (
-                                                <div key={idx} className="relative group">
-                                                    {/* Node icon trên timeline */}
-                                                    <span
-                                                        className={`absolute -left-6 top-1.5 w-5 h-5 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-white text-2xs font-bold ${isHotel
-                                                            ? 'bg-purple-600'
-                                                            : isMeal
-                                                                ? 'bg-amber-500'
-                                                                : 'bg-[#006971]'
-                                                            }`}
-                                                    >
-                                                        {isHotel ? '🏨' : isMeal ? '🍽️' : idx + 1}
-                                                    </span>
-
-                                                    {/* Thẻ hoạt động */}
-                                                    <div className="p-3.5 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200 hover:shadow-xs transition-all space-y-1.5">
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <span className="text-xs font-bold text-[#006971] flex items-center gap-1">
-                                                                <Clock size={12} />
-                                                                {item.start} - {item.end}
-                                                            </span>
-                                                            <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-white border border-gray-200 text-gray-700">
-                                                                {item.label || item.type}
-                                                            </span>
-                                                        </div>
-
-                                                        <div className="font-bold text-gray-900 text-sm">
-                                                            {item.name}
-                                                        </div>
-
-                                                        <div className="flex flex-wrap items-center justify-between gap-2 text-2xs text-gray-500 pt-1 border-t border-gray-100">
-                                                            <span className="flex items-center gap-1">
-                                                                <MapPin size={11} className="text-[#006971]" />
-                                                                {item.district ? `${item.district}, ${item.region || ''}` : 'Đà Nẵng'}
-                                                            </span>
-                                                            {item.price_est > 0 ? (
-                                                                <span className="text-amber-700 font-bold">
-                                                                    ~{item.price_est.toLocaleString('vi-VN')} đ/người
+                                                <React.Fragment key={idx}>
+                                                    {/* Dòng nét đứt hiển thị khoảng thời gian di chuyển giữa 2 địa điểm */}
+                                                    {idx > 0 && (
+                                                        <div className="flex items-center gap-2 py-1 px-2">
+                                                            <div className="flex-1 border-t border-dashed border-gray-300" />
+                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-50 border border-dashed border-gray-300 text-2xs font-semibold text-gray-500 whitespace-nowrap">
+                                                                <span>🛵</span>
+                                                                <span>
+                                                                    {travelMin > 0
+                                                                        ? `Thời gian di chuyển: ~${travelMin} phút${item.distance_km ? ` (${item.distance_km} km)` : ''}`
+                                                                        : 'Tại cùng địa điểm (0 phút di chuyển)'}
                                                                 </span>
-                                                            ) : (
-                                                                <span className="text-gray-400">
-                                                                    {item.price_text || 'Miễn phí'}
+                                                            </span>
+                                                            <div className="flex-1 border-t border-dashed border-gray-300" />
+                                                        </div>
+                                                    )}
+
+                                                    <div className="relative group">
+                                                        {/* Node icon trên timeline */}
+                                                        <span
+                                                            className={`absolute -left-6 top-1.5 w-5 h-5 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-white text-2xs font-bold ${isHotel
+                                                                ? 'bg-purple-600'
+                                                                : isMeal
+                                                                    ? 'bg-amber-500'
+                                                                    : 'bg-[#006971]'
+                                                                }`}
+                                                        >
+                                                            {isHotel ? '🏨' : isMeal ? '🍽️' : idx + 1}
+                                                        </span>
+
+                                                        {/* Thẻ hoạt động phân màu theo nhóm ô */}
+                                                        <div className={`p-3.5 rounded-xl border transition-all space-y-1.5 shadow-2xs ${isMeal
+                                                            ? 'bg-amber-50/70 border-amber-200/90 hover:bg-amber-50'
+                                                            : isHotel
+                                                                ? 'bg-purple-50/70 border-purple-200/90 hover:bg-purple-50'
+                                                                : 'bg-teal-50/60 border-teal-200/90 hover:bg-teal-50'
+                                                            }`}>
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className={`text-xs font-bold flex items-center gap-1 ${isMeal
+                                                                    ? 'text-amber-700'
+                                                                    : isHotel
+                                                                        ? 'text-purple-700'
+                                                                        : 'text-[#006971]'
+                                                                    }`}>
+                                                                    <Clock size={12} />
+                                                                    {item.start} - {item.end}
                                                                 </span>
+                                                                <span className={`px-2 py-0.5 rounded text-2xs font-bold border ${isMeal
+                                                                    ? 'bg-amber-100/80 border-amber-300 text-amber-800'
+                                                                    : isHotel
+                                                                        ? 'bg-purple-100/80 border-purple-300 text-purple-800'
+                                                                        : 'bg-teal-100/80 border-teal-300 text-teal-800'
+                                                                    }`}>
+                                                                    {item.label || item.type}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="font-bold text-gray-900 text-sm">
+                                                                {item.name}
+                                                            </div>
+
+                                                            {item.description && (
+                                                                <div className={`text-2xs leading-snug line-clamp-2 ${isMeal ? 'text-amber-900/80' : 'text-teal-900/80 font-medium'
+                                                                    }`}>
+                                                                    {item.description}
+                                                                </div>
                                                             )}
+
+                                                            <div className={`flex flex-wrap items-center justify-between gap-2 text-2xs pt-1 border-t ${isMeal
+                                                                ? 'border-amber-200/60 text-amber-900/80'
+                                                                : isHotel
+                                                                    ? 'border-purple-200/60 text-purple-900/80'
+                                                                    : 'border-teal-200/60 text-teal-900/80'
+                                                                }`}>
+                                                                <span className="flex items-center gap-1">
+                                                                    <MapPin size={11} className={isMeal ? 'text-amber-600' : isHotel ? 'text-purple-600' : 'text-[#006971]'} />
+                                                                    {item.district ? `${item.district}, ${item.region || ''}` : 'Đà Nẵng'}
+                                                                </span>
+                                                                {item.price_excluded ? (
+                                                                    <span className="text-orange-700 font-bold flex items-center gap-1">
+                                                                        <Utensils size={11} />
+                                                                        {item.price_text || 'Tùy theo món ăn'}
+                                                                    </span>
+                                                                ) : item.price_est > 0 ? (
+                                                                    <span className="text-amber-700 font-bold">
+                                                                        ~{item.price_est.toLocaleString('vi-VN')} đ/người
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-gray-500 font-semibold">
+                                                                        {item.price_text || 'Miễn phí'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </React.Fragment>
                                             );
                                         })}
                                     </div>

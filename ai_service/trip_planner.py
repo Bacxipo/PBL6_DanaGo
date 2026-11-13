@@ -23,6 +23,8 @@ INTERESTS = ["Biển & đảo", "Ẩm thực", "Văn hóa & lịch sử", "Thiê
 MEALS = {"breakfast": (7 * 60, 10 * 60, 45), "lunch": (11 * 60, 14 * 60, 60),
          "dinner": (17 * 60, 19 * 60, 60)}
 MEAL_LABEL = {"breakfast": "Bữa sáng", "lunch": "Bữa trưa", "dinner": "Bữa tối"}
+# Chi phí ăn uống không tính vào ngân sách, chỉ gợi ý quán
+MEAL_PRICE_TEXT = "Tùy theo món ăn"
 REST_DUR = 60
 CHECKOUT_DUR = 10
 
@@ -90,6 +92,25 @@ def _record(r):
     }
 
 
+def _normalize_regions(region):
+    """Chuẩn hóa tham số region (có thể là None, chuỗi đơn, chuỗi phân cách dấu phẩy, hoặc list) thành list các khu vực."""
+    if not region:
+        return []
+    if isinstance(region, str):
+        parts = [r.strip() for r in region.split(",") if r.strip() and r.strip() != "Tất cả khu vực"]
+        return parts
+    if isinstance(region, (list, tuple, set)):
+        out = []
+        for item in region:
+            if isinstance(item, str):
+                for sub in item.split(","):
+                    s = sub.strip()
+                    if s and s != "Tất cả khu vực" and s not in out:
+                        out.append(s)
+        return out
+    return []
+
+
 def _pool(df, interests, budget_pp=None, region=None, include_food=False, premium_boost=0.0, randomize=False):
     """
     premium_boost > 0: điểm có vé cao hơn được ưu tiên hơn khi ngân sách còn nhiều.
@@ -99,8 +120,9 @@ def _pool(df, interests, budget_pp=None, region=None, include_food=False, premiu
     d = df
     if interests:
         d = d[d["interest_group"].isin(interests)]
-    if region:
-        d = d[d["region"] == region]
+    target_regions = _normalize_regions(region)
+    if target_regions:
+        d = d[d["region"].isin(target_regions)]
     if budget_pp is not None:
         d = d[d["price_est"] <= budget_pp]
     if not include_food:
@@ -206,22 +228,66 @@ def _food_choice(foods, loc, t, kind, exclude_ids=None, randomize=True):
     return None, None
 
 
+def _arrange_day_seq(atts):
+    """
+    Sắp xếp thứ tự các điểm trong ngày hợp lý:
+    - Nếu có điểm thời lượng dài (>= 240p) và mở cửa buổi sáng (<= 09:00), đưa lên đầu ngày (ca sáng - trưa) để khởi hành sớm & ăn trưa tại điểm.
+    - Điểm chỉ mở cửa chiều/tối (open_time >= 13:00 như Asia Park) luôn xếp về sau.
+    - Trong các điểm buổi chiều/tối: ưu tiên điểm đóng cửa sớm (< 19:00) vào ca chiều, điểm mở muộn vào ca tối.
+    """
+    seq = list(atts)
+    if len(seq) <= 1:
+        return seq
+
+    long_morning_idx = None
+    best_dur = -1
+    for idx, r in enumerate(seq):
+        dur = int(r.get("visit_duration_min", 90))
+        op = int(r.get("open_time", 0))
+        if dur >= 240 and op <= 9 * 60 and dur > best_dur:
+            best_dur = dur
+            long_morning_idx = idx
+
+    if long_morning_idx is not None and long_morning_idx != 0:
+        first = seq.pop(long_morning_idx)
+        seq.insert(0, first)
+    elif int(seq[0].get("open_time", 0)) >= 13 * 60:
+        for idx in range(1, len(seq)):
+            if int(seq[idx].get("open_time", 0)) < 13 * 60:
+                first = seq.pop(idx)
+                seq.insert(0, first)
+                break
+
+    if len(seq) >= 3:
+        a1, a2 = seq[1], seq[2]
+        if int(a2["close_time"]) < 19 * 60 and int(a1["close_time"]) >= int(a2["close_time"]):
+            seq[1], seq[2] = a2, a1
+    return seq
+
+
 def simulate_day(atts, foods, lodging, prev_lodging, prev_checkout_min, need_night, include_meals=True, used_food_ids=None, randomize=True):
     """
     Thứ tự một ngày:
       [trả phòng đêm trước] -> bữa sáng -> tham quan (sáng) -> bữa trưa
       -> nghỉ ngơi ở khách sạn (nếu có đêm nghỉ) -> tham quan (chiều) -> tham quan (tối)
       -> bữa tối -> về lại khách sạn (nếu có đêm nghỉ)
+    Đặc biệt với các điểm có thời gian du lịch dài (>= 240 phút như Bà Nà Hills, Núi Thần Tài, Cù Lao Chàm, VinWonders, Asia Park...):
+      - Cho khởi hành sớm hơn (06:45) + ăn sáng nhanh (30p)
+      - Cắt bớt buổi đi ăn rời bên ngoài (kết hợp ăn uống & nghỉ ngơi trực tiếp tại khu du lịch) để giữ trọn thời gian trải nghiệm.
     Trả về (items, end_loc) nếu khả thi, ngược lại None.
     """
-    items, t, loc = [], DAY_START, prev_lodging
-    seq = list(atts)
-    if not seq:
+    raw_seq = list(atts)
+    if not raw_seq:
         return None
-    slots = ["sáng", "chiều", "tối"]
+    seq = _arrange_day_seq(raw_seq)
+    has_long_morning = int(seq[0].get("visit_duration_min", 90)) >= 240 and int(seq[0].get("open_time", 0)) <= 9 * 60
+    day_start_min = (6 * 60 + 45) if has_long_morning else DAY_START
+    breakfast_dur = 30 if has_long_morning else MEALS["breakfast"][2]
+
+    items, t, loc = [], day_start_min, prev_lodging
     day_used_foods = set(used_food_ids or [])
 
-    def free_meal_item(kind, t_start, anchor_loc):
+    def free_meal_item(kind, t_start, anchor_loc, custom_dur=None):
         label_map = {"breakfast": "Bữa sáng (Tự túc)", "lunch": "Bữa trưa (Tự túc)", "dinner": "Bữa tối (Tự túc)"}
         name_map = {
             "breakfast": "Tự túc bữa sáng tại nơi nghỉ hoặc tự do",
@@ -229,7 +295,9 @@ def simulate_day(atts, foods, lodging, prev_lodging, prev_checkout_min, need_nig
             "dinner": "Tự túc bữa tối & khám phá phố đêm",
         }
         ws, we, dur = MEALS[kind]
-        actual_start = max(t_start, ws)
+        if custom_dur is not None:
+            dur = custom_dur
+        actual_start = max(t_start, (6 * 60 + 45) if (kind == "breakfast" and has_long_morning) else ws)
         c_lat = float(anchor_loc["latitude"]) if anchor_loc is not None else float(seq[0]["latitude"])
         c_lng = float(anchor_loc["longitude"]) if anchor_loc is not None else float(seq[0]["longitude"])
         c_dist = str(anchor_loc.get("district", "")) if (anchor_loc is not None and pd.notna(anchor_loc.get("district"))) else ""
@@ -251,50 +319,69 @@ def simulate_day(atts, foods, lodging, prev_lodging, prev_checkout_min, need_nig
 
     # trả phòng đêm trước + bữa sáng
     if prev_lodging is not None:
+        is_same_hotel = need_night and lodging is not None and int(prev_lodging["id"]) == int(lodging["id"])
+        if not is_same_hotel:
+            items.append(_checkout(prev_lodging, t, t + CHECKOUT_DUR))
+            t, loc = t + CHECKOUT_DUR, prev_lodging
         if include_meals:
             f, s = _food_choice(foods, prev_lodging, t, "breakfast", exclude_ids=day_used_foods, randomize=randomize)
-            if f is None:
-                items.append({"type": "breakfast", "label": "Ăn sáng tại khách sạn", "id": int(prev_lodging["id"]),
+            if f is None or (has_long_morning and s > 7 * 60 + 25):
+                items.append({"type": "breakfast", "label": "Ăn sáng sớm tại khách sạn" if has_long_morning else "Ăn sáng tại khách sạn",
+                              "id": int(prev_lodging["id"]),
                               "name": prev_lodging["name"],
                               "district": str(prev_lodging.get("district", "")) if pd.notna(prev_lodging.get("district")) else "",
                               "region": str(prev_lodging.get("region", "")) if pd.notna(prev_lodging.get("region")) else "",
-                              "start": hm(t), "end": hm(t + 30),
-                              "price_text": "", "price_est": 0,
+                              "start": hm(t), "end": hm(t + breakfast_dur),
+                              "price_text": MEAL_PRICE_TEXT, "price_est": 0, "price_excluded": True,
                               "latitude": float(prev_lodging["latitude"]), "longitude": float(prev_lodging["longitude"])})
-                t = t + 30
+                t, loc = t + breakfast_dur, prev_lodging
             else:
                 day_used_foods.add(int(f["id"]))
-                items.append(_item("breakfast", f, s, s + MEALS["breakfast"][2]))
-                t = s + MEALS["breakfast"][2]
+                items.append(_item("breakfast", f, s, s + breakfast_dur))
+                t, loc = s + breakfast_dur, f
         else:
-            items.append(free_meal_item("breakfast", t, prev_lodging))
-            t = t + MEALS["breakfast"][2]
-        loc = prev_lodging
-        # Nếu cùng một nơi nghỉ qua đêm thì không cần làm thủ tục trả phòng buổi sáng
-        is_same_hotel = need_night and lodging is not None and int(prev_lodging["id"]) == int(lodging["id"])
-        if not is_same_hotel:
-            co = t
-            items.append(_checkout(prev_lodging, co, co + CHECKOUT_DUR))
-            t, loc = co + CHECKOUT_DUR, prev_lodging
+            items.append(free_meal_item("breakfast", t, prev_lodging, custom_dur=breakfast_dur))
+            t, loc = t + breakfast_dur, prev_lodging
     else:
         if include_meals:
             f, s = _food_choice(foods, seq[0], t, "breakfast", exclude_ids=day_used_foods, randomize=randomize)
             if f is None:
                 return None
+            if has_long_morning and s > 7 * 60 + 15:
+                s = 7 * 60
             day_used_foods.add(int(f["id"]))
-            items.append(_item("breakfast", f, s, s + MEALS["breakfast"][2]))
-            t, loc = s + MEALS["breakfast"][2], f
+            items.append(_item("breakfast", f, s, s + breakfast_dur))
+            t, loc = s + breakfast_dur, f
         else:
-            items.append(free_meal_item("breakfast", t, seq[0]))
-            t = t + MEALS["breakfast"][2]
+            items.append(free_meal_item("breakfast", t, seq[0], custom_dur=breakfast_dur))
+            t = t + breakfast_dur
             loc = seq[0]
 
-    def place_att(a, t, loc, slot):
+    def place_att(a, t, loc, slot, combine_meal=None):
         st = max(t + travel_min(loc, a), int(a["open_time"]))
-        en = st + int(a["visit_duration_min"])
+        raw_dur = int(a["visit_duration_min"])
+        if combine_meal == "lunch":
+            # Điểm tham quan dài buổi sáng (Bà Nà, Núi Thần Tài, Cù Lao Chàm, VinWonders, Mikazuki...): cộng thêm 60p ăn trưa tại chỗ
+            slot_max = 340 if len(seq) <= 2 else 300
+            dur = min(raw_dur + 60, slot_max)
+        elif combine_meal == "dinner":
+            # Điểm vui chơi dài buổi chiều - tối (Asia Park, Mikazuki...): cộng thêm 45p ăn tối tại chỗ
+            slot_max = 240 if len(seq) <= 2 else 210
+            dur = min(raw_dur + 45, slot_max)
+        else:
+            slot_max = {"sáng": 180, "chiều": 165, "tối": 105}.get(slot, 180)
+            dur = min(raw_dur, slot_max)
+        en = st + dur
         if en > int(a["close_time"]) or en > DAY_END:
             return None
-        return _item("attraction", a, st, en, slot)
+        it_out = _item("attraction", a, st, en, slot)
+        if combine_meal == "lunch":
+            it_out["label"] = "Tham quan & Ăn trưa tại điểm"
+            it_out["description"] = "Địa điểm có thời gian tham quan dài — khởi hành sớm và kết hợp ăn trưa, nghỉ ngơi ngay tại khu du lịch (chi phí ăn tùy món)."
+        elif combine_meal == "dinner":
+            it_out["label"] = "Tham quan & Ăn tối tại điểm"
+            it_out["description"] = "Địa điểm có thời gian vui chơi dài — kết hợp ăn tối và thưởng thức ẩm thực ngay tại điểm đến (chi phí ăn tùy món)."
+        return it_out
 
     def place_meal(kind, t, loc):
         if not include_meals:
@@ -306,65 +393,67 @@ def simulate_day(atts, foods, lodging, prev_lodging, prev_checkout_min, need_nig
         return _item(kind, f, s, s + MEALS[kind][2])
 
     # tham quan (sáng)
-    it = place_att(seq[0], t, loc, "sáng")
+    it = place_att(seq[0], t, loc, "sáng", combine_meal="lunch" if has_long_morning else None)
     if it is None:
         return None
     items.append(it); t, loc = hm_to_min(it["end"]), seq[0]
-    # bữa trưa
-    it = place_meal("lunch", t, loc)
-    if it is None:
-        return None
-    items.append(it)
-    t = hm_to_min(it["end"])
-    loc = (foods_row(foods, it["id"]) if it.get("id") else None) or loc
 
-    # nghỉ ngơi ở khách sạn (chờ nhận phòng nếu chưa đến giờ)
+    # bữa trưa (chỉ xếp bữa trưa rời nếu điểm buổi sáng KHÔNG phải là khu du lịch dài đã gộp ăn trưa)
+    if not has_long_morning:
+        it = place_meal("lunch", t, loc)
+        if it is None:
+            return None
+        items.append(it)
+        t = hm_to_min(it["end"])
+        loc = (foods_row(foods, it["id"]) if it.get("id") else None) or loc
+
+    # nghỉ ngơi ở khách sạn (về nhận phòng / gửi hành lý & nghỉ trưa liền mạch ngay sau khi di chuyển tới)
     if need_night:
         if lodging is None:
             return None
         arr = t + travel_min(loc, lodging)
         is_same_hotel = prev_lodging is not None and int(prev_lodging["id"]) == int(lodging["id"])
         if is_same_hotel:
-            # Cùng một nơi nghỉ: về phòng nghỉ ngơi buổi trưa mà không cần chờ nhận phòng lại
-            st = max(arr, t)
-            items.append({"type": "checkin", "label": "Nghỉ ngơi ở khách sạn", "id": int(lodging["id"]), "name": lodging["name"],
-                          "district": str(lodging.get("district", "")) if pd.notna(lodging.get("district")) else "",
-                          "region": str(lodging.get("region", "")) if pd.notna(lodging.get("region")) else "",
-                          "start": hm(st), "end": hm(st + REST_DUR), "price_text": "", "price_est": 0,
-                          "latitude": float(lodging["latitude"]), "longitude": float(lodging["longitude"])})
-            t, loc = st + REST_DUR, lodging
+            # Nếu đi khu du lịch dài cả sáng-trưa và đã nhận phòng từ đêm trước thì không bắt buộc quay về khách sạn giữa trưa
+            if not has_long_morning:
+                st = arr
+                items.append({"type": "checkin", "label": "Nghỉ ngơi ở khách sạn", "id": int(lodging["id"]), "name": lodging["name"],
+                              "district": str(lodging.get("district", "")) if pd.notna(lodging.get("district")) else "",
+                              "region": str(lodging.get("region", "")) if pd.notna(lodging.get("region")) else "",
+                              "start": hm(st), "end": hm(st + REST_DUR), "price_text": "", "price_est": 0,
+                              "latitude": float(lodging["latitude"]), "longitude": float(lodging["longitude"])})
+                t, loc = st + REST_DUR, lodging
         else:
-            st = max(arr, int(lodging["checkin_min"]))
-            items.append(_checkin(lodging, st, st + REST_DUR))
-            t, loc = st + REST_DUR, lodging
+            rest_dur = 45 if has_long_morning else REST_DUR
+            st = arr
+            items.append(_checkin(lodging, st, st + rest_dur))
+            t, loc = st + rest_dur, lodging
 
     # 1. Tham quan (chiều) nếu có từ 2 điểm trở lên
-    att_afternoon = None
-    att_evening = None
-    if len(seq) == 2:
-        att_afternoon = seq[1]
-    elif len(seq) >= 3:
-        # Nếu có 3 điểm: ưu tiên điểm đóng cửa sớm vào ca chiều, điểm mở khuya vào ca tối
-        a1, a2 = seq[1], seq[2]
-        if int(a2["close_time"]) < 19 * 60 and int(a1["close_time"]) >= int(a2["close_time"]):
-            att_afternoon, att_evening = a2, a1
-        else:
-            att_afternoon, att_evening = a1, a2
+    att_afternoon = seq[1] if len(seq) >= 2 else None
+    att_evening = seq[2] if len(seq) >= 3 else None
+
+    has_long_afternoon = (
+        att_afternoon is not None
+        and not has_long_morning
+        and int(att_afternoon.get("visit_duration_min", 90)) >= 240
+    )
 
     if att_afternoon is not None:
-        it = place_att(att_afternoon, t, loc, "chiều")
+        it = place_att(att_afternoon, t, loc, "chiều", combine_meal="dinner" if has_long_afternoon else None)
         if it is None:
             return None
         items.append(it)
         t, loc = hm_to_min(it["end"]), att_afternoon
 
-    # 2. Bữa tối (Ăn tối lúc ~17:00 - 18:30 trước khi đi chơi tối)
-    it = place_meal("dinner", t, loc)
-    if it is None:
-        return None
-    items.append(it)
-    t = hm_to_min(it["end"])
-    loc = (foods_row(foods, it["id"]) if it.get("id") else None) or loc
+    # 2. Bữa tối (chỉ xếp bữa tối rời nếu ca chiều không gộp ăn tối tại khu vui chơi)
+    if not has_long_afternoon:
+        it = place_meal("dinner", t, loc)
+        if it is None:
+            return None
+        items.append(it)
+        t = hm_to_min(it["end"])
+        loc = (foods_row(foods, it["id"]) if it.get("id") else None) or loc
 
     # 3. Tham quan (tối) nếu có điểm thứ 3 (Đi chơi tối lúc ~19:00 - 20:30)
     if att_evening is not None:
@@ -383,6 +472,26 @@ def simulate_day(atts, foods, lodging, prev_lodging, prev_checkout_min, need_nig
         t, loc = st + 10, lodging
     if t > DAY_END:
         return None
+
+    # 5. Khớp nối liền mạch khung giờ (loại bỏ khoảng trống chết giữa các điểm) & gắn thông tin thời gian di chuyển (travel_min, distance_km)
+    items[0]["travel_min"] = 0
+    items[0]["distance_km"] = 0.0
+    for k in range(1, len(items)):
+        prev_it = items[k - 1]
+        curr_it = items[k]
+        dist_km = haversine_km(prev_it["latitude"], prev_it["longitude"], curr_it["latitude"], curr_it["longitude"])
+        same_place = (prev_it.get("id") == curr_it.get("id")) and dist_km < 0.05
+        tr = 0 if same_place else max(MIN_TRAVEL, round(dist_km / TRAVEL_KMH * 60))
+        prev_end = hm_to_min(prev_it["end"])
+        curr_start = hm_to_min(curr_it["start"])
+        gap = curr_start - prev_end
+        if gap > tr:
+            # Mở rộng thời gian lưu lại ở điểm trước (tham quan/nghỉ ngơi thêm) để lấp khoảng chờ trước giờ mở cửa/giờ ăn tiếp theo
+            prev_it["end"] = hm(curr_start - tr)
+            gap = tr
+        curr_it["travel_min"] = max(0, int(gap))
+        curr_it["distance_km"] = round(float(dist_km), 1)
+
     return items, loc
 
 
@@ -410,12 +519,22 @@ def _item(kind, r, st, en, slot=None):
     label = MEAL_LABEL.get(kind, "Tham quan")
     if kind == "attraction":
         label = f"Tham quan ({slot})" if slot else "Tham quan"
-    return {"type": kind, "label": label, "id": int(r["id"]), "name": r["name"],
+    is_meal = kind in MEAL_LABEL
+    # Quán ăn: vẫn xếp vào lịch nhưng KHÔNG tính tiền vào ngân sách, giá tuỳ theo món khách gọi
+    price_text = MEAL_PRICE_TEXT if is_meal else r.get("price_text", "")
+    price_est = 0 if is_meal else int(r.get("price_est", 0))
+    item = {"type": kind, "label": label, "id": int(r["id"]), "name": r["name"],
             "district": str(r.get("district", "")) if pd.notna(r.get("district")) else "",
             "region": str(r.get("region", "")) if pd.notna(r.get("region")) else "",
-            "start": hm(st), "end": hm(en), "price_text": r.get("price_text", ""),
-            "price_est": int(r.get("price_est", 0)),
+            "start": hm(st), "end": hm(en), "price_text": price_text,
+            "price_est": price_est,
             "latitude": float(r["latitude"]), "longitude": float(r["longitude"])}
+    if is_meal:
+        item["price_excluded"] = True
+        desc = r.get("description")
+        if desc is not None and pd.notna(desc) and str(desc).strip():
+            item["description"] = str(desc).strip()
+    return item
 
 
 def _checkin(lo, st, en):
@@ -436,27 +555,51 @@ def _checkout(lo, st, en):
             "latitude": float(lo["latitude"]), "longitude": float(lo["longitude"])}
 
 
+# Phân khúc giá phòng/đêm (tính theo giá cả phòng price_per_night)
+LODGING_TIERS = {
+    "low":  {"min": 0,         "max": 500_000,    "target": 380_000,   "target_share": 0.30, "max_budget_share": 0.40},
+    "mid":  {"min": 450_000,   "max": 1_300_000,  "target": 850_000,   "target_share": 0.46, "max_budget_share": 0.56},
+    "high": {"min": 1_200_000, "max": 99_000_000, "target": 2_000_000, "target_share": 0.62, "max_budget_share": 0.72},
+}
+
+
 # ------------------------------------------------------------------ lập lịch nhiều ngày
 def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids=None,
               lodging_df=None, lodging_ids=None, max_lodging_tries=8,
-              include_meals=True, include_lodging=True, guests_per_room=2, randomize=True):
+              include_meals=True, include_lodging=True, guests_per_room=2,
+              lodging_price_tier="auto", places_per_day=3, randomize=True):
     """
     df: điểm tham quan + quán ăn (đã APPROVED)
     lodging_df: nơi nghỉ (đã APPROVED); None thì không có nghỉ đêm
     selected_ids: id điểm tham quan người dùng chọn
     lodging_ids: id nơi nghỉ người dùng chọn, theo thứ tự từng đêm
-    include_meals: có tính chi phí và xếp các quán ăn cho bữa sáng, trưa, tối hay không
+    include_meals: có gợi ý quán ăn cho bữa sáng, trưa, tối hay không (chi phí ăn uống KHÔNG tính vào ngân sách)
     include_lodging: có tính chi phí và xếp nơi lưu trú hay không
     guests_per_room: số người chia sẻ mỗi phòng/căn (1 = ở phòng đơn / bao trọn phòng, >=2 = chia sẻ phòng)
+    lodging_price_tier: mức giá nơi lưu trú ('auto', 'low', 'mid', 'high')
+    places_per_day: số điểm tham quan mỗi ngày (2 hoặc 3)
     randomize: đa dạng hoá kết quả để mỗi lần bấm tạo lịch sẽ cho ra các gợi ý mới mẻ
     """
     warnings = []
+    target_places_per_day = max(2, min(3, int(places_per_day or PLACES_PER_DAY)))
     selected_ids = [int(i) for i in (selected_ids or [])]
     lodging_ids = [int(i) for i in (lodging_ids or [])]
     if not include_lodging:
         lodging_df = None
         lodging_ids = []
     nights = max(0, num_days - 1) if lodging_df is not None else 0
+
+    # Xác định phân khúc giá phòng hiệu lực (low / mid / high)
+    tier_key = (lodging_price_tier or "auto").lower().strip()
+    if tier_key not in LODGING_TIERS:
+        daily_budget = budget_pp / max(1, num_days)
+        if daily_budget <= 800_000:
+            tier_key = "low"
+        elif daily_budget <= 2_000_000:
+            tier_key = "mid"
+        else:
+            tier_key = "high"
+    tier_cfg = LODGING_TIERS[tier_key]
 
     # Nếu người dùng đi 1 mình (guests_per_room == 1), tính giá cả phòng (price_per_night)
     # và loại bỏ các căn Villa lớn (> 4 khách) để tránh việc 1 người bị xếp vào ở Villa nguyên căn.
@@ -474,38 +617,48 @@ def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids
             lodging_df["price_pp_night"] = lodging_df.apply(calc_pp, axis=1)
 
     by_id = {int(r["id"]): r for _, r in df.iterrows()}
-    meal_cap = max(150_000.0, budget_pp / (3 * max(1, num_days)) * 1.5)
-    foods_all = df[df["is_food"] & (df["price_est"] <= meal_cap)]
-    # Tính premium_boost: khi không có meals + lodging, dư nhiều budget → ưu tiên địa điểm có vé cao hơn
-    # để AI chủ động chọn trải nghiệm premium thay vì chỉ đi chùa miễn phí.
-    free_services_budget = 0.0
-    if not include_meals:
-        free_services_budget += budget_pp * 0.35   # tiết kiệm ~35% so với có bữa ăn
-    if not include_lodging:
-        free_services_budget += budget_pp * 0.25   # tiết kiệm ~25% so với có nơi nghỉ
-    # premium_boost tỷ lệ thuận với ngân sách dư thêm (0.0 khi đủ cả meals+lodging, tới 1.5 khi tự túc hết)
-    premium_boost = min(1.5, free_services_budget / max(1, budget_pp))
+    # Ăn uống không tính vào ngân sách nên không lọc quán theo giá
+    foods_all = df[df["is_food"]]
 
-    # Khi premium_boost đáng kể (người dùng tự túc nhiều), mở rộng interests để lấy địa điểm premium
-    # ngoài nhóm sở thích chính (Bà Nà Hills, Hội An Memories, Núi Thần Tài...)
+    # Trần ngân sách tối đa cho mỗi đêm nghỉ/người để luôn giữ lại 40% - 68% ngân sách cho vé tham quan & vui chơi
+    max_lodging_total_pp = budget_pp * tier_cfg["max_budget_share"] if nights > 0 else 0.0
+    night_cap_pp = max_lodging_total_pp / nights if nights > 0 else 0.0
+
+    # Ngân sách kỳ vọng dành cho vé tham quan trong toàn chuyến
+    expected_att_budget = max(0.0, budget_pp - max_lodging_total_pp)
+    premium_boost = min(1.5, expected_att_budget / max(1.0, num_days * 450_000.0))
+
     pool_interests = list(interests or [])
-    # Nếu sở thích chỉ chọn "Ẩm thực", cần bổ sung điểm tham quan tổng hợp (Văn hóa, Check-in, Biển)
-    # vì các dòng "Ẩm thực" là quán ăn/chợ, không có điểm tham quan độc lập
     attraction_interests = [i for i in pool_interests if i != "Ẩm thực"]
     if not attraction_interests:
         pool_interests = ["Văn hóa & lịch sử", "Vui chơi & check-in", "Biển & đảo"]
-    elif premium_boost >= 0.3 and "Vui chơi & check-in" not in pool_interests:
-        # Thêm "Vui chơi & check-in" để có các địa điểm premium (Bà Nà 600k, Thần Tài 450k, v.v.)
-        pool_interests = pool_interests + ["Vui chơi & check-in"]
-    pool = _pool(df, pool_interests, None, region, premium_boost=premium_boost, randomize=randomize)
-    if include_meals:
-        day_reserve = max(400_000.0, 0.5 * budget_pp / max(1, num_days))
+    user_interest_set = set(pool_interests)
+
+    target_regions = _normalize_regions(region)
+
+    # Lấy pool chính theo sở thích + bổ sung các địa điểm có vé (paid attractions) nổi bật để tránh toàn điểm 0đ
+    pool_main = _pool(df, pool_interests, None, target_regions, premium_boost=premium_boost, randomize=randomize)
+    paid_source = df[df["price_est"] > 0]
+    if "Đà Nẵng nội thành" in target_regions and "Hòa Vang - Bà Nà" not in target_regions:
+        # Khi có chọn Đà Nẵng nội thành, bổ sung thêm các khu du lịch có vé lớn thuộc TP. Đà Nẵng (Hòa Vang - Bà Nà: Bà Nà Hills, Núi Thần Tài, Hòa Phú Thành...)
+        extra_regs = list(set(target_regions + ["Hòa Vang - Bà Nà"]))
+        dn_paid = df[(df["price_est"] > 0) & (df["region"].isin(extra_regs))]
+        pool_paid_extra = _pool(dn_paid, None, None, None, premium_boost=premium_boost, randomize=randomize)
     else:
-        day_reserve = max(50_000.0, 0.2 * budget_pp / max(1, num_days))
-    min_night = float(lodging_df["price_pp_night"].min()) if lodging_df is not None else 0.0
+        pool_paid_extra = _pool(paid_source, None, None, target_regions, premium_boost=premium_boost, randomize=randomize)
+    pool = pd.concat([pool_main, pool_paid_extra[~pool_paid_extra["id"].isin(pool_main["id"])]], ignore_index=True)
+
+    # Dự phòng cho mỗi ngày còn lại (vé tham quan tối thiểu mỗi ngày)
+    day_reserve = max(60_000.0, 0.15 * expected_att_budget / max(1, num_days))
+    if lodging_df is not None and nights > 0:
+        tier_sub = lodging_df[(lodging_df["price_per_night"] >= tier_cfg["min"]) & (lodging_df["price_per_night"] <= tier_cfg["max"])]
+        min_night = float(tier_sub["price_pp_night"].min()) if not tier_sub.empty else float(lodging_df["price_pp_night"].min())
+    else:
+        min_night = 0.0
 
     used, spent = set(), 0.0
     trip_used_food_ids = set()
+    visited_regions = {}
     chosen_lodging = {}
     if lodging_df is not None and lodging_ids:
         lo_by_id = {int(r["id"]): r for _, r in lodging_df.iterrows()}
@@ -515,38 +668,57 @@ def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids
             else:
                 warnings.append(f"Không tìm thấy nơi nghỉ id {lid}.")
 
+    def _rank_lodging_candidates(reg_df, max_pp_allowed):
+        """Chấm điểm và lọc danh sách nơi nghỉ theo phân khúc giá (low/mid/high) + trần ngân sách."""
+        if reg_df.empty:
+            return []
+        cands = reg_df.copy()
+        budget_target_room = (budget_pp * tier_cfg.get("target_share", 0.45) / max(1, nights)) * max(1, guests_per_room)
+        target_room = min(float(tier_cfg["max"]), max(float(tier_cfg["min"]), budget_target_room, float(tier_cfg["target"])))
+        # Khoảng cách tương đối so với mức giá mục tiêu của phân khúc
+        price_diff_ratio = (cands["price_per_night"].astype(float) - target_room).abs() / max(target_room, 300_000.0)
+        in_tier = ((cands["price_per_night"] >= tier_cfg["min"]) & (cands["price_per_night"] <= tier_cfg["max"])).astype(float)
+        under_cap = (cands["price_pp_night"] <= max_pp_allowed).astype(float)
+
+        noise = np.random.uniform(-0.15, 0.15, size=len(cands)) if randomize else 0.0
+        # Ưu tiên: (1) nằm trong trần ngân sách đêm, (2) khớp phân khúc giá người dùng chọn, (3) gần giá mục tiêu & rating cao
+        cands["_lo_score"] = (
+            under_cap * 10.0
+            + in_tier * 4.5
+            + cands["avg_rating"].astype(float)
+            - 1.2 * price_diff_ratio
+            + noise
+        )
+        cands = cands.sort_values(["_lo_score", "price_pp_night", "id"], ascending=[False, True, True])
+        return [lo.to_dict() for _, lo in cands.head(max_lodging_tries).iterrows()]
+
     def plan_day_in_region(reg, d, prev_lo, prev_checkout, need_night, reserve_after, spent_now, lodging_fixed, used_food_ids=None):
         """Thử xếp một ngày ở vùng reg. Trả về dict hoặc None."""
         foods = foods_all[foods_all["region"] == reg]
-        if foods.empty:
+        if len(foods) < 6:
             foods = foods_all
-        # các phương án nơi nghỉ (theo đánh giá giảm dần, trong ngân sách)
+        # các phương án nơi nghỉ (cân đối theo phân khúc giá & trần ngân sách đêm)
         lo_options = []
         if need_night:
+            remaining_for_today = budget_pp - spent_now - reserve_after - day_reserve
+            max_pp_tonight = min(night_cap_pp, max(0.0, remaining_for_today))
             if lodging_fixed is not None:
                 lo_options = [lodging_fixed]
-                # Thêm các nơi nghỉ trong vùng reg dự phòng nếu nơi cố định không khả thi do khoảng cách / giờ giấc
-                cands = lodging_df[lodging_df["region"] == reg].sort_values(["avg_rating", "id"], ascending=[False, True])
-                for _, lo in cands.iterrows():
-                    if int(lo["id"]) != int(lodging_fixed.get("id", -1)):
-                        lo_options.append(lo.to_dict())
+                cands = lodging_df[lodging_df["region"] == reg]
+                for lo_d in _rank_lodging_candidates(cands, max_pp_tonight):
+                    if int(lo_d["id"]) != int(lodging_fixed.get("id", -1)):
+                        lo_options.append(lo_d)
                     if len(lo_options) >= max_lodging_tries:
                         break
             elif prev_lo is not None and prev_lo.get("region") == reg:
-                # Nếu cùng khu vực (region): BẮT BUỘC giữ nguyên nơi nghỉ đêm trước, không đổi khách sạn
+                # Nếu cùng khu vực (region): giữ nguyên nơi nghỉ đêm trước
                 lo_options = [prev_lo]
             else:
-                cands = lodging_df[lodging_df["region"] == reg].copy()
-                if randomize and not cands.empty:
-                    cands["_score"] = cands["avg_rating"].astype(float) + np.random.uniform(-0.2, 0.2, size=len(cands))
-                    cands = cands.sort_values(["_score", "id"], ascending=[False, True])
-                else:
-                    cands = cands.sort_values(["avg_rating", "id"], ascending=[False, True])
-                for _, lo in cands.iterrows():
-                    if spent_now + lo["price_pp_night"] + reserve_after + day_reserve <= budget_pp:
-                        lo_options.append(lo.to_dict())
-                    if len(lo_options) >= max_lodging_tries:
-                        break
+                cands = lodging_df[lodging_df["region"] == reg]
+                lo_options = [
+                    lo_d for lo_d in _rank_lodging_candidates(cands, max_pp_tonight)
+                    if spent_now + lo_d["price_pp_night"] + reserve_after + day_reserve <= budget_pp
+                ]
             if not lo_options:
                 lo_options = [None]   # sẽ dùng nơi rẻ nhất ở phần sau
         else:
@@ -554,19 +726,43 @@ def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids
 
         ordered = [by_id[i] for i in selected_ids if i in by_id and i not in used and by_id[i]["region"] == reg]
         ids_ordered = {int(r["id"]) for r in ordered}
-        rest_rows = [r for _, r in pool[(pool["region"] == reg) & (~pool["id"].isin(used))].iterrows()
-                     if int(r["id"]) not in ids_ordered]
-        cand_rows = list(ordered) + rest_rows
+        if reg == "Đà Nẵng nội thành":
+            # Cho phép kết hợp các khu du lịch có vé lớn thuộc TP. Đà Nẵng (Hòa Vang - Bà Nà) để tận dụng tốt ngân sách
+            reg_mask = (pool["region"] == reg) | ((pool["region"] == "Hòa Vang - Bà Nà") & (pool["price_est"] >= 100_000))
+        else:
+            reg_mask = (pool["region"] == reg)
+        avail_reg = pool[reg_mask & (~pool["id"].isin(used)) & (~pool["id"].isin(ids_ordered))]
 
         for lo in lo_options:
             if need_night and lo is None:
-                cheapest = lodging_df.sort_values("price_pp_night").iloc[0].to_dict()
+                reg_lo = lodging_df[lodging_df["region"] == reg]
+                base_lo = reg_lo if not reg_lo.empty else lodging_df
+                cheapest = base_lo.sort_values("price_pp_night").iloc[0].to_dict()
                 lo = cheapest
             night_cost = float(lo["price_pp_night"]) if need_night and lo is not None else 0.0
             day_cap = budget_pp - spent_now - night_cost - reserve_after
+            if day_cap < 0:
+                continue
+
+            # Ngân sách vé mục tiêu của ngày hôm nay: phân bổ đều phần ngân sách vé còn lại cho số ngày còn lại
+            days_left = max(1, num_days - d + 1)
+            est_future_nights = max(0, nights - d) * min(night_cap_pp, night_cost if night_cost > 0 else night_cap_pp)
+            rem_att_budget = max(0.0, budget_pp - spent_now - night_cost - est_future_nights)
+            target_day_att = rem_att_budget / days_left
+
+            # Tách địa điểm có vé (paid) và miễn phí (free) để phối hợp hài hòa trong ngày
+            paid_df = avail_reg[(avail_reg["price_est"] > 0) & (avail_reg["price_est"] <= day_cap)].copy()
+            free_df = avail_reg[avail_reg["price_est"] <= 0].copy()
+
+            paid_rows = [r for _, r in paid_df.iterrows()]
+            free_rows = [r for _, r in free_df.iterrows()]
+
             seq, items_best, day_spent = [], None, 0.0
-            for r in cand_rows:
-                if len(seq) == PLACES_PER_DAY:
+            chosen_day_ids = set()
+
+            # 1. Xếp các điểm người dùng đã chọn trước
+            for r in ordered:
+                if len(seq) == target_places_per_day:
                     break
                 sim = simulate_day(seq + [r], foods, lo if need_night else None, prev_lo, prev_checkout, need_night, include_meals=include_meals, used_food_ids=used_food_ids, randomize=randomize)
                 if sim is None:
@@ -576,8 +772,66 @@ def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids
                 if cost_try > day_cap:
                     continue
                 seq.append(r)
+                chosen_day_ids.add(int(r["id"]))
                 day_spent = cost_try
                 items_best = items_try
+
+            # 2. Chọn động từng địa điểm tiếp theo để tổng chi phí vé trong ngày bám sát target_day_att
+            while len(seq) < target_places_per_day:
+                still_need = target_day_att - day_spent
+                has_long_in_seq = any(int(x.get("visit_duration_min", 90)) >= 240 for x in seq)
+
+                rem_paid = [
+                    r for r in paid_rows
+                    if int(r["id"]) not in chosen_day_ids
+                    and (day_spent + float(r["price_est"]) <= day_cap)
+                    and not (has_long_in_seq and int(r.get("visit_duration_min", 90)) >= 240)
+                ]
+                rem_free = [
+                    r for r in free_rows
+                    if int(r["id"]) not in chosen_day_ids
+                    and not (has_long_in_seq and int(r.get("visit_duration_min", 90)) >= 240)
+                ]
+
+                if still_need >= 35_000 and rem_paid:
+                    # Chấm điểm ứng viên có vé sao cho giá vé khớp với phần ngân sách còn thiếu (still_need) của ngày
+                    def _score_paid_cand(r):
+                        p = float(r["price_est"])
+                        in_p = 1.0 if r["interest_group"] in user_interest_set else 0.0
+                        same_r = 1.0 if r["region"] == reg else 0.0
+                        diff_ratio = abs(p - still_need) / max(still_need, 80_000.0)
+                        jitter = random.uniform(-0.12, 0.12) if randomize else 0.0
+                        return (
+                            (1.2 if p >= 40_000 else 0.0)
+                            + in_p * 0.5
+                            + same_r * 0.9
+                            + float(r["avg_rating"])
+                            - 1.5 * diff_ratio
+                            + jitter
+                        )
+                    rem_paid_sorted = sorted(rem_paid, key=_score_paid_cand, reverse=True)
+                    try_list = rem_paid_sorted + rem_free
+                else:
+                    try_list = rem_free + rem_paid
+
+                added = False
+                for r in try_list:
+                    sim = simulate_day(seq + [r], foods, lo if need_night else None, prev_lo, prev_checkout, need_night, include_meals=include_meals, used_food_ids=used_food_ids, randomize=randomize)
+                    if sim is None:
+                        continue
+                    items_try, _ = sim
+                    cost_try = sum(i["price_est"] for i in items_try)
+                    if cost_try > day_cap:
+                        continue
+                    seq.append(r)
+                    chosen_day_ids.add(int(r["id"]))
+                    day_spent = cost_try
+                    items_best = items_try
+                    added = True
+                    break
+                if not added:
+                    break
+
             if items_best is not None and seq:
                 return {"seq": seq, "items": items_best, "lodging": lo if need_night else None,
                         "cost": day_spent, "night_cost": night_cost}
@@ -595,14 +849,30 @@ def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids
 
         left_sel = [i for i in selected_ids if i in by_id and i not in used]
         avail = pool[~pool["id"].isin(used)]
+        priority_order = {
+            "Đà Nẵng nội thành": 0,
+            "Hòa Vang - Bà Nà": 1,
+            "Hội An - Điện Bàn": 2,
+            "Cù Lao Chàm": 3,
+            "Duy Xuyên - Mỹ Sơn": 4,
+        }
+        def _reg_sort_key(g):
+            reg_sub = avail[avail["region"] == g]
+            has_paid = int((reg_sub["price_est"] >= 40_000).any())
+            visited_cnt = visited_regions.get(g, 0)
+            prio = priority_order.get(g, 5)
+            top_r = float(reg_sub["avg_rating"].head(3).sum()) if not reg_sub.empty else 0.0
+            return (visited_cnt, -has_paid, prio, -top_r)
+
         if left_sel:
             regions_try = [by_id[left_sel[0]]["region"]]
+        elif len(target_regions) == 1:
+            regions_try = [target_regions[0]]
+        elif len(target_regions) > 1:
+            regions_try = sorted(target_regions, key=_reg_sort_key)
         else:
             regions_try = []
-            if prev_lo is not None and prev_lo["region"] in set(avail["region"]):
-                regions_try.append(prev_lo["region"])   # ngày bắt đầu từ vùng nơi nghỉ đêm trước
-            for g in sorted(avail["region"].unique(),
-                            key=lambda g: -avail[avail["region"] == g]["avg_rating"].head(3).sum()):
+            for g in sorted(avail["region"].unique(), key=_reg_sort_key):
                 if g not in regions_try:
                     regions_try.append(g)
 
@@ -614,9 +884,11 @@ def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids
                 break
 
         if res is None:
-            warnings.append(f"Ngày {d}: Không thể xếp lịch tham quan do ngân sách dự tính quá thấp hoặc tiêu chí quá chặt. Bạn nên tăng ngân sách, chọn tự túc ăn uống / nơi ở hoặc mở rộng khu vực.")
+            warnings.append(f"Ngày {d}: Không thể xếp lịch tham quan do ngân sách dự tính quá thấp hoặc tiêu chí quá chặt. Bạn nên tăng ngân sách, chọn tự túc nơi ở hoặc mở rộng khu vực.")
             days_out.append({"day": d, "region": None, "items": [], "night": None, "cost_pp": 0})
             continue
+
+        visited_regions[reg_used] = visited_regions.get(reg_used, 0) + 1
 
         if need_night and res["lodging"] is not None:
             chosen_lodging[d] = res["lodging"]
@@ -624,8 +896,10 @@ def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids
                 warnings.append(f"Ngày {d}: nơi nghỉ {lodging_fixed['name']} nằm ngoài vùng {reg_used} của ngày này.")
         if lodging_fixed is None and need_night and res["lodging"] is not None and res["lodging"]["region"] != reg_used:
             warnings.append(f"Ngày {d}: nơi nghỉ {res['lodging']['name']} nằm ngoài vùng {reg_used}.")
-        if len(res["seq"]) < PLACES_PER_DAY:
-            warnings.append(f"Ngày {d} chỉ có {len(res['seq'])}/{PLACES_PER_DAY} điểm tham quan.")
+        has_major_park = any(int(r.get("visit_duration_min", 90)) >= 240 for r in res["seq"])
+        expected_min = min(target_places_per_day, 2) if has_major_park else target_places_per_day
+        if len(res["seq"]) < expected_min:
+            warnings.append(f"Ngày {d} chỉ có {len(res['seq'])}/{target_places_per_day} điểm tham quan.")
         used.update(int(r["id"]) for r in res["seq"])
         for it in res["items"]:
             if it.get("type") in ["breakfast", "lunch", "dinner"] and it.get("id"):
@@ -651,5 +925,6 @@ def make_plan(df, num_days, budget_pp, interests=None, region=None, selected_ids
                         f"(thường do nơi nghỉ bạn đã chọn đắt hơn ngân sách).")
     return {
         "num_days": num_days, "budget_pp": int(budget_pp), "total_cost_pp": int(spent),
-        "budget_left_pp": int(budget_pp - spent), "days": days_out, "warnings": warnings,
+        "budget_left_pp": int(budget_pp - spent), "places_per_day": target_places_per_day,
+        "days": days_out, "warnings": warnings,
     }

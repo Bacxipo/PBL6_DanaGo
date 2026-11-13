@@ -77,6 +77,12 @@ class AiPlanItem {
   final double? latitude;
   final double? longitude;
   final String? addressUrl;
+  final String? priceText;
+  // true = quán ăn: giá tùy theo món, không tính vào ngân sách
+  final bool priceExcluded;
+  final String? description;
+  final int? travelMin;
+  final double? distanceKm;
 
   AiPlanItem({
     required this.id,
@@ -91,9 +97,27 @@ class AiPlanItem {
     this.latitude,
     this.longitude,
     this.addressUrl,
+    this.priceText,
+    this.priceExcluded = false,
+    this.description,
+    this.travelMin,
+    this.distanceKm,
   });
 
+  bool get isMeal => type == 'breakfast' || type == 'lunch' || type == 'dinner';
+
+  /// Chuỗi hiển thị giá cho item
+  String get displayPriceNote {
+    if (priceExcluded) {
+      return (priceText != null && priceText!.isNotEmpty) ? priceText! : 'Tùy theo món ăn';
+    }
+    if (priceText != null && priceText!.isNotEmpty) return priceText!;
+    return 'Miễn phí';
+  }
+
   factory AiPlanItem.fromJson(Map<String, dynamic> json) {
+    final type = json['type'] as String? ?? 'attraction';
+    final isMealType = type == 'breakfast' || type == 'lunch' || type == 'dinner';
     return AiPlanItem(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] ?? '',
@@ -102,11 +126,18 @@ class AiPlanItem {
       start: json['start'] as String?,
       end: json['end'] as String?,
       priceEst: (json['price_est'] as num?)?.toInt() ?? 0,
-      type: json['type'] as String? ?? 'attraction',
+      type: type,
       label: json['label'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       addressUrl: json['address_url'] as String?,
+      priceText: json['price_text']?.toString(),
+      // Quán ăn có id > 0 (không phải "tự túc") luôn coi như không tính tiền
+      priceExcluded: json['price_excluded'] == true ||
+          (isMealType && json['price_text']?.toString() != 'Tự túc'),
+      description: json['description']?.toString(),
+      travelMin: (json['travel_min'] as num?)?.toInt(),
+      distanceKm: (json['distance_km'] as num?)?.toDouble(),
     );
   }
 }

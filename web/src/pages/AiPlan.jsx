@@ -46,6 +46,13 @@ const REGION_OPTIONS = [
     { value: 'Nam Quảng Nam', label: 'Nam Quảng Nam (Tam Kỳ, Làng Bích Họa)' },
 ];
 
+// Phân khúc mức giá nơi lưu trú (tính theo giá cả phòng / đêm)
+const LODGING_PRICE_TIERS = [
+    { id: 'low', label: 'Thấp', sub: '< 500k/đêm', desc: 'Homestay, khách sạn bình dân (~25-32% ngân sách)' },
+    { id: 'mid', label: 'Trung bình', sub: '500k - 1.3tr', desc: 'Khách sạn 3-4 sao, boutique (~35-45% ngân sách)' },
+    { id: 'high', label: 'Cao', sub: '> 1.3tr/đêm', desc: 'Resort, khách sạn 5 sao, villa (~50-60% ngân sách)' },
+];
+
 export default function AiPlanPage() {
     // 1. FORM STATES (Theo giao diện người dùng yêu cầu)
     const [destination, setDestination] = useState('Đà Nẵng');
@@ -78,8 +85,11 @@ export default function AiPlanPage() {
     // Phong cách / Sở thích đã chọn
     const [selectedInterests, setSelectedInterests] = useState(['Văn hóa & lịch sử']);
 
-    // Khu vực trọng tâm
-    const [selectedRegion, setSelectedRegion] = useState('');
+    // Dropdown mở/đóng cho Cảm xúc phong cách & Khu vực trọng tâm
+    const [isStyleDropdownOpen, setIsStyleDropdownOpen] = useState(false);
+    const [isRegionDropdownOpen, setIsRegionDropdownOpen] = useState(false);
+    // Khu vực trọng tâm (mảng cho phép chọn nhiều khu vực, rỗng = Tất cả khu vực)
+    const [selectedRegions, setSelectedRegions] = useState([]);
 
     // Địa điểm người dùng chọn trước
     const [selectedPlaces, setSelectedPlaces] = useState([]);
@@ -89,10 +99,12 @@ export default function AiPlanPage() {
     const [selectedLodgings, setSelectedLodgings] = useState([]);
     const [isLodgingModalOpen, setIsLodgingModalOpen] = useState(false);
 
-    // Tùy chọn dịch vụ ăn uống & nơi lưu trú
+    // Tùy chọn dịch vụ ăn uống & nơi lưu trú & số địa điểm/ngày
     const [includeMeals, setIncludeMeals] = useState(true);
     const [includeLodging, setIncludeLodging] = useState(true);
     const [guestsPerRoom, setGuestsPerRoom] = useState(2); // 1 = Đi 1 mình / phòng đơn, 2 = 2 người/phòng, v.v.
+    const [lodgingPriceTier, setLodgingPriceTier] = useState('mid'); // 'low' | 'mid' | 'high'
+    const [placesPerDay, setPlacesPerDay] = useState(3); // 2 hoặc 3 địa điểm tham quan mỗi ngày
 
     // 2. KẾT QUẢ VÀ TRẠNG THÁI LẬP LỊCH
     const [loadingPlan, setLoadingPlan] = useState(false);
@@ -127,17 +139,31 @@ export default function AiPlanPage() {
         setIncludeMeals(checked);
     };
 
+    // Toggle chọn một hoặc nhiều khu vực
+    const toggleRegion = (val) => {
+        if (!val) {
+            // Chọn "Tất cả khu vực" -> xóa lọc riêng lẻ
+            setSelectedRegions([]);
+            return;
+        }
+        setSelectedRegions((prev) =>
+            prev.includes(val) ? prev.filter((r) => r !== val) : [...prev, val]
+        );
+    };
+
     // Đặt lại form về mặc định
     const handleResetAll = () => {
         setStartDate(todayStr);
         setEndDate(defaultEndStr);
         setBudget(4200000);
         setSelectedInterests(['Văn hóa & lịch sử']);
-        setSelectedRegion('');
+        setSelectedRegions([]);
         setSelectedPlaces([]);
         setSelectedLodgings([]);
         setIncludeMeals(true);
         setIncludeLodging(true);
+        setLodgingPriceTier('mid');
+        setPlacesPerDay(3);
         setPlan(null);
         setError(null);
     };
@@ -159,12 +185,15 @@ export default function AiPlanPage() {
                 num_days: numDays,
                 budget_pp: budget,
                 interests: selectedInterests,
-                region: selectedRegion || null,
+                region: selectedRegions.length > 0 ? selectedRegions.join(',') : null,
+                regions: selectedRegions,
                 selected_ids: selectedPlaces.map((p) => p.id),
                 lodging_ids: lodgingIds,
                 include_meals: includeMeals,
                 include_lodging: includeLodging,
                 guests_per_room: Number(guestsPerRoom) || 2,
+                lodging_price_tier: lodgingPriceTier,
+                places_per_day: Number(placesPerDay) || 3,
             };
 
             const res = await fetch(`${AI_API_URL}/plan`, {
@@ -206,25 +235,11 @@ export default function AiPlanPage() {
                 {/* ================= CỘT TRÁI: PANEL ĐIỀU KHIỂN AI PLAN (SCROLLABLE) ================= */}
                 <aside className="w-full lg:w-[440px] xl:w-[470px] shrink-0 bg-white rounded-3xl shadow-sm border border-gray-200/80 p-5 sm:p-6 flex flex-col justify-between space-y-5 overflow-y-auto max-h-[calc(100vh-100px)] lg:sticky lg:top-20">
                     <div className="space-y-5">
-                        {/* 1. ĐIỂM ĐẾN (TỈNH / THÀNH PHỐ) */}
-                        <div>
-                            <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
-                                Điểm Đến (Tỉnh / Thành Phố)
-                            </label>
-                            <div className="relative flex items-center">
-                                <span className="absolute left-3.5 text-[#006971]">
-                                    <MapPin size={17} />
-                                </span>
-                                <input
-                                    type="text"
-                                    value={destination}
-                                    onChange={(e) => setDestination(e.target.value)}
-                                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50/60 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#006971]/30 focus:border-[#006971] focus:bg-white transition-all"
-                                />
-                                <span className="absolute right-3.5 text-gray-400">
-                                    <Compass size={17} />
-                                </span>
-                            </div>
+                        {/* 1. SLOGAN BANNER DU LỊCH ĐÀ NẴNG */}
+                        <div className="px-4 py-3.5 rounded-2xl bg-gradient-to-br from-[#004e54] via-[#006971] to-[#00897b] text-white shadow-sm relative overflow-hidden flex items-center justify-center text-center">
+                            <h2 className="text-sm font-black text-white leading-snug tracking-wide">
+                                Đà Nẵng - Thành Phố Đáng Sống, Điểm Đến Diệu Kỳ
+                            </h2>
                         </div>
 
                         {/* 2. THỜI GIAN CHUYẾN ĐI */}
@@ -261,6 +276,45 @@ export default function AiPlanPage() {
                                     {numDays} Ngày {nightsCount > 0 ? `${nightsCount} Đêm` : ''}
                                 </div>
                             </div>
+
+                            {/* Chọn số địa điểm du lịch mỗi ngày: 2 hoặc 3 địa điểm/ngày */}
+                            <div className="mt-2.5 p-2.5 bg-teal-50/40 rounded-xl border border-teal-100 space-y-1.5">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="font-bold text-gray-800 flex items-center gap-1.5">
+                                        <Compass size={13} className="text-[#006971]" />
+                                        <span>Số điểm tham quan / ngày:</span>
+                                    </span>
+                                    <span className="text-2xs font-semibold text-[#006971]">
+                                        {placesPerDay === 2 ? 'Thong thả, chuyên sâu' : 'Khám phá nhiều điểm'}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[
+                                        { count: 2, title: '2 địa điểm / ngày', desc: 'Thong thả, dư dả thời gian' },
+                                        { count: 3, title: '3 địa điểm / ngày', desc: 'Đi nhiều điểm (Sáng - Chiều - Tối)' },
+                                    ].map((opt) => {
+                                        const active = placesPerDay === opt.count;
+                                        return (
+                                            <button
+                                                key={opt.count}
+                                                type="button"
+                                                onClick={() => setPlacesPerDay(opt.count)}
+                                                className={`py-2 px-2.5 rounded-xl border text-left transition-all cursor-pointer ${active
+                                                    ? 'bg-[#006971] border-[#006971] text-white shadow-2xs'
+                                                    : 'bg-white border-teal-200/80 text-gray-700 hover:border-[#006971]/60 hover:bg-teal-50/40'
+                                                    }`}
+                                            >
+                                                <div className="text-xs font-extrabold leading-tight">
+                                                    {opt.title}
+                                                </div>
+                                                <div className={`text-3xs font-medium mt-0.5 ${active ? 'text-teal-100' : 'text-gray-400'}`}>
+                                                    {opt.desc}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
 
                         {/* 3. NGÂN SÁCH (BUDGET) */}
@@ -281,7 +335,13 @@ export default function AiPlanPage() {
                                 max="15000000"
                                 step="200000"
                                 value={budget}
-                                onChange={(e) => setBudget(Number(e.target.value))}
+                                onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setBudget(val);
+                                    if (val <= 2500000) setLodgingPriceTier('low');
+                                    else if (val <= 5000000) setLodgingPriceTier('mid');
+                                    else setLodgingPriceTier('high');
+                                }}
                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#006971]"
                             />
 
@@ -289,79 +349,184 @@ export default function AiPlanPage() {
                             <div className="flex justify-between text-2xs text-gray-400 font-semibold mt-1.5">
                                 <span
                                     className={`cursor-pointer ${budget <= 2500000 ? 'text-[#006971] font-bold' : ''}`}
-                                    onClick={() => setBudget(2000000)}
+                                    onClick={() => {
+                                        setBudget(2000000);
+                                        setLodgingPriceTier('low');
+                                    }}
                                 >
                                     Tiết kiệm
                                 </span>
                                 <span
-                                    className={`cursor-pointer ${budget > 2500000 && budget <= 6000000 ? 'text-[#006971] font-bold' : ''}`}
-                                    onClick={() => setBudget(4200000)}
+                                    className={`cursor-pointer ${budget > 2500000 && budget <= 5000000 ? 'text-[#006971] font-bold' : ''}`}
+                                    onClick={() => {
+                                        setBudget(4200000);
+                                        setLodgingPriceTier('mid');
+                                    }}
                                 >
                                     Tiêu chuẩn
                                 </span>
                                 <span
-                                    className={`cursor-pointer ${budget > 6000000 ? 'text-[#006971] font-bold' : ''}`}
-                                    onClick={() => setBudget(9000000)}
+                                    className={`cursor-pointer ${budget > 5000000 ? 'text-[#006971] font-bold' : ''}`}
+                                    onClick={() => {
+                                        setBudget(9000000);
+                                        setLodgingPriceTier('high');
+                                    }}
                                 >
                                     Cao cấp
                                 </span>
                             </div>
                         </div>
 
-                        {/* 4. CẢM XÚC & PHONG CÁCH / SỞ THÍCH */}
-                        <div>
-                            <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
-                                Cảm Xúc & Phong Cách
-                            </label>
-
-                            <div className="space-y-1.5">
-                                {STYLE_OPTIONS.map((style) => {
-                                    const isSelected = selectedInterests.includes(style.id);
-                                    return (
-                                        <button
-                                            key={style.id}
-                                            type="button"
-                                            onClick={() => toggleInterest(style.id)}
-                                            className={`w-full p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${isSelected
-                                                ? 'border-[#006971] bg-teal-50/70 text-[#006971] shadow-2xs'
-                                                : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
-                                                }`}
-                                        >
-                                            <span className="flex items-center gap-2">
-                                                <span>{style.icon}</span>
-                                                <span>{style.label}</span>
-                                            </span>
-                                            <span
-                                                className={`w-4 h-4 rounded-md flex items-center justify-center text-white ${isSelected ? 'bg-[#006971]' : 'border border-gray-300'
-                                                    }`}
-                                            >
-                                                {isSelected && <Check size={11} strokeWidth={3} />}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
+                        {/* 4. CẢM XÚC & PHONG CÁCH / SỞ THÍCH (DROPDOWN XỔ XUỐNG) */}
+                        <div className="relative">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                    Cảm Xúc & Phong Cách
+                                </label>
+                                <span className="text-2xs font-bold text-[#006971]">
+                                    Đã chọn ({selectedInterests.length})
+                                </span>
                             </div>
+
+                            {/* Nút trigger dropdown */}
+                            <button
+                                type="button"
+                                onClick={() => setIsStyleDropdownOpen((prev) => !prev)}
+                                className={`w-full p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer bg-gray-50/60 ${
+                                    isStyleDropdownOpen
+                                        ? 'border-[#006971] ring-2 ring-[#006971]/20 bg-white'
+                                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                }`}
+                            >
+                                <div className="flex items-center gap-1.5 overflow-hidden pr-2">
+                                    <span className="shrink-0 text-sm">🎨</span>
+                                    <span className="truncate text-xs font-bold text-gray-800">
+                                        {selectedInterests.length === 0
+                                            ? 'Chọn phong cách du lịch...'
+                                            : selectedInterests.join(', ')}
+                                    </span>
+                                </div>
+                                <ChevronDown
+                                    size={16}
+                                    className={`text-gray-400 shrink-0 transition-transform duration-200 ${
+                                        isStyleDropdownOpen ? 'rotate-180 text-[#006971]' : ''
+                                    }`}
+                                />
+                            </button>
+
+                            {/* Danh sách xổ xuống */}
+                            {isStyleDropdownOpen && (
+                                <div className="mt-2 p-2 bg-white rounded-2xl border border-gray-200 shadow-lg space-y-1 z-20 relative animate-in fade-in duration-150">
+                                    {STYLE_OPTIONS.map((style) => {
+                                        const isSelected = selectedInterests.includes(style.id);
+                                        return (
+                                            <button
+                                                key={style.id}
+                                                type="button"
+                                                onClick={() => toggleInterest(style.id)}
+                                                className={`w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                                                    isSelected
+                                                        ? 'border-[#006971] bg-teal-50/70 text-[#006971]'
+                                                        : 'border-transparent hover:bg-gray-50 text-gray-700'
+                                                }`}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span>{style.icon}</span>
+                                                    <span>{style.label}</span>
+                                                </span>
+                                                <span
+                                                    className={`w-4 h-4 rounded-md flex items-center justify-center text-white ${
+                                                        isSelected ? 'bg-[#006971]' : 'border border-gray-300'
+                                                    }`}
+                                                >
+                                                    {isSelected && <Check size={11} strokeWidth={3} />}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
-                        {/* 5. KHU VỰC TRỌNG TÂM */}
-                        <div>
-                            <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
-                                Khu Vực Trọng Tâm
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={selectedRegion}
-                                    onChange={(e) => setSelectedRegion(e.target.value)}
-                                    className="w-full px-3.5 py-2.5 bg-gray-50/60 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#006971]/30 appearance-none cursor-pointer"
-                                >
-                                    {REGION_OPTIONS.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        {/* 5. KHU VỰC TRỌNG TÂM (DROPDOWN XỔ XUỐNG) */}
+                        <div className="relative">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                    Khu Vực Trọng Tâm
+                                </label>
+                                {selectedRegions.length > 0 ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedRegions([])}
+                                        className="text-2xs font-bold text-[#006971] hover:underline cursor-pointer"
+                                    >
+                                        Chọn tất cả
+                                    </button>
+                                ) : (
+                                    <span className="text-2xs font-semibold text-gray-400">Tất cả khu vực</span>
+                                )}
                             </div>
+
+                            {/* Nút trigger dropdown */}
+                            <button
+                                type="button"
+                                onClick={() => setIsRegionDropdownOpen((prev) => !prev)}
+                                className={`w-full p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer bg-gray-50/60 ${
+                                    isRegionDropdownOpen
+                                        ? 'border-[#006971] ring-2 ring-[#006971]/20 bg-white'
+                                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                }`}
+                            >
+                                <div className="flex items-center gap-1.5 overflow-hidden pr-2">
+                                    <MapPin size={14} className="text-[#006971] shrink-0" />
+                                    <span className="truncate text-xs font-bold text-gray-800">
+                                        {selectedRegions.length === 0
+                                            ? 'Tất cả khu vực (AI tự cân đối)'
+                                            : selectedRegions.join(', ')}
+                                    </span>
+                                </div>
+                                <ChevronDown
+                                    size={16}
+                                    className={`text-gray-400 shrink-0 transition-transform duration-200 ${
+                                        isRegionDropdownOpen ? 'rotate-180 text-[#006971]' : ''
+                                    }`}
+                                />
+                            </button>
+
+                            {/* Danh sách xổ xuống */}
+                            {isRegionDropdownOpen && (
+                                <div className="mt-2 p-2 bg-white rounded-2xl border border-gray-200 shadow-lg space-y-1 z-20 relative max-h-60 overflow-y-auto no-scrollbar animate-in fade-in duration-150">
+                                    {REGION_OPTIONS.map((opt) => {
+                                        const isAll = opt.value === '';
+                                        const isSelected = isAll
+                                            ? selectedRegions.length === 0
+                                            : selectedRegions.includes(opt.value);
+                                        return (
+                                            <button
+                                                key={opt.value || 'ALL'}
+                                                type="button"
+                                                onClick={() => toggleRegion(opt.value)}
+                                                className={`w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer text-left ${
+                                                    isSelected
+                                                        ? 'border-[#006971] bg-teal-50/70 text-[#006971]'
+                                                        : 'border-transparent hover:bg-gray-50 text-gray-700'
+                                                }`}
+                                            >
+                                                <span className="flex items-center gap-2 pr-2">
+                                                    <span className="leading-snug">{opt.label}</span>
+                                                </span>
+                                                <span
+                                                    className={`w-4 h-4 rounded-md shrink-0 flex items-center justify-center text-white ${
+                                                        isSelected ? 'bg-[#006971]' : 'border border-gray-300'
+                                                    }`}
+                                                >
+                                                    {isSelected && <Check size={11} strokeWidth={3} />}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
                         {/* 6. ĐỊA ĐIỂM NGƯỜI DÙNG CHỌN THÊM */}
@@ -437,6 +602,45 @@ export default function AiPlanPage() {
 
                             {includeLodging ? (
                                 <>
+                                    {/* Chọn mức độ giá tiền nơi lưu trú: Thấp / Trung bình / Cao */}
+                                    <div className="p-2.5 bg-purple-50/50 rounded-xl border border-purple-100 space-y-2">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-bold text-gray-800 flex items-center gap-1.5">
+                                                <Coins size={13} className="text-purple-600" />
+                                                <span>Mức giá phòng:</span>
+                                            </span>
+                                            <span className="text-2xs font-semibold text-purple-700">
+                                                {LODGING_PRICE_TIERS.find((t) => t.id === lodgingPriceTier)?.desc}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-1.5">
+                                            {LODGING_PRICE_TIERS.map((tier) => {
+                                                const active = lodgingPriceTier === tier.id;
+                                                return (
+                                                    <button
+                                                        key={tier.id}
+                                                        type="button"
+                                                        onClick={() => setLodgingPriceTier(tier.id)}
+                                                        className={`py-2 px-2 rounded-xl border text-center transition-all cursor-pointer ${active
+                                                            ? 'bg-purple-600 border-purple-600 text-white shadow-2xs'
+                                                            : 'bg-white border-purple-200/80 text-gray-700 hover:border-purple-400 hover:bg-purple-50/50'
+                                                            }`}
+                                                    >
+                                                        <div className="text-xs font-extrabold leading-tight">
+                                                            {tier.label}
+                                                        </div>
+                                                        <div
+                                                            className={`text-3xs font-medium mt-0.5 ${active ? 'text-purple-100' : 'text-gray-400'
+                                                                }`}
+                                                        >
+                                                            {tier.sub}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
                                     {/* Tuỳ chọn số người / phòng để tính chi phí và chọn loại phòng phù hợp */}
                                     <div className="flex items-center justify-between p-2.5 bg-purple-50/60 rounded-xl border border-purple-100 text-xs">
                                         <div className="space-y-0.5">
@@ -515,7 +719,7 @@ export default function AiPlanPage() {
                                 </div>
                             ) : (
                                 <div className="text-2xs text-gray-400 pl-6">
-                                    Bao gồm bữa sáng, trưa, tối tại các hàng quán & cà phê đặc trưng theo vùng.
+                                    Gợi ý quán ăn sáng, trưa, tối & cà phê đặc trưng theo vùng. Chi phí ăn uống tùy theo món, không tính vào ngân sách.
                                 </div>
                             )}
                         </div>
@@ -641,7 +845,7 @@ export default function AiPlanPage() {
             <SelectLodgingModal
                 isOpen={isLodgingModalOpen}
                 onClose={() => setIsLodgingModalOpen(false)}
-                currentRegion={selectedRegion}
+                currentRegion={selectedRegions.join(',')}
                 budgetPp={budget}
                 selectedLodgings={selectedLodgings}
                 onConfirmSelection={(lodgings) => setSelectedLodgings(lodgings)}

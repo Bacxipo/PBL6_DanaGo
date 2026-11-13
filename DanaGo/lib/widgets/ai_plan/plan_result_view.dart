@@ -99,6 +99,7 @@ class _PlanResultViewState extends State<PlanResultView> {
             'type': it.type,
             'priceEst': it.priceEst,
             'budget': it.priceEst,
+            'notes': it.description ?? (it.priceExcluded ? 'Tùy theo món ăn' : null),
             'checklists': checklists,
           });
         }
@@ -357,10 +358,61 @@ class _PlanResultViewState extends State<PlanResultView> {
                   runSpacing: 4,
                   children: [
                     _buildInclusionChip('Vé tham quan', true),
-                    _buildInclusionChip('Ăn uống', widget.includeMeals),
                     _buildInclusionChip('Nơi lưu trú', widget.includeLodging),
                   ],
                 ),
+                if (widget.includeMeals) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.restaurant_menu_rounded,
+                          size: 13, color: Colors.deepOrange),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Ăn uống: có gợi ý quán, chi phí tùy theo món (không tính vào ngân sách)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: isDark ? Colors.grey[400] : Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (widget.plan.budgetLeftPp >= 500000 &&
+                    widget.plan.budgetPp > 0 &&
+                    (widget.plan.budgetLeftPp / widget.plan.budgetPp) >= 0.2) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.teal.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('💡', style: TextStyle(fontSize: 15)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Ngân sách còn dư ${_formatVND(widget.plan.budgetLeftPp)}/người (~${_formatVND((widget.plan.budgetLeftPp / (widget.plan.numDays > 0 ? widget.plan.numDays : 1)).round())}/ngày): AI đã chọn tối đa số điểm tham quan có vé và nơi nghỉ phù hợp nhất. Khoản dư này là quỹ dự phòng lý tưởng cho các bữa ăn uống đặc sản (tùy món), di chuyển cá nhân và mua sắm quà lưu niệm.',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              height: 1.4,
+                              color: isDark ? Colors.teal[100] : Colors.teal[900],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -573,7 +625,11 @@ class _PlanResultViewState extends State<PlanResultView> {
               physics: const NeverScrollableScrollPhysics(),
               padding: const EdgeInsets.all(14),
               itemCount: day.items.length,
-              separatorBuilder: (_, __) => const Divider(height: 16),
+              separatorBuilder: (context, idx) => _buildTravelDashedConnector(
+                day.items[idx],
+                day.items[idx + 1],
+                isDark,
+              ),
               itemBuilder: (context, idx) {
                 final it = day.items[idx];
                 return _buildTimelineItem(it, idx, isDark);
@@ -633,22 +689,141 @@ class _PlanResultViewState extends State<PlanResultView> {
     );
   }
 
-  Widget _buildTimelineItem(AiPlanItem it, int index, bool isDark) {
-    String emoji = '📍';
-    Color tagBg = Colors.grey.withValues(alpha: 0.15);
-    Color tagColor = Colors.grey[800]!;
+  Widget _buildTravelDashedConnector(
+    AiPlanItem prevItem,
+    AiPlanItem nextItem,
+    bool isDark,
+  ) {
+    int? travelMin = nextItem.travelMin;
+    if (travelMin == null && prevItem.end != null && nextItem.start != null) {
+      final pParts = prevItem.end!.split(':');
+      final nParts = nextItem.start!.split(':');
+      if (pParts.length == 2 && nParts.length == 2) {
+        final pm = (int.tryParse(pParts[0]) ?? 0) * 60 +
+            (int.tryParse(pParts[1]) ?? 0);
+        final nm = (int.tryParse(nParts[0]) ?? 0) * 60 +
+            (int.tryParse(nParts[1]) ?? 0);
+        travelMin = (nm - pm).clamp(0, 999);
+      }
+    }
+    final mins = travelMin ?? 10;
+    final distStr = (nextItem.distanceKm != null && nextItem.distanceKm! > 0)
+        ? ' (${nextItem.distanceKm} km)'
+        : '';
+    final labelText = mins > 0
+        ? 'Thời gian di chuyển: ~$mins phút$distStr'
+        : 'Tại cùng địa điểm (0 phút di chuyển)';
 
-    if (it.type == 'breakfast' || it.type == 'lunch' || it.type == 'dinner') {
+    final dashColor = isDark ? Colors.grey[700]! : Colors.grey[350]!;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 6),
+      child: Row(
+        children: [
+          Expanded(child: _buildDashedLine(dashColor)),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[850] : Colors.grey[100],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: dashColor,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🛵', style: TextStyle(fontSize: 11)),
+                const SizedBox(width: 5),
+                Text(
+                  labelText,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: _buildDashedLine(dashColor)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDashedLine(Color color) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final boxWidth = constraints.constrainWidth();
+        const dashWidth = 4.0;
+        const dashHeight = 1.2;
+        final dashCount = (boxWidth / (2 * dashWidth)).floor();
+        return Flex(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          direction: Axis.horizontal,
+          children: List.generate(dashCount, (_) {
+            return SizedBox(
+              width: dashWidth,
+              height: dashHeight,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: color),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  Widget _buildTimelineItem(AiPlanItem it, int index, bool isDark) {
+    final bool isMeal = it.type == 'breakfast' ||
+        it.type == 'lunch' ||
+        it.type == 'dinner' ||
+        it.type == 'food';
+    final bool isHotel = it.type == 'checkin' ||
+        it.type == 'checkout' ||
+        it.type == 'return' ||
+        it.type == 'lodging';
+
+    // 🎨 Màu theo từng nhóm ô (Ăn uống, Khách sạn/Nghỉ ngơi, Đi tham quan)
+    final Color cardBg;
+    final Color cardBorder;
+    final Color accentColor;
+    final Color tagBg;
+    final Color tagColor;
+    final Color timeBadgeBg;
+    final String emoji;
+
+    if (isMeal) {
+      // 1. Ô Ăn uống: Tông cam / hổ phách ấm áp
+      cardBg = isDark ? const Color(0xFF2B1910) : const Color(0xFFFFF7ED);
+      cardBorder = isDark ? const Color(0xFF7C2D12) : const Color(0xFFFFDBB5);
+      accentColor = const Color(0xFFEA580C);
+      tagBg = isDark ? const Color(0xFF431407) : const Color(0xFFFFEDD5);
+      tagColor = isDark ? const Color(0xFFFDBA74) : const Color(0xFFC2410C);
+      timeBadgeBg = isDark ? const Color(0xFF381B10) : Colors.white;
       emoji = '🍽️';
-      tagBg = Colors.orange.withValues(alpha: 0.15);
-      tagColor = Colors.deepOrange;
-    } else if (it.type == 'checkin' || it.type == 'checkout' || it.type == 'return') {
+    } else if (isHotel) {
+      // 2. Ô Khách sạn / Nghỉ ngơi: Tông tím sang trọng
+      cardBg = isDark ? const Color(0xFF221634) : const Color(0xFFFAF5FF);
+      cardBorder = isDark ? const Color(0xFF581C87) : const Color(0xFFE9D5FF);
+      accentColor = const Color(0xFF9333EA);
+      tagBg = isDark ? const Color(0xFF3B0764) : const Color(0xFFF3E8FF);
+      tagColor = isDark ? const Color(0xFFD8B4FE) : const Color(0xFF7E22CE);
+      timeBadgeBg = isDark ? const Color(0xFF2E1748) : Colors.white;
       emoji = '🏨';
-      tagBg = Colors.purple.withValues(alpha: 0.15);
-      tagColor = Colors.purple;
     } else {
-      tagBg = AppColors.primary.withValues(alpha: 0.12);
-      tagColor = AppColors.primary;
+      // 3. Ô Đi tham quan / Thắng cảnh: Tông xanh ngọc teal tươi mát
+      cardBg = isDark ? const Color(0xFF0F2628) : const Color(0xFFF0FDFA);
+      cardBorder = isDark ? const Color(0xFF134E4A) : const Color(0xFFCCFBF1);
+      accentColor = AppColors.primary;
+      tagBg = isDark ? const Color(0xFF042F2E) : const Color(0xFFCCFBF1);
+      tagColor = isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0F766E);
+      timeBadgeBg = isDark ? const Color(0xFF143437) : Colors.white;
+      emoji = '📍';
     }
 
     final checklistItems = <String>[];
@@ -658,185 +833,265 @@ class _PlanResultViewState extends State<PlanResultView> {
         'Điện thoại, sạc dự phòng & máy ảnh',
         'Mũ nón, kính râm & kem chống nắng',
       ]);
-    } else if (['breakfast', 'lunch', 'dinner', 'food'].contains(it.type)) {
+    } else if (isMeal) {
       checklistItems.addAll([
         'Khăn ướt / Nước rửa tay',
         'Tiền mặt hoặc ứng dụng thanh toán',
       ]);
-    } else if (['checkin', 'checkout', 'return'].contains(it.type)) {
+    } else if (isHotel) {
       checklistItems.addAll([
         'CCCD / Hộ chiếu nhận phòng',
         'Kiểm tra hành lý & đồ đạc',
       ]);
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Time Badge
-            Container(
-              width: 52,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.grey[800] : Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    it.start ?? '08:00',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cardBorder, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Time Badge
+              Container(
+                width: 54,
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                decoration: BoxDecoration(
+                  color: timeBadgeBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: cardBorder.withValues(alpha: 0.8),
+                    width: 0.8,
                   ),
-                  if (it.end != null)
+                ),
+                child: Column(
+                  children: [
                     Text(
-                      it.end!,
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-
-            // Icon
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: tagBg,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 14)),
-              ),
-            ),
-            const SizedBox(width: 10),
-
-            // Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: tagBg,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          it.label ?? it.type,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: tagColor,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      if (it.priceEst > 0)
-                        Text(
-                          _formatVND(it.priceEst),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepOrange,
-                          ),
-                        )
-                      else
-                        Text(
-                          'Miễn phí',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green[700],
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    it.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  if (it.district != null && it.district!.isNotEmpty)
-                    Text(
-                      '📍 ${it.district}',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-
-        // Suggested Checklist Dropdown / Items
-        if (checklistItems.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 62, top: 6),
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: checklistItems.map((chk) {
-                final key = '${it.id}_$chk';
-                final isDone = _checkedChecklists.contains(key);
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isDone) {
-                        _checkedChecklists.remove(key);
-                      } else {
-                        _checkedChecklists.add(key);
-                      }
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: isDone
-                          ? Colors.green.withValues(alpha: 0.12)
-                          : (isDark ? Colors.grey[800] : Colors.grey[100]),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isDone ? Colors.green : Colors.grey.withValues(alpha: 0.2),
+                      it.start ?? '08:00',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: accentColor,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    if (it.end != null)
+                      Text(
+                        it.end!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              // Icon Avatar
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: tagBg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cardBorder, width: 0.8),
+                ),
+                child: Center(
+                  child: Text(emoji, style: const TextStyle(fontSize: 15)),
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              // Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Icon(
-                          isDone ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                          size: 13,
-                          color: isDone ? Colors.green : Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          chk,
-                          style: TextStyle(
-                            fontSize: 10,
-                            decoration: isDone ? TextDecoration.lineThrough : null,
-                            color: isDone ? Colors.green[800] : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: tagBg,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            it.label ?? it.type,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: tagColor,
+                            ),
                           ),
                         ),
+                        const Spacer(),
+                        if (it.priceExcluded)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFEDD5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.restaurant_menu_rounded,
+                                    size: 11, color: Color(0xFFEA580C)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  it.displayPriceNote,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFC2410C),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (it.priceEst > 0)
+                          Text(
+                            _formatVND(it.priceEst),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.amber[300] : Colors.deepOrange,
+                            ),
+                          )
+                        else
+                          Text(
+                            it.isMeal ? it.displayPriceNote : 'Miễn phí',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: it.isMeal ? Colors.grey[600] : Colors.green[700],
+                            ),
+                          ),
                       ],
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
+                    const SizedBox(height: 4),
+                    Text(
+                      it.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        height: 1.25,
+                      ),
+                    ),
+                    if (it.description != null &&
+                        it.description!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(
+                          it.description!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            height: 1.3,
+                            color: isDark
+                                ? Colors.grey[300]
+                                : (isMeal
+                                    ? const Color(0xFF7C2D12).withValues(alpha: 0.85)
+                                    : const Color(0xFF004D54).withValues(alpha: 0.85)),
+                          ),
+                        ),
+                      ),
+                    if (it.district != null && it.district!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '📍 ${it.district}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-      ],
+
+          // Suggested Checklist Dropdown / Items
+          if (checklistItems.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 64, top: 8),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: checklistItems.map((chk) {
+                  final key = '${it.id}_$chk';
+                  final isDone = _checkedChecklists.contains(key);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (isDone) {
+                          _checkedChecklists.remove(key);
+                        } else {
+                          _checkedChecklists.add(key);
+                        }
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDone
+                            ? Colors.green.withValues(alpha: 0.15)
+                            : (isDark ? Colors.black26 : Colors.white),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDone ? Colors.green : cardBorder,
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isDone
+                                ? Icons.check_box_rounded
+                                : Icons.check_box_outline_blank_rounded,
+                            size: 13,
+                            color: isDone ? Colors.green : Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            chk,
+                            style: TextStyle(
+                              fontSize: 10,
+                              decoration: isDone ? TextDecoration.lineThrough : null,
+                              color: isDone
+                                  ? Colors.green[800]
+                                  : (isDark ? Colors.grey[300] : Colors.grey[800]),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

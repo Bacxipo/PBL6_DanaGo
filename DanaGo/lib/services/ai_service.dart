@@ -29,26 +29,37 @@ class AiService {
     required int budgetPp,
     required List<String> interests,
     String? region,
+    List<String>? regions,
     List<int>? selectedIds,
     List<int>? lodgingIds,
     bool includeMeals = true,
     bool includeLodging = true,
     int guestsPerRoom = 2,
+    String lodgingPriceTier = 'mid',
+    int placesPerDay = 3,
     bool randomize = true,
   }) async {
     final uri = Uri.parse('$aiBaseUrl/plan');
+    final validRegions = (regions ?? [])
+        .where((r) => r.trim().isNotEmpty && r != 'Tất cả khu vực')
+        .toList();
     final payload = {
       'num_days': numDays,
       'budget_pp': budgetPp,
       'interests': interests,
-      'region': (region != null && region.isNotEmpty && region != 'Tất cả khu vực')
-          ? region
-          : null,
+      'region': validRegions.isNotEmpty
+          ? validRegions.join(',')
+          : ((region != null && region.isNotEmpty && region != 'Tất cả khu vực')
+              ? region
+              : null),
+      'regions': validRegions,
       'selected_ids': selectedIds ?? [],
       'lodging_ids': lodgingIds ?? [],
       'include_meals': includeMeals,
       'include_lodging': includeLodging,
       'guests_per_room': guestsPerRoom,
+      'lodging_price_tier': lodgingPriceTier,
+      'places_per_day': placesPerDay,
       'randomize': randomize,
     };
 
