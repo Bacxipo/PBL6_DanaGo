@@ -13,13 +13,15 @@ class FeedLocationPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFEFF5F5),
+          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEFF5F5),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -34,21 +36,21 @@ class FeedLocationPill extends StatelessWidget {
             Flexible(
               child: Text(
                 locationName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Be Vietnam Pro',
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+                  color: isDark ? const Color(0xFF2DD4BF) : AppColors.primary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios_rounded,
               size: 10,
-              color: AppColors.primary,
+              color: isDark ? const Color(0xFF2DD4BF) : AppColors.primary,
             ),
           ],
         ),

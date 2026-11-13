@@ -5,19 +5,15 @@ class ItineraryBottomBar extends StatelessWidget {
   final VoidCallback? onAutoSave;
   final VoidCallback? onAddPlace;
 
-  const ItineraryBottomBar({
-    super.key,
-    this.onAutoSave,
-    this.onAddPlace,
-  });
+  const ItineraryBottomBar({super.key, this.onAutoSave, this.onAddPlace});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 10,
@@ -52,8 +48,8 @@ class ItineraryBottomBar extends StatelessWidget {
           Expanded(
             child: ElevatedButton.icon(
               onPressed: onAddPlace ?? () {},
-              icon: const Icon(Icons.add_location_alt_rounded, size: 18),
-              label: const Text('Thêm địa điểm'),
+              icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+              label: const Text('Gợi ý địa điểm'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -70,4 +66,3 @@ class ItineraryBottomBar extends StatelessWidget {
     );
   }
 }
-

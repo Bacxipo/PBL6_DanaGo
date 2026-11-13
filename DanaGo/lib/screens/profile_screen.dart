@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/services/google_auth_service.dart';
 import 'package:smarttrip/screens/edit_profile_screen.dart';
 import 'package:smarttrip/screens/favorites_screen.dart';
-import 'package:smarttrip/screens/itinerary_screen.dart';
 import 'package:smarttrip/screens/login_screen.dart';
+import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/screens/my_reviews_screen.dart';
 import 'package:smarttrip/screens/notifications_screen.dart';
 import 'package:smarttrip/screens/user_profile_posts_screen.dart';
+import 'package:smarttrip/services/review_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/profile/profile_header.dart';
 import 'package:smarttrip/widgets/profile/profile_menu_section.dart';
 import 'package:smarttrip/widgets/profile/profile_stats_pill.dart';
+import 'package:smarttrip/theme/theme_controller.dart';
+import 'package:smarttrip/services/auth_service.dart';
+import 'package:smarttrip/services/favorite_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,18 +24,92 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Sample user data
   final Map<String, dynamic> _user = {
-    'name': 'Nguyễn Văn A',
-    'email': 'nguyenvana@gmail.com',
-    'phone': '0901 234 567',
-    'bio': 'Yêu du lịch, thích khám phá văn hóa & ẩm thực Đà Nẵng',
-    'avatar': 'https://i.postimg.cc/tC24nW4N/avt1.jpg',
-    'joinDate': 'Tháng 10, 2026',
-    'tripsCount': 12,
-    'reviewsCount': 28,
-    'favoritesCount': 45,
+    'name': 'Đang tải',
+    'email': '...',
+    'phone': '...',
+    'bio': '...',
+    'avatar': 'assets/images/default-avatar.svg',
+    'joinDate': '...',
+    'tripsCount': 0,
+    'reviewsCount': 0,
+    'favoritesCount': 0,
   };
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+    FavoriteService.instance.addListener(_onFavoritesChanged);
+    ReviewService.instance.addListener(_onFavoritesChanged);
+  }
+
+  @override
+  void dispose() {
+    FavoriteService.instance.removeListener(_onFavoritesChanged);
+    ReviewService.instance.removeListener(_onFavoritesChanged);
+    super.dispose();
+  }
+
+  void _onFavoritesChanged() {
+    if (mounted) {
+      setState(() {
+        _user['favoritesCount'] = FavoriteService.instance.favoriteCount;
+        _user['reviewsCount'] = ReviewService.instance.myReviewsCount;
+      });
+    }
+  }
+
+  Future<void> _loadUserProfile() async {
+    final profile = await AuthService.instance.getProfile();
+    await FavoriteService.instance.getFavorites();
+    await ReviewService.instance.getMyReviews();
+    if (mounted) {
+      setState(() {
+        if (profile != null) {
+          if (profile['fullName'] != null) {
+            _user['name'] = profile['fullName'];
+          }
+          if (profile['email'] != null) {
+            _user['email'] = profile['email'];
+          }
+          if (profile['avatarUrl'] != null &&
+              (profile['avatarUrl'] as String).isNotEmpty) {
+            _user['avatar'] = profile['avatarUrl'];
+          } else {
+            _user['avatar'] = 'assets/images/default-avatar.svg';
+          }
+          if (profile['bio'] != null) {
+            _user['bio'] = profile['bio'];
+          }
+          if (profile['createdAt'] != null) {
+            try {
+              final dt = DateTime.parse(profile['createdAt'] as String);
+              const months = [
+                '',
+                'Tháng 1',
+                'Tháng 2',
+                'Tháng 3',
+                'Tháng 4',
+                'Tháng 5',
+                'Tháng 6',
+                'Tháng 7',
+                'Tháng 8',
+                'Tháng 9',
+                'Tháng 10',
+                'Tháng 11',
+                'Tháng 12',
+              ];
+              _user['joinDate'] = '${months[dt.month]}, ${dt.year}';
+            } catch (_) {
+              _user['joinDate'] = profile['createdAt'];
+            }
+          }
+        }
+        _user['favoritesCount'] = FavoriteService.instance.favoriteCount;
+        _user['reviewsCount'] = ReviewService.instance.myReviewsCount;
+      });
+    }
+  }
 
   void _navigateToEditProfile() async {
     final result = await Navigator.push(
@@ -46,11 +125,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _navigateToFavorites() {
-    Navigator.push(
+  void _navigateToFavorites() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const FavoritesScreen()),
     );
+    if (mounted) {
+      setState(() {
+        _user['favoritesCount'] = FavoriteService.instance.favoriteCount;
+      });
+    }
   }
 
   void _navigateToMyReviews() {
@@ -61,9 +145,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToItinerary() {
-    Navigator.push(
+    Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const ItineraryScreen()),
+      MaterialPageRoute(builder: (_) => const MainScreen(initialIndex: 2)),
+      (route) => false,
     );
   }
 
@@ -80,7 +165,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute(
         builder: (_) => UserProfilePostsScreen(
           authorName: _user['name'] ?? 'Nguyễn Văn A',
-          authorAvatar: _user['avatar'] ?? 'https://i.postimg.cc/X7QYBdY8/avt2.jpg',
+          authorAvatar:
+              _user['avatar'] ?? 'https://i.postimg.cc/X7QYBdY8/avt2.jpg',
           isVerified: true,
           isCurrentUser: true,
         ),
@@ -91,11 +177,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ─── Header with Avatar ────────────────────────────────────
           SliverToBoxAdapter(
             child: ProfileHeader(
               user: _user,
@@ -103,8 +188,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onSettingsTap: _navigateToEditProfile,
             ),
           ),
-
-          // ─── Stats Pill ───────────────────────────────────────────
           SliverToBoxAdapter(
             child: ProfileStatsPill(
               tripsCount: _user['tripsCount'] ?? 0,
@@ -117,9 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           // ─── Account Section ──────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _buildSectionLabel('Tài khoản'),
-          ),
+          SliverToBoxAdapter(child: _buildSectionLabel('Tài khoản')),
           SliverToBoxAdapter(
             child: ProfileMenuSection(
               items: [
@@ -156,64 +237,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-
           // ─── Settings Section ─────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _buildSectionLabel('Cài đặt'),
-          ),
-          SliverToBoxAdapter(
-            child: ProfileMenuSection(
-              items: [
-                ProfileMenuItem(
-                  icon: Icons.notifications_none_rounded,
-                  title: 'Thông báo',
-                  subtitle: 'Quản lý thông báo',
-                  onTap: _navigateToNotifications,
-                ),
-                ProfileMenuItem(
-                  icon: Icons.language_rounded,
-                  title: 'Ngôn ngữ',
-                  subtitle: 'Tiếng Việt',
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+          SliverToBoxAdapter(child: _buildSectionLabel('Cài đặt')),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark;
+              return SliverToBoxAdapter(
+                child: ProfileMenuSection(
+                  items: [
+                    ProfileMenuItem(
+                      icon: Icons.notifications_none_rounded,
+                      title: 'Thông báo',
+                      subtitle: 'Quản lý thông báo',
+                      onTap: _navigateToNotifications,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'VI',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+                    ProfileMenuItem(
+                      icon: Icons.language_rounded,
+                      title: 'Ngôn ngữ',
+                      subtitle: 'Tiếng Việt',
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'VI',
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
+                      onTap: () {},
                     ),
-                  ),
-                  onTap: () {},
+                    // 🔥 Mục Chế độ tối chuẩn kiểu ProfileMenuItem:
+                    ProfileMenuItem(
+                      icon: isDark
+                          ? Icons.dark_mode_rounded
+                          : Icons.light_mode_rounded,
+                      title: 'Chế độ tối',
+                      subtitle: isDark
+                          ? 'Đang bật giao diện tối'
+                          : 'Đang dùng giao diện sáng',
+                      trailing: Switch(
+                        value: isDark,
+                        activeColor: AppColors.primary,
+                        onChanged: (val) {
+                          ThemeController.toggleTheme(val);
+                        },
+                      ),
+                      onTap: () {
+                        ThemeController.toggleTheme(!isDark);
+                      },
+                    ),
+                    ProfileMenuItem(
+                      icon: Icons.shield_outlined,
+                      title: 'Bảo mật & Quyền riêng tư',
+                      onTap: () {},
+                    ),
+                  ],
                 ),
-                ProfileMenuItem(
-                  icon: Icons.dark_mode_outlined,
-                  title: 'Giao diện',
-                  subtitle: 'Sáng',
-                  onTap: () {},
-                ),
-                ProfileMenuItem(
-                  icon: Icons.shield_outlined,
-                  title: 'Bảo mật & Quyền riêng tư',
-                  onTap: () {},
-                ),
-              ],
-            ),
+              );
+            },
           ),
-
           // ─── Other Section ────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _buildSectionLabel('Khác'),
-          ),
+          SliverToBoxAdapter(child: _buildSectionLabel('Khác')),
           SliverToBoxAdapter(
             child: ProfileMenuSection(
               items: [
@@ -304,28 +399,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Đăng xuất',
-          style: TextStyle(fontFamily: 'Be Vietnam Pro', fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontFamily: 'Be Vietnam Pro',
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: const Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
-          style: TextStyle(fontFamily: 'Be Vietnam Pro', color: AppColors.textSecondary),
+          style: TextStyle(
+            fontFamily: 'Be Vietnam Pro',
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text(
               'Hủy',
-              style: TextStyle(fontFamily: 'Be Vietnam Pro', color: AppColors.textTertiary),
+              style: TextStyle(
+                fontFamily: 'Be Vietnam Pro',
+                color: AppColors.textTertiary,
+              ),
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
+            onPressed: () async {
+              try {
+                await AuthService.instance.logout();
+                await GoogleAuthService.instance.signOut();
+
+                if (!context.mounted) return;
+                Navigator.pop(context);
+
+                if (!mounted) return;
+
+                Navigator.of(this.context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              } catch (_) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Chưa thể đăng xuất. Vui lòng thử lại.'),
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
@@ -336,7 +455,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: const Text(
               'Đăng xuất',
-              style: TextStyle(fontFamily: 'Be Vietnam Pro', fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontFamily: 'Be Vietnam Pro',
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

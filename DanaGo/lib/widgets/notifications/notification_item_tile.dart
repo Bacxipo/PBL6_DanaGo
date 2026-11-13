@@ -16,6 +16,8 @@ class NotificationItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Dismissible(
       key: Key(item.id),
       direction: DismissDirection.endToStart,
@@ -27,7 +29,11 @@ class NotificationItemTile extends StatelessWidget {
       ),
       onDismissed: (_) => onDelete(),
       child: Material(
-        color: item.isRead ? Colors.transparent : AppColors.primaryLight.withValues(alpha: 0.35),
+        color: item.isRead
+            ? Colors.transparent
+            : (isDark
+                ? AppColors.primary.withValues(alpha: 0.15)
+                : AppColors.primaryLight.withValues(alpha: 0.35)),
         child: InkWell(
           onTap: onTap,
           child: Padding(
@@ -54,7 +60,7 @@ class NotificationItemTile extends StatelessWidget {
                                 fontFamily: 'Be Vietnam Pro',
                                 fontSize: 14,
                                 fontWeight: item.isRead ? FontWeight.w600 : FontWeight.w700,
-                                color: AppColors.textPrimary,
+                                color: isDark ? Colors.white : AppColors.textPrimary,
                               ),
                             ),
                           ),

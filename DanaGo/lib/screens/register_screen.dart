@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/screens/interest_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/utils/validators.dart';
 import 'package:smarttrip/widgets/common/custom_text_field.dart';
+import 'package:smarttrip/services/auth_service.dart';
+import 'package:smarttrip/services/api_client.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,6 +23,7 @@ class _SignupScreenState extends State<RegisterScreen> {
   bool _isObscurePassword = true;
   bool _isObscureConfirmPass = true;
   bool _isAgree = false;
+  bool _isLoading = false;
   @override
   void dispose() {
     _nameController.dispose();
@@ -29,7 +33,7 @@ class _SignupScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _handleRegister() {
+  Future<void> _handleRegister() async {
     final String? errorMessage = Validators.validateRegisterForm(
       name: _nameController.text,
       email: _emailController.text,
@@ -41,15 +45,46 @@ class _SignupScreenState extends State<RegisterScreen> {
       UiHelpers.showError(context, errorMessage);
       return;
     }
-    UiHelpers.showSuccess(
-      context,
-      'Đăng ký tài khoản thành công cho ${_nameController.text.trim()}!',
-    );
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        Navigator.pop(context);
+    setState(() => _isLoading = true);
+    try {
+      final email = _emailController.text.trim();
+      String username = email
+          .split('@')[0]
+          .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+      if (username.isEmpty) {
+        username = 'user_${DateTime.now().millisecondsSinceEpoch % 100000}';
       }
-    });
+      await AuthService.instance.register(
+        fullName: _nameController.text.trim(),
+        username: username,
+        email: email,
+        password: _passwordController.text,
+      );
+      if (!mounted) return;
+      UiHelpers.showSuccess(
+        context,
+        'Đăng ký tài khoản thành công cho. Hãy chọn sở thích của bạn.',
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const InterestScreen()),
+      );
+    } on ApiException catch (e) {
+      if (mounted) {
+        UiHelpers.showError(context, e.message);
+      }
+    } catch (_) {
+      if (mounted) {
+        UiHelpers.showError(
+          context,
+          'Không thể kết nối đến máy chủ. Vui lòng thử lại!',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -243,15 +278,24 @@ class _SignupScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: _handleRegister,
-                  child: const Text(
-                    'Đăng ký',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  onPressed: _isLoading ? null : _handleRegister,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Đăng ký',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -260,7 +304,10 @@ class _SignupScreenState extends State<RegisterScreen> {
                 children: [
                   const Text(
                     'Đã có tài khoản?',
-                    style: TextStyle(color: AppColors.textTertiary, fontSize: 14),
+                    style: TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 14,
+                    ),
                   ),
                   GestureDetector(
                     onTap: () {

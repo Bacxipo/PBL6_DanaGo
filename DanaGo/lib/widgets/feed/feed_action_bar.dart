@@ -25,6 +25,9 @@ class FeedActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark ? Colors.grey.shade400 : AppColors.textSecondary;
+
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Row(
@@ -40,7 +43,7 @@ class FeedActionBar extends StatelessWidget {
                   Icon(
                     isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                     size: 20,
-                    color: isLiked ? const Color(0xFFEF4444) : AppColors.textSecondary,
+                    color: isLiked ? const Color(0xFFEF4444) : iconColor,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -49,7 +52,7 @@ class FeedActionBar extends StatelessWidget {
                       fontFamily: 'Be Vietnam Pro',
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: isLiked ? const Color(0xFFEF4444) : AppColors.textSecondary,
+                      color: isLiked ? const Color(0xFFEF4444) : iconColor,
                     ),
                   ),
                 ],
@@ -65,19 +68,19 @@ class FeedActionBar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.chat_bubble_outline_rounded,
                     size: 19,
-                    color: AppColors.textSecondary,
+                    color: iconColor,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     '$commentsCount',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Be Vietnam Pro',
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
+                      color: iconColor,
                     ),
                   ),
                 ],
@@ -87,7 +90,7 @@ class FeedActionBar extends StatelessWidget {
           const Spacer(),
           // Share Button
           IconButton(
-            icon: const Icon(Icons.share_outlined, size: 20, color: AppColors.textSecondary),
+            icon: Icon(Icons.share_outlined, size: 20, color: iconColor),
             onPressed: onSharePressed ??
                 () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +108,7 @@ class FeedActionBar extends StatelessWidget {
             icon: Icon(
               isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
               size: 20,
-              color: isBookmarked ? AppColors.primary : AppColors.textSecondary,
+              color: isBookmarked ? AppColors.primary : iconColor,
             ),
             onPressed: onBookmarkPressed,
             visualDensity: VisualDensity.compact,

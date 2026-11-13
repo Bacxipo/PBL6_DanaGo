@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/screens/interest_screen.dart';
+import 'package:smarttrip/services/google_auth_service.dart';
 import 'package:smarttrip/screens/register_screen.dart';
 import 'package:smarttrip/screens/forgot_password_screen.dart';
-import 'package:smarttrip/screens/interest_screen.dart';
+import 'package:smarttrip/screens/main_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/app_styles.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
-import 'package:smarttrip/utils/validators.dart';
 import 'package:smarttrip/widgets/common/custom_text_field.dart';
+import 'package:smarttrip/services/auth_service.dart';
+import 'package:smarttrip/services/api_client.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,15 +22,77 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isObscure = true; //hide mk
+  bool _isLoading = false;
+
+  final _googleAuth = GoogleAuthService.instance;
+  bool _googleNavigationScheduled = false;
+  String? _lastGoogleError;
+
+  @override
+  void initState() {
+    super.initState();
+    _googleAuth.addListener(_onGoogleAuthChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onGoogleAuthChanged();
+    });
+  }
+
+  void _onGoogleAuthChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final error = _googleAuth.errorMessage;
+    if (_googleAuth.status == GoogleLoginStatus.failed &&
+        error != null &&
+        error != _lastGoogleError) {
+      _lastGoogleError = error;
+      UiHelpers.showError(context, error);
+    } else if (_googleAuth.status != GoogleLoginStatus.failed) {
+      _lastGoogleError = null;
+    }
+    if (_googleAuth.status == GoogleLoginStatus.authenticated &&
+        !_googleNavigationScheduled) {
+      _googleNavigationScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_googleAuth.hasPreferences) {
+          UiHelpers.showSuccess(
+            context,
+            'Đăng nhập thành công! Chào mừng quay trở lại',
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const MainScreen()),
+            (route) => false,
+          );
+        } else {
+          UiHelpers.showSuccess(
+            context,
+            'Chào mừng bạn đến với DanaGo! Hãy chọn sở thích của bạn',
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const InterestScreen()),
+          );
+        }
+      });
+    }
+  }
+
+  Future<void> _handleGoogleLogin() {
+    _lastGoogleError = null;
+    _googleNavigationScheduled = false;
+    return _googleAuth.signIn();
+  }
 
   @override
   void dispose() {
+    _googleAuth.removeListener(_onGoogleAuthChanged);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     final String email = _emailController.text.trim();
     final String password = _passwordController.text;
 
@@ -35,18 +100,35 @@ class _LoginScreenState extends State<LoginScreen> {
       UiHelpers.showError(context, "Vui lòng nhập đầy đủ Email và Mật khẩu!");
       return;
     }
-    if (!Validators.isValidEmail(email)) {
-      UiHelpers.showError(context, "Địa chỉ Email không đúng định dạng!");
-      return;
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.instance.login(
+        emailOrUsername: email,
+        password: password,
+      );
+      if (!mounted) return;
+      UiHelpers.showSuccess(context, 'Đăng nhập thành công! Chào mừng bạn');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
+      );
+    } on ApiException catch (e) {
+      if (mounted) {
+        UiHelpers.showError(context, e.message);
+      }
+    } catch (_) {
+      if (mounted) {
+        UiHelpers.showError(
+          context,
+          'Không thể kết nối máy chủ. Vui lòng thử lại',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    UiHelpers.showSuccess(
-      context,
-      'Đăng nhập thành công! Chào mừng quay trở lại',
-    );
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const InterestScreen()),
-    );
   }
 
   @override
@@ -186,25 +268,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: _handleLogin,
-                  child: const Text(
-                    'Đăng nhập',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  onPressed: _isLoading ? null : _handleLogin,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Đăng nhập',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
-                    child: Divider(
-                      color: AppColors.divider,
-                      thickness: 1,
-                    ),
+                    child: Divider(color: AppColors.divider, thickness: 1),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -218,10 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   Expanded(
-                    child: Divider(
-                      color: AppColors.divider,
-                      thickness: 1,
-                    ),
+                    child: Divider(color: AppColors.divider, thickness: 1),
                   ),
                 ],
               ),
@@ -237,9 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: () {
-                    //Logic login gg
-                  },
+                  onPressed: _googleAuth.isBusy ? null : _handleGoogleLogin,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -249,9 +332,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 22,
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        'Đăng nhập bằng Google',
-                        style: TextStyle(
+                      Text(
+                        _googleAuth.isBusy
+                            ? 'Đang đăng nhập…'
+                            : 'Đăng nhập bằng Google',
+                        style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -298,13 +383,9 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 15),
               GestureDetector(
                 onTap: () {
-                  // Logic
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Đang truy cập ứng dụng với tư cách khách...',
-                      ),
-                    ),
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainScreen()),
                   );
                 },
                 child: const Row(

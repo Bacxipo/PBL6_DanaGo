@@ -33,7 +33,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
     _priceToCtrl = TextEditingController(
       text: widget.initialFilter.priceTo ?? '',
     );
-    _selectedArea = SearchFilterModel.areas.first;
+    _selectedArea = widget.initialFilter.area;
     _minRating = widget.initialFilter.minRating;
   }
 
@@ -46,10 +46,12 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       child: Column(
@@ -61,7 +63,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: isDark ? Colors.white24 : AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -70,12 +72,12 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Bộ lọc',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               GestureDetector(
@@ -83,21 +85,27 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: AppColors.bgSecondary,
+                    color: isDark
+                        ? const Color(0xFF0F172A)
+                        : AppColors.bgSecondary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.close, size: 18, color: Colors.black),
+                  child: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: isDark ? Colors.white70 : Colors.black,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'DANH MỤC',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 10),
@@ -117,13 +125,24 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary
-                        : AppColors.primaryLight,
+                        : (isDark
+                              ? const Color(0xFF0F172A)
+                              : AppColors.primaryLight),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? Colors.white12 : Colors.transparent),
+                    ),
                   ),
                   child: Text(
                     cat,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.primary,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark
+                                ? const Color(0xFF2DD4BF)
+                                : AppColors.primary),
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -133,12 +152,12 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
             }).toList(),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'KHOẢNG GIÁ',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
               letterSpacing: 0.8,
             ),
           ),
@@ -146,19 +165,27 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
           Row(
             children: [
               Expanded(
-                child: _buildPriceField(controller: _priceFromCtrl, hint: 'từ'),
+                child: _buildPriceField(
+                  controller: _priceFromCtrl,
+                  hint: 'từ',
+                  isDark: isDark,
+                ),
               ),
               const SizedBox(width: 20),
               Expanded(
-                child: _buildPriceField(controller: _priceToCtrl, hint: 'đến'),
+                child: _buildPriceField(
+                  controller: _priceToCtrl,
+                  hint: 'đến',
+                  isDark: isDark,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'KHU VỰC',
             style: TextStyle(
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
               fontSize: 15,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.8,
@@ -168,17 +195,20 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.bgCard,
+              color: isDark ? const Color(0xFF0F172A) : AppColors.bgCard,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                color: isDark ? Colors.white12 : AppColors.border,
+              ),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedArea,
                 isExpanded: true,
-                icon: const Icon(
+                dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                icon: Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  color: Colors.black,
+                  color: isDark ? Colors.white70 : Colors.black,
                 ),
                 items: SearchFilterModel.areas
                     .map(
@@ -186,9 +216,11 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
                         value: area,
                         child: Text(
                           area,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.textSecondary,
+                            color: isDark
+                                ? Colors.white
+                                : AppColors.textSecondary,
                           ),
                         ),
                       ),
@@ -201,10 +233,10 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'ĐÁNH GIÁ TỐI THIỂU',
             style: TextStyle(
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
               fontSize: 15,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.8,
@@ -213,11 +245,11 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
           const SizedBox(height: 10),
           Row(
             children: [
-              _buildRatingChip('Bất kỳ', 'any'),
+              _buildRatingChip('Bất kỳ', 'any', isDark),
               const SizedBox(width: 12),
-              _buildRatingChip('4.0 ★ +', '4.0'),
+              _buildRatingChip('4.0 ★ +', '4.0', isDark),
               const SizedBox(width: 12),
-              _buildRatingChip('4.5 ★ +', '4.5'),
+              _buildRatingChip('4.5 ★ +', '4.5', isDark),
             ],
           ),
           const SizedBox(height: 20),
@@ -276,13 +308,20 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
   Widget _buildPriceField({
     required TextEditingController controller,
     required String hint,
+    required bool isDark,
   }) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+      style: TextStyle(
+        fontSize: 14,
+        color: isDark ? Colors.white : AppColors.textSecondary,
+      ),
       decoration: InputDecoration(
         hintText: hint,
+        hintStyle: TextStyle(
+          color: isDark ? Colors.grey.shade500 : AppColors.textHint,
+        ),
         prefixIcon: const Padding(
           padding: EdgeInsets.only(left: 12, right: 4),
           child: Text(
@@ -296,18 +335,22 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         filled: true,
-        fillColor: AppColors.bgCard,
+        fillColor: isDark ? const Color(0xFF0F172A) : AppColors.bgCard,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white12 : AppColors.border,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white12 : AppColors.border,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -317,7 +360,7 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
     );
   }
 
-  Widget _buildRatingChip(String label, String value) {
+  Widget _buildRatingChip(String label, String value, bool isDark) {
     final bool isSelected = _minRating == value;
     return GestureDetector(
       onTap: () => setState(() => _minRating = value),
@@ -325,10 +368,16 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.white,
+          color: isSelected
+              ? (isDark
+                    ? AppColors.primary.withValues(alpha: 0.2)
+                    : AppColors.primaryLight)
+              : (isDark ? const Color(0xFF0F172A) : Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? Colors.white12 : AppColors.border),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -337,7 +386,9 @@ class _SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.bold,
-            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            color: isSelected
+                ? (isDark ? const Color(0xFF2DD4BF) : AppColors.primary)
+                : (isDark ? Colors.grey.shade300 : AppColors.textSecondary),
           ),
         ),
       ),

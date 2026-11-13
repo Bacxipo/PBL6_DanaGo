@@ -18,15 +18,17 @@ class MyReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -69,13 +71,13 @@ class MyReviewCard extends StatelessWidget {
                     children: [
                       Text(
                         review.placeTitle,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -93,7 +95,11 @@ class MyReviewCard extends StatelessWidget {
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.neutral, size: 20),
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: AppColors.neutral,
+                  size: 20,
+                ),
                 onSelected: (value) {
                   if (value == 'edit') {
                     onEdit();
@@ -106,11 +112,18 @@ class MyReviewCard extends StatelessWidget {
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 18, color: AppColors.textPrimary),
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 18,
+                          color: AppColors.textPrimary,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Chỉnh sửa',
-                          style: TextStyle(fontFamily: 'Be Vietnam Pro', fontSize: 13),
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -119,7 +132,11 @@ class MyReviewCard extends StatelessWidget {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                        Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                          color: AppColors.error,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Xóa đánh giá',
@@ -151,8 +168,8 @@ class MyReviewCard extends StatelessWidget {
                     index < review.rating.floor()
                         ? Icons.star_rounded
                         : (index < review.rating
-                            ? Icons.star_half_rounded
-                            : Icons.star_outline_rounded),
+                              ? Icons.star_half_rounded
+                              : Icons.star_outline_rounded),
                     color: AppColors.starActive,
                     size: 18,
                   );
@@ -174,10 +191,10 @@ class MyReviewCard extends StatelessWidget {
           // Review Content
           Text(
             review.content,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Be Vietnam Pro',
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: isDark ? Colors.white70 : AppColors.textSecondary,
               height: 1.5,
             ),
           ),
@@ -204,7 +221,10 @@ class MyReviewCard extends StatelessWidget {
                         width: 70,
                         height: 70,
                         color: AppColors.bgSecondary,
-                        child: const Icon(Icons.image_not_supported_outlined, color: AppColors.textHint),
+                        child: const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: AppColors.textHint,
+                        ),
                       ),
                     ),
                   );
@@ -239,4 +259,3 @@ class MyReviewCard extends StatelessWidget {
     );
   }
 }
-

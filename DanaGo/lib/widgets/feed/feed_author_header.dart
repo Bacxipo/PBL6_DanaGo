@@ -28,6 +28,8 @@ class FeedAuthorHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
         // Avatar with verified badge
@@ -83,11 +85,11 @@ class FeedAuthorHeader extends StatelessWidget {
                       onTap: () => _navigateToAuthorProfile(context),
                       child: Text(
                         post.authorName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),

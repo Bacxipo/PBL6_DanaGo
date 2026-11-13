@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:smarttrip/models/review_item.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
@@ -14,24 +15,32 @@ class DetailReviewsSection extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Đánh giá nổi bật',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
             ),
             Row(
               children: [
                 // Nút Viết đánh giá
                 GestureDetector(
                   onTap: onWriteReview,
-                  child: const Text(
+                  child: Text(
                     '+ Viết đánh giá',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: isDark
+                          ? const Color(0xFF2DD4BF)
+                          : AppColors.primary,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -43,7 +52,10 @@ class DetailReviewsSection extends StatelessWidget {
                   onTap: onSeeAll,
                   child: const Text(
                     'Xem tất cả',
-                    style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -61,11 +73,11 @@ class DetailReviewsSection extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -76,9 +88,20 @@ class DetailReviewsSection extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundImage: NetworkImage(review.avatarUrl),
+                      ClipOval(
+                        child: review.avatarUrl.endsWith('.svg')
+                            ? SvgPicture.asset(
+                                review.avatarUrl,
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                review.avatarUrl,
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                              ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -87,9 +110,12 @@ class DetailReviewsSection extends StatelessWidget {
                           children: [
                             Text(
                               review.userName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
                               ),
                             ),
                             Text(
@@ -104,13 +130,18 @@ class DetailReviewsSection extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.star, color: AppColors.starActive, size: 16),
+                          const Icon(
+                            Icons.star,
+                            color: AppColors.starActive,
+                            size: 16,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             review.rating.toStringAsFixed(1),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
+                              color: isDark ? Colors.white : Colors.black87,
                             ),
                           ),
                         ],
@@ -120,9 +151,9 @@ class DetailReviewsSection extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     review.comment,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: isDark ? Colors.white70 : AppColors.textSecondary,
                       height: 1.4,
                     ),
                   ),

@@ -15,30 +15,60 @@ class CategorySelector extends StatelessWidget {
   });
 
   IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'tất cả':
-        return Icons.explore_rounded;
-      case 'biển':
-        return Icons.beach_access_rounded;
-      case 'ẩm thực':
-        return Icons.restaurant_rounded;
-      case 'di tích':
-        return Icons.museum_rounded;
-      case 'trekking':
-        return Icons.hiking_rounded;
-      case 'cafe':
-        return Icons.local_cafe_rounded;
-      case 'mua sắm':
-        return Icons.shopping_bag_rounded;
-      case 'khu du lịch':
-        return Icons.attractions_rounded;
-      default:
-        return Icons.place_rounded;
+    final lower = category.toLowerCase();
+    if (lower.contains('tất cả')) {
+      return Icons.explore_rounded;
     }
+    if (lower.contains('biển')) {
+      return Icons.beach_access_rounded;
+    }
+    if (lower.contains('ẩm thực') ||
+        lower.contains('quán ăn') ||
+        lower.contains('nhà hàng')) {
+      return Icons.restaurant_rounded;
+    }
+    if (lower.contains('cà phê') ||
+        lower.contains('tiệm trà') ||
+        lower.contains('cafe')) {
+      return Icons.local_cafe_rounded;
+    }
+    if (lower.contains('bảo tàng') || lower.contains('nghệ thuật')) {
+      return Icons.museum_rounded;
+    }
+    if (lower.contains('di tích') || lower.contains('lịch sử')) {
+      return Icons.account_balance_rounded;
+    }
+    if (lower.contains('check-in') ||
+        lower.contains('kiến trúc') ||
+        lower.contains('danh thắng')) {
+      return Icons.photo_camera_rounded;
+    }
+    if (lower.contains('cắm trại') ||
+        lower.contains('trekking') ||
+        lower.contains('leo núi')) {
+      return Icons.hiking_rounded;
+    }
+    if (lower.contains('vui chơi') ||
+        lower.contains('nghỉ dưỡng') ||
+        lower.contains('khu du lịch')) {
+      return Icons.attractions_rounded;
+    }
+    if (lower.contains('làng nghề') || lower.contains('truyền thống')) {
+      return Icons.palette_rounded;
+    }
+    if (lower.contains('phố cổ') || lower.contains('đô thị')) {
+      return Icons.location_city_rounded;
+    }
+    if (lower.contains('mua sắm') || lower.contains('chợ')) {
+      return Icons.shopping_bag_rounded;
+    }
+    return Icons.place_rounded;
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 42,
       child: ListView.builder(
@@ -65,10 +95,14 @@ class CategorySelector extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.white,
+                    color: isSelected
+                        ? AppColors.primary
+                        : (isDark ? const Color(0xFF1E293B) : Colors.white),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : AppColors.border,
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? Colors.white12 : AppColors.border),
                       width: 1,
                     ),
                     boxShadow: isSelected
@@ -81,7 +115,9 @@ class CategorySelector extends StatelessWidget {
                           ]
                         : [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.02),
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.2 : 0.02,
+                              ),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
                             ),
@@ -100,8 +136,14 @@ class CategorySelector extends StatelessWidget {
                         catName,
                         style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark
+                                    ? Colors.grey.shade200
+                                    : AppColors.textPrimary),
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                           fontSize: 13,
                         ),
                       ),

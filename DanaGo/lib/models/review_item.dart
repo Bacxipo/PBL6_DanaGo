@@ -5,6 +5,7 @@ class ReviewItemModel {
   final String timeAgo;
   final double rating;
   final String comment;
+  final List<String> images;
 
   const ReviewItemModel({
     required this.id,
@@ -13,25 +14,31 @@ class ReviewItemModel {
     required this.timeAgo,
     required this.rating,
     required this.comment,
+    this.images = const [],
   });
-  static final List<ReviewItemModel> mockReviews = [
-    const ReviewItemModel(
-      id: 'r1',
-      userName: 'Xuân Bắc',
-      avatarUrl: 'https://i.postimg.cc/tC24nW4N/avt1.jpg',
-      timeAgo: '2 ngày trước',
-      rating: 5.0,
-      comment:
-          'Rất đẹp, đặc biệt là xem phun lửa cuối tuần. Không khí nhộn nhịp, nhiều quán ăn xung quanh.',
-    ),
-    const ReviewItemModel(
-      id: 'r2',
-      userName: 'Hải Nam',
-      avatarUrl: 'https://i.postimg.cc/X7QYBdY8/avt2.jpg',
-      timeAgo: '1 tuần trước',
-      rating: 5.0,
-      comment:
-          'Biểu tượng không thể bỏ qua khi đến Đà Nẵng. Chụp ảnh góc nào cũng xuất sắc luôn nha.',
-    ),
-  ];
+  factory ReviewItemModel.fromJson(Map<String, dynamic> json) {
+    final user = json['user'] as Map<String, dynamic>?;
+    final rawAvatar = user?['avatarUrl'] as String? ?? '';
+    final dt = DateTime.tryParse(json['createdAt'] as String? ?? '');
+    final diff = dt != null ? DateTime.now().difference(dt) : Duration.zero;
+    final timeAgo = diff.inDays > 0
+        ? '${diff.inDays} ngày trước'
+        : (diff.inHours > 0 ? '${diff.inHours} giờ trước' : 'vừa xong');
+    return ReviewItemModel(
+      id: json['id'].toString(),
+      userName: user?['fullName'] as String? ?? 'Người dùng DanaGo',
+      avatarUrl: rawAvatar.startsWith('http')
+          ? rawAvatar
+          : 'assets/images/default-avatar.svg',
+      timeAgo: timeAgo,
+      rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
+      comment: json['comment'] as String? ?? '',
+      images:
+          (json['images'] as List<dynamic>?)
+              ?.map((img) => img['imageUrl'] as String? ?? '')
+              .where((url) => url.isNotEmpty)
+              .toList() ??
+          [],
+    );
+  }
 }

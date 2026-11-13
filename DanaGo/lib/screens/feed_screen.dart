@@ -56,8 +56,10 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
@@ -68,7 +70,10 @@ class _FeedScreenState extends State<FeedScreen> {
               // 1. Feed Page Header with Title & Notification Bell
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -108,13 +113,16 @@ class _FeedScreenState extends State<FeedScreen> {
                         onTap: _openCreatePost,
                         borderRadius: BorderRadius.circular(16),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
+                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -129,7 +137,8 @@ class _FeedScreenState extends State<FeedScreen> {
                                     MaterialPageRoute(
                                       builder: (_) => const UserProfilePostsScreen(
                                         authorName: 'Nguyễn Văn A',
-                                        authorAvatar: 'https://i.postimg.cc/tC24nW4N/avt1.jpg',
+                                        authorAvatar:
+                                            'https://i.postimg.cc/tC24nW4N/avt1.jpg',
                                         isVerified: true,
                                         isCurrentUser: true,
                                       ),
@@ -146,7 +155,11 @@ class _FeedScreenState extends State<FeedScreen> {
                                       width: 36,
                                       height: 36,
                                       color: AppColors.primaryLight,
-                                      child: const Icon(Icons.person, color: AppColors.primary, size: 20),
+                                      child: const Icon(
+                                        Icons.person,
+                                        color: AppColors.primary,
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -185,29 +198,25 @@ class _FeedScreenState extends State<FeedScreen> {
 
               // 2. Post Feed List
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final post = _posts[index];
-                    return FeedPostCard(
-                      key: ValueKey(post.id),
-                      post: post,
-                      onPostUpdated: () => setState(() {}),
-                    );
-                  },
-                  childCount: _posts.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final post = _posts[index];
+                  return FeedPostCard(
+                    key: ValueKey(post.id),
+                    post: post,
+                    onPostUpdated: () => setState(() {}),
+                  );
+                }, childCount: _posts.length),
               ),
 
               // Bottom padding for scroll clearance above bottom nav bar
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 80),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
           ),
         ),
       ),
       // Floating Action Button "Viết bài"
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'feed_fab',
         onPressed: _openCreatePost,
         backgroundColor: AppColors.primary,
         elevation: 3,

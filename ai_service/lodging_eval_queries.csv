@@ -1,0 +1,36 @@
+query,expected
+"villa có bàn bi a, hồ bơi, vibe chill",Lantana Villa Hòa Bắc|Koaniva The Ocean Villa Da Nang|Premier Village Da Nang
+"homestay chill với người thương, có bếp nấu ăn, có các trò chơi",Bungalow Healing Homestay Đà Nẵng|Seren Camp Tam Hải Homestay
+khách sạn vừa sang vừa rẻ có đồ ăn ngon,Golden Lotus Grand Da Nang|Mường Thanh Grand Quảng Nam|Sanouva Da Nang Hotel
+"homestay giá rẻ, ở nhanh gọn cho 4 người",Homestay Alăng Như|Bungalow Healing Homestay Đà Nẵng
+"nhà nghỉ gần trung tâm thành phố, yên tĩnh thư giãn",Nhà khách Tam Homestay|Nhà khách CF15
+"cả nhà đi Bà Nà Hills, muốn ở khách sạn ngay khu vui chơi, có buffet ngon, giường êm, và được nhân viên đón ra tận cáp treo",Mercure Danang French Village Bana Hills
+"mình muốn ở trên đỉnh Bà Nà để trải nghiệm thời tiết 4 mùa trong một ngày, có kiến trúc làng Pháp đẹp để chụp ảnh",Mercure Danang French Village Bana Hills
+"gợi ý khách sạn hoặc resort ở Hòa Vang có tắm suối khoáng nóng, nhiều hồ ngâm, đi nghỉ cuối tuần",Ebisu Onsen Resort|Cami Riverside Resort Da Nang
+tìm resort sinh thái ven sông ở Hòa Vang có phòng suite view toàn cảnh và bể bơi ngoài trời,Cami Riverside Resort Da Nang
+"nhóm mình muốn thuê villa rộng gần chân Bà Nà, yên tĩnh, tổ chức BBQ ngoài trời",Lá Retreat near Ba Na Hills
+"khu nghỉ dưỡng Hòa Bắc sạch sẽ, có thiên nhiên, khu chơi cho trẻ con và bể bơi",Lantana Villa Hòa Bắc|Yên Retreat Hòa Bắc
+"chỗ nghỉ Hòa Bắc giá tốt có bữa sáng buffet và bể bơi, check-in check-out không phải chờ lâu",Lantana Villa Hòa Bắc|Yên Retreat Hòa Bắc
+"homestay nhà gỗ ở Hòa Vang có bếp riêng để tự nấu, nhà 4 người, có thuê xe máy được không",Bungalow Healing Homestay Đà Nẵng
+"ra Cù Lao Chàm tìm nhà nghỉ sạch sẽ gần cầu cảng Bãi Làng để tiện thuê xe, chủ nhà dễ thương",Nhà nghỉ Hammock Cù Lao Chàm
+"nhà nghỉ giá rẻ ở Cù Lao Chàm, đi bộ 2 phút ra Bãi Ông, gần chợ, nhiều cây xanh và yên tĩnh",Nhà nghỉ Trang Vũ Cù Lao Chàm
+"homestay Bãi Làng Cù Lao Chàm có sân ngồi chơi và được cô chú nấu cơm nhà, vừa ngon vừa rẻ",Nhà Waratah Homestay Cù Lao Chàm
+"muốn ở homestay trên đảo gần bãi biển hoang sơ, mang không khí địa phương, có sáng và tối ăn ngon",The Coral Homestay & Pub Cù Lao Chàm
+"homestay sát biển Cù Lao Chàm có view biển đẹp, chủ nhà hiếu khách, có đón từ bến tàu",The Coral Homestay & Pub Cù Lao Chàm|Nhà Waratah Homestay Cù Lao Chàm
+"nhóm 4 người muốn nhà nghỉ khoảng 250k một đêm sát biển Bãi Ông, có tour câu cá, lặn ngắm san hô",Nhà nghỉ Tâm Hiền Cù Lao Chàm
+"gia đình có em bé muốn ở khách sạn gần Thánh địa Mỹ Sơn, phòng mát, hồ bơi rộng, nhận phòng sớm cho bé ngủ trưa",My Son Heritage Resort and Spa
+muốn ngủ ngay gần đền tháp Mỹ Sơn để sáng sớm vào tham quan trước khi đông khách,Homestay 7 Liễu Mỹ Sơn|Nhà nghỉ Hồ Cư Mỹ Sơn|My Son Heritage Resort and Spa
+"gia đình 4 người cần phòng thông nhau, bể bơi cho trẻ em, có xe đạp miễn phí đi xem phố Hội An",JM Hoi An Beach Hotel|Barbados Cherry Villa
+"muốn ở gần phố cổ Hội An nhưng yên tĩnh, có phòng ban công nhìn ra sông để hóng mát buổi tối",Laluna Hoi An Riverside Hotel & Spa
+"resort sát biển Tam Thanh Tam Kỳ, cạnh làng bích họa, hồ bơi sạch và đồ ăn nhà hàng ngon",Tam Thanh Beach Resort & Spa
+"khu nghỉ dưỡng sinh thái bên hồ Phú Ninh, rừng cây mát, yên tĩnh, có tắm khoáng và đi thuyền ngắm đảo",Phu Ninh Lake Resort & Spa
+"muốn tìm chỗ ở ẩn trên đảo Tam Hải, không khí trong lành, nội thất gỗ, có bãi biển riêng để chữa lành",Le Domaine de Tam Hai Resort
+"khách sạn Biển Rạng gần sân bay Chu Lai, phòng rộng, bể bơi lớn, ban công ngắm bình minh",Hoang Yen Boutique Hotel Biển Rạng
+"resort 5 sao ở Tam Tiến có bãi biển riêng, trò chơi dưới nước và bar bên bờ biển",ROBINSON Nam Hoi An Resort
+"tối nay bay sáng mai ở Chu Lai, tìm chỗ ngủ một đêm gần sân bay, sạch và nhân viên lịch sự",Nhà nghỉ Như Ngọc Núi Thành
+"muốn đi săn mây ở vùng núi Quảng Nam, sáng dậy đón bình minh trên đỉnh, có ẩm thực bản địa",Mây Takpo Homestay Săn Mây|Lộc Trời Homestay Đỉnh Quế
+"khách sạn gần biển Mỹ Khê có kiến trúc nhiều cây xanh, bể bơi đón bình minh và phòng thông minh",M Hotel Danang
+"gia đình có bé muốn ở khách sạn ven biển Mỹ Khê, có trà chiều miễn phí, bé ngủ dậy có đồ ăn nhẹ",Sala Danang Beach Hotel
+"khách sạn boutique phong cách nhiệt đới, đi bộ vài phút ra biển Mỹ Khê, lễ tân thân thiện",Saha Casa Boutique Hotel Da Nang
+"khách sạn tầm 600k cách biển Mỹ Khê 2 phút đi bộ, sạch đẹp, ăn sáng ngon, có chỗ đậu xe",Ruby Star Da Nang
+"đại gia đình 6 đến 10 người muốn thuê biệt thự nguyên căn sát biển, có hồ bơi riêng",My Khe Beach Luxury Pool Villa|Jack Tran's Beach Villa Tam Thanh|S Villa Tam Tiến Beachfront

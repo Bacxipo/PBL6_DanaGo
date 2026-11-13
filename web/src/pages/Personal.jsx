@@ -1,0 +1,82 @@
+'use client';
+
+import { useState } from 'react';
+import { User, Calendar, Map, Settings, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import SettingInfo from '../components/comon/account/SettingInfo';
+import FavoritePlace from '../components/comon/place/FavoritePlace';
+import PersonalPage from '../components/comon/account/PersonalPage';
+import ItineraryDetail from '../components/comon/itinerary/ItineraryDetail';
+
+export default function Personal() {
+    const router = useRouter();
+    const [activeButton, setActiveButton] = useState('personalpage');
+
+    const getButtonClass = (key) => {
+        const isActive = activeButton === key;
+        return `w-full p-3 rounded-xl flex items-center gap-x-3 transition-all duration-200 font-semibold text-sm cursor-pointer ${isActive
+                ? 'bg-[#006971] text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-[#006971]'
+            }`;
+    };
+
+    const handleLogout = () => {
+        sessionStorage.removeItem('accessToken');
+        window.dispatchEvent(new Event('auth-changed'));
+        router.replace('/login');
+    };
+    return (
+        <section className='w-full flex gap-8 max-w-7xl mx-auto py-8 px-4'>
+            {/* Sidebar Menu */}
+            <div className='sticky top-24 self-start flex flex-col gap-3 p-4 bg-white rounded-2xl shadow-sm border border-gray-100 w-1/4 h-fit max-h-[calc(100dvh-7rem)] overflow-y-auto shrink-0'>
+                <button
+                    className={getButtonClass('personalpage')}
+                    onClick={() => setActiveButton('personalpage')}
+                >
+                    <User className='w-5 h-5' />
+                    <span>Trang cá nhân</span>
+                </button>
+
+                <button
+                    className={getButtonClass('itinerary')}
+                    onClick={() => setActiveButton('itinerary')}
+                >
+                    <Calendar className='w-5 h-5' />
+                    <span>Lịch trình của tôi</span>
+                </button>
+
+                <button
+                    className={getButtonClass('favoritePlaces')}
+                    onClick={() => setActiveButton('favoritePlaces')}
+                >
+                    <Map className='w-5 h-5' />
+                    <span>Địa điểm yêu thích</span>
+                </button>
+
+                <button
+                    className={getButtonClass('accountSettings')}
+                    onClick={() => setActiveButton('accountSettings')}
+                >
+                    <Settings className='w-5 h-5' />
+                    <span>Cài đặt tài khoản</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full p-3 rounded-xl flex items-center gap-x-3 font-semibold text-sm cursor-pointer text-red-600 bg-red-50/40 hover:bg-red-100/60 hover:text-red-700 transition-all duration-200"
+                >
+                    <LogOut className='w-5 h-5 text-red-500' />
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+
+            {/* Main Content View */}
+            <div className='w-3/4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px]'>
+                {activeButton === 'personalpage' && <PersonalPage />}
+                {activeButton === 'itinerary' && <ItineraryDetail />}
+                {activeButton === 'favoritePlaces' && <FavoritePlace />}
+                {activeButton === 'accountSettings' && <SettingInfo />}
+            </div>
+        </section>
+    );
+}

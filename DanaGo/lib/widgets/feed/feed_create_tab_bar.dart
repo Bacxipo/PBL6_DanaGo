@@ -13,24 +13,26 @@ class FeedCreateTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF5F5),
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEFF5F5),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
         children: [
-          _buildTab(0, '📸', 'Trải nghiệm'),
-          _buildTab(1, '❓', 'Hỏi đáp'),
-          _buildTab(2, '📍', 'Địa điểm mới'),
+          _buildTab(context, 0, '📸', 'Trải nghiệm', isDark),
+          _buildTab(context, 1, '❓', 'Hỏi đáp', isDark),
+          _buildTab(context, 2, '📍', 'Địa điểm mới', isDark),
         ],
       ),
     );
   }
 
-  Widget _buildTab(int index, String emoji, String title) {
+  Widget _buildTab(BuildContext context, int index, String emoji, String title, bool isDark) {
     final isSelected = selectedIndex == index;
 
     return Expanded(
@@ -40,12 +42,14 @@ class FeedCreateTabBar extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected
+                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -64,7 +68,9 @@ class FeedCreateTabBar extends StatelessWidget {
                     fontFamily: 'Be Vietnam Pro',
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? AppColors.primary : AppColors.neutral,
+                    color: isSelected
+                        ? (isDark ? const Color(0xFF2DD4BF) : AppColors.primary)
+                        : (isDark ? Colors.grey.shade400 : AppColors.neutral),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

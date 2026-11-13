@@ -68,28 +68,38 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.authorName,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Be Vietnam Pro',
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: isDark ? Colors.white : AppColors.textPrimary,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined, color: AppColors.textPrimary, size: 20),
+            icon: Icon(
+              Icons.share_outlined,
+              color: isDark ? Colors.white : AppColors.textPrimary,
+              size: 20,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Chia sẻ trang cá nhân của ${widget.authorName}')),
@@ -261,13 +271,18 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           tabBar,
-          Container(color: AppColors.divider, height: 1.0),
+          Container(
+            color: isDark ? Colors.white12 : AppColors.divider,
+            height: 1.0,
+          ),
         ],
       ),
     );

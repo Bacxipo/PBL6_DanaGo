@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
 class HomeSearchBar extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onAvatarTap;
+  final String? avatarUrl;
 
   const HomeSearchBar({
     super.key,
     this.onTap,
     this.onAvatarTap,
+    this.avatarUrl,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
         Expanded(
@@ -22,11 +27,11 @@ class HomeSearchBar extends StatelessWidget {
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -69,18 +74,34 @@ class HomeSearchBar extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: Image.network(
-                'https://i.postimg.cc/tC24nW4N/avt1.jpg',
-                fit: BoxFit.cover,
-                errorBuilder: (ctx, err, _) => Container(
-                  color: AppColors.border,
-                  child: const Icon(Icons.person, color: AppColors.textHint),
-                ),
-              ),
+              child: _buildAvatar(),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAvatar() {
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      if (avatarUrl!.startsWith('http')) {
+        return Image.network(
+          avatarUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => SvgPicture.asset(
+            'assets/images/default-avatar.svg',
+            fit: BoxFit.cover,
+          ),
+        );
+      }
+      if (avatarUrl!.endsWith('.svg')) {
+        return SvgPicture.asset(avatarUrl!, fit: BoxFit.cover);
+      }
+      return Image.asset(avatarUrl!, fit: BoxFit.cover);
+    }
+    return SvgPicture.asset(
+      'assets/images/default-avatar.svg',
+      fit: BoxFit.cover,
     );
   }
 }

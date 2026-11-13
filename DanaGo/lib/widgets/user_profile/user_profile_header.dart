@@ -36,8 +36,10 @@ class _UserProfileHeaderState extends State<UserProfileHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -220,11 +222,11 @@ class _UserProfileHeaderState extends State<UserProfileHeader> {
                     Flexible(
                       child: Text(
                         widget.authorName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
                           fontSize: 19,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

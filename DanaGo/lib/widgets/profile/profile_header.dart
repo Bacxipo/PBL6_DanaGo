@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/theme/app_colors.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ProfileHeader extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -63,31 +64,17 @@ class ProfileHeader extends StatelessWidget {
                 height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: AppColors.primaryLight,
                   border: Border.all(color: Colors.white, width: 3),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
-                  image: user['avatar'] != null
-                      ? DecorationImage(
-                          image: (user['avatar'] as String).startsWith('http')
-                              ? NetworkImage(user['avatar']) as ImageProvider
-                              : AssetImage(user['avatar']),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                  color: AppColors.primaryLight,
                 ),
-                child: user['avatar'] == null
-                    ? const Icon(
-                        Icons.person_rounded,
-                        size: 45,
-                        color: AppColors.primary,
-                      )
-                    : null,
+                child: ClipOval(child: _buildAvatar(user['avatar'])),
               ),
               Positioned(
                 bottom: 0,
@@ -177,5 +164,27 @@ class ProfileHeader extends StatelessWidget {
       ),
     );
   }
-}
 
+  Widget _buildAvatar(dynamic avatar) {
+    if (avatar is String && avatar.isNotEmpty) {
+      if (avatar.startsWith('http')) {
+        return Image.network(
+          avatar,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => SvgPicture.asset(
+            'assets/images/default-avatar.svg',
+            fit: BoxFit.cover,
+          ),
+        );
+      }
+      if (avatar.endsWith('.svg')) {
+        return SvgPicture.asset(avatar, fit: BoxFit.cover);
+      }
+      return Image.asset(avatar, fit: BoxFit.cover);
+    }
+    return SvgPicture.asset(
+      'assets/images/default-avatar.svg',
+      fit: BoxFit.cover,
+    );
+  }
+}

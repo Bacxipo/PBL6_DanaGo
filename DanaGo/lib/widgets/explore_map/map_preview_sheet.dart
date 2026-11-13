@@ -15,17 +15,19 @@ class MapPreviewSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black26,
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.2),
             blurRadius: 20,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -37,7 +39,7 @@ class MapPreviewSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: isDark ? Colors.white24 : AppColors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
