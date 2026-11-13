@@ -19,7 +19,7 @@ export default function ItineraryCard({ item, onDelete, onUpdateTime }) {
     const imgSrc = item.img || '';
 
     return (
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm relative group hover:shadow-md transition">
+        <div className="relative group rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition duration-200 hover:border-teal-200 hover:shadow-lg">
             <div className="relative w-full h-40 rounded-xl overflow-hidden mb-3 bg-slate-100">
                 {imgSrc ? (
                     <Image

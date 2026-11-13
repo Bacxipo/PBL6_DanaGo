@@ -2,27 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-    Sparkles,
-    MapPin,
-    Clock,
-    Coins,
-    Star,
-    Compass,
-    Check,
-    AlertCircle,
-    Loader2,
-    RotateCcw,
-    SlidersHorizontal,
-    Waves,
-    Utensils,
-    Landmark,
-    Trees,
-    FerrisWheel,
-    ArrowRight,
-    Send,
-    CornerDownLeft,
-} from 'lucide-react';
+import { Sparkles, MapPin, Clock, Coins, Star, Compass, Check, AlertCircle, Loader2, RotateCcw, SlidersHorizontal, Waves, Utensils, Landmark, Trees, FerrisWheel, ArrowRight, Send, CornerDownLeft, } from 'lucide-react';
 
 const AI_API_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000';
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -224,9 +204,9 @@ export default function AIPlanPage() {
         : 0;
 
     return (
-        <div className="w-full min-h-screen bg-gray-50/60 pb-16">
+        <div className="dana-content-page w-full min-h-screen bg-[#f7fafa]/60 pb-16">
             {/* ================= HERO HEADER ================= */}
-            <div className="bg-gradient-to-r from-[#004e54] via-[#006971] to-[#00828c] text-white py-10 px-4 mb-8 shadow-sm">
+            <div className="bg-gradient-to-r from-[#073d46] via-[#006971] to-[#258d89] text-white py-10 px-4 mb-8 shadow-sm">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="space-y-2 max-w-2xl text-center md:text-left">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-semibold text-amber-200 border border-white/20">
@@ -260,8 +240,8 @@ export default function AIPlanPage() {
             <div className="max-w-7xl mx-auto px-4">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     {/* ================= CỘT TRÁI: FORM ĐIỀU KHIỂN & BỘ LỌC ================= */}
-                    <aside className="lg:col-span-4 bg-white p-6 rounded-2xl shadow-xs border border-gray-100 space-y-6 lg:sticky lg:top-6">
-                        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <aside className="lg:col-span-4 bg-white p-6 rounded-2xl shadow-xs border border-teal-100/70 space-y-6 lg:sticky lg:top-6">
+                        <div className="flex items-center justify-between border-b border-teal-100/70 pb-3">
                             <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
                                 <SlidersHorizontal size={18} className="text-[#006971]" />
                                 Yêu cầu & Bộ lọc
@@ -290,7 +270,7 @@ export default function AIPlanPage() {
                             </div>
 
                             {/* Khung Textarea tích hợp nút Gửi và phím Enter */}
-                            <div className="rounded-2xl border border-gray-300 bg-white p-2.5 focus-within:ring-2 focus-within:ring-[#006971]/30 focus-within:border-[#006971] transition-all shadow-xs">
+                            <div className="rounded-2xl border border-slate-200 bg-white p-2.5 focus-within:ring-2 focus-within:ring-[#006971]/30 focus-within:border-[#006971] transition-all shadow-xs">
                                 <textarea
                                     rows={3}
                                     maxLength={300}
@@ -306,7 +286,7 @@ export default function AIPlanPage() {
                                     className="w-full p-1 text-sm bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none leading-relaxed"
                                 />
 
-                                <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-1">
+                                <div className="flex items-center justify-between pt-2 border-t border-teal-100/70 mt-1">
                                     <span className="text-xs text-gray-400 flex items-center gap-1 select-none">
                                         <CornerDownLeft size={11} className="text-gray-400" />
                                         Nhấn <kbd className="px-1 py-0.5 bg-gray-100 rounded text-gray-600 font-sans text-xs">Enter</kbd> để gửi
@@ -370,8 +350,8 @@ export default function AIPlanPage() {
                                             type="button"
                                             onClick={() => toggleInterest(ig.id)}
                                             className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${isSelected
-                                                    ? 'bg-[#006971] text-white border-[#006971] shadow-xs'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-[#006971]/40'
+                                                ? 'bg-[#006971] text-white border-[#006971] shadow-xs'
+                                                : 'bg-white text-gray-700 border-slate-200/80 hover:border-[#006971]/40'
                                                 }`}
                                         >
                                             <IconComponent size={14} className={isSelected ? 'text-white' : 'text-gray-500'} />
@@ -394,7 +374,7 @@ export default function AIPlanPage() {
                             <select
                                 value={region}
                                 onChange={(e) => setRegion(e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-800 focus:outline-none focus:border-[#006971] cursor-pointer"
+                                className="w-full px-3 py-2 text-sm border border-slate-200/80 rounded-xl bg-white text-gray-800 focus:outline-none focus:border-[#006971] cursor-pointer"
                             >
                                 {REGIONS.map((r) => (
                                     <option key={r.value} value={r.value}>
@@ -414,7 +394,7 @@ export default function AIPlanPage() {
                                 value={budget}
                                 onChange={(e) => setBudget(e.target.value)}
                                 placeholder="Ví dụ: 500000 hoặc để trống"
-                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-800 focus:outline-none focus:border-[#006971]"
+                                className="w-full px-3 py-2 text-sm border border-slate-200/80 rounded-xl bg-white text-gray-800 focus:outline-none focus:border-[#006971]"
                             />
                             <div className="flex gap-2 mt-2">
                                 {[
@@ -471,10 +451,10 @@ export default function AIPlanPage() {
 
                         {/* THANH TAB LỌC KẾT QUẢ THEO NHÓM */}
                         {results && (
-                            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                            <div className="bg-white p-4 rounded-2xl border border-teal-100/70 shadow-xs space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-teal-100/70 pb-3">
                                     <div>
-                                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                                        <h3 className="text-base font-bold text-[#163438] flex items-center gap-2">
                                             <Compass size={18} className="text-[#006971]" />
                                             Gợi Ý Phù Hợp ({totalPlacesCount} địa điểm)
                                         </h3>
@@ -501,8 +481,8 @@ export default function AIPlanPage() {
                                         type="button"
                                         onClick={() => setActiveGroupTab('ALL')}
                                         className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeGroupTab === 'ALL'
-                                                ? 'bg-[#006971] text-white shadow-xs'
-                                                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                                            ? 'bg-[#006971] text-white shadow-xs'
+                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
                                             }`}
                                     >
                                         Tất cả ({totalPlacesCount})
@@ -514,8 +494,8 @@ export default function AIPlanPage() {
                                                 type="button"
                                                 onClick={() => setActiveGroupTab(groupName)}
                                                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeGroupTab === groupName
-                                                        ? 'bg-[#006971] text-white shadow-xs'
-                                                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                                                    ? 'bg-[#006971] text-white shadow-xs'
+                                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
                                                     }`}
                                             >
                                                 {groupName} ({places.length})
@@ -527,7 +507,7 @@ export default function AIPlanPage() {
 
                         {/* DANH SÁCH THẺ ĐỊA ĐIỂM (CARDS) */}
                         {loading ? (
-                            <div className="py-20 flex flex-col items-center justify-center space-y-4 bg-white rounded-2xl border border-gray-100">
+                            <div className="py-20 flex flex-col items-center justify-center space-y-4 bg-white rounded-2xl border border-teal-100/70">
                                 <Loader2 size={36} className="text-[#006971] animate-spin" />
                                 <div className="text-center space-y-1">
                                     <div className="text-sm font-semibold text-gray-800">
@@ -539,7 +519,7 @@ export default function AIPlanPage() {
                                 </div>
                             </div>
                         ) : displayedPlaces.length === 0 ? (
-                            <div className="py-16 text-center bg-white rounded-2xl border border-gray-100 p-6 space-y-3">
+                            <div className="py-16 text-center bg-white rounded-2xl border border-teal-100/70 p-6 space-y-3">
                                 <Compass size={40} className="mx-auto text-gray-300" />
                                 <div className="text-base font-bold text-gray-800">
                                     Chưa có địa điểm nào phù hợp
@@ -566,8 +546,8 @@ export default function AIPlanPage() {
                                         <div
                                             key={`${place.groupName}-${place.id}`}
                                             className={`group bg-white rounded-2xl border overflow-hidden transition-all flex flex-col justify-between ${isSelected
-                                                    ? 'border-[#006971] ring-2 ring-[#006971]/20 shadow-md'
-                                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                                                ? 'border-[#006971] ring-2 ring-[#006971]/20 shadow-md'
+                                                : 'border-slate-200/80 hover:border-slate-200 hover:shadow-sm'
                                                 }`}
                                         >
                                             {/* Phần trên: Ảnh & Badges */}
@@ -589,10 +569,10 @@ export default function AIPlanPage() {
                                                     {matchPercent !== null && (
                                                         <span
                                                             className={`absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-2xs font-bold shadow-xs backdrop-blur-md ${matchPercent >= 70
-                                                                    ? 'bg-emerald-600 text-white'
-                                                                    : matchPercent >= 50
-                                                                        ? 'bg-teal-600 text-white'
-                                                                        : 'bg-gray-800 text-white'
+                                                                ? 'bg-emerald-600 text-white'
+                                                                : matchPercent >= 50
+                                                                    ? 'bg-teal-600 text-white'
+                                                                    : 'bg-gray-800 text-white'
                                                                 }`}
                                                         >
                                                             Phù hợp {matchPercent}%
@@ -611,7 +591,7 @@ export default function AIPlanPage() {
                                                 {/* Phần thân thông tin */}
                                                 <div className="p-4 space-y-2.5">
                                                     <div className="flex items-start justify-between gap-2">
-                                                        <h4 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1 group-hover:text-[#006971] transition-colors">
+                                                        <h4 className="font-bold text-[#163438] text-sm leading-snug line-clamp-1 group-hover:text-[#006971] transition-colors">
                                                             {place.name}
                                                         </h4>
                                                         <div className="flex items-center gap-1 text-amber-500 font-bold text-xs shrink-0">
@@ -620,7 +600,7 @@ export default function AIPlanPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-2 text-2xs text-gray-600 pt-1 border-t border-gray-100">
+                                                    <div className="grid grid-cols-2 gap-2 text-2xs text-gray-600 pt-1 border-t border-teal-100/70">
                                                         <div className="flex items-center gap-1.5">
                                                             <Coins size={12} className="text-amber-600 shrink-0" />
                                                             <span>
@@ -636,7 +616,7 @@ export default function AIPlanPage() {
                                                     </div>
 
                                                     {place.category && (
-                                                        <div className="text-2xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md line-clamp-1">
+                                                        <div className="text-2xs text-gray-500 bg-[#f7fafa] px-2 py-1 rounded-md line-clamp-1">
                                                             Phân loại: <span className="font-medium text-gray-700">{place.category}</span>
                                                         </div>
                                                     )}
@@ -649,8 +629,8 @@ export default function AIPlanPage() {
                                                     type="button"
                                                     onClick={() => toggleSelectPlace(place)}
                                                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${isSelected
-                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                            : 'bg-[#006971]/10 text-[#006971] hover:bg-[#006971] hover:text-white'
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-[#006971]/10 text-[#006971] hover:bg-[#006971] hover:text-white'
                                                         }`}
                                                 >
                                                     {isSelected ? (
@@ -665,7 +645,7 @@ export default function AIPlanPage() {
 
                                                 <Link
                                                     href={`/explore/place/${place.id}`}
-                                                    className="p-2 rounded-xl border border-gray-200 hover:border-[#006971] hover:text-[#006971] text-gray-500 transition-colors"
+                                                    className="p-2 rounded-xl border border-slate-200/80 hover:border-[#006971] hover:text-[#006971] text-gray-500 transition-colors"
                                                     title="Xem chi tiết"
                                                 >
                                                     <ArrowRight size={14} />

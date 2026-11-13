@@ -137,7 +137,7 @@ export default function DetailPlace({ id: propId }) {
 
     if (loading) {
         return (
-                <div className="flex flex-col items-center justify-center min-h-[460px] gap-3 text-slate-500 py-24">
+                <div className="dana-content-page flex flex-col items-center justify-center min-h-[460px] gap-3 text-slate-500 py-24">
                     <Loader2 className="w-9 h-9 animate-spin text-[#006971]" />
                     <p className="text-sm font-semibold">Đang tải chi tiết điểm đến...</p>
                 </div>
@@ -219,7 +219,7 @@ export default function DetailPlace({ id: propId }) {
                                                     <span>{place.address}</span>
                                                 </span>
                                             </div>
-                                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
+                                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#163438] tracking-tight">
                                                 {place.name}
                                             </h1>
                                             <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-4xl">
@@ -371,7 +371,7 @@ export default function DetailPlace({ id: propId }) {
 
                                                             {/* VỀ ĐỊA ĐIỂM NÀY */}
                                                             <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-4">
-                                                                <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
+                                                                <h3 className="text-lg font-bold text-[#163438] border-b border-slate-100 pb-3">
                                                                     Giới thiệu chi tiết
                                                                 </h3>
                                                                 <p className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-line">
@@ -381,7 +381,7 @@ export default function DetailPlace({ id: propId }) {
 
                                                             {/* BẢN ĐỒ VỊ TRÍ */}
                                                             <div className="space-y-3">
-                                                                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                                                <h3 className="text-lg font-bold text-[#163438] flex items-center gap-2">
                                                                     <MapPin className="w-5 h-5 text-[#006971]" />
                                                                     <span>Bản đồ vị trí</span>
                                                                 </h3>
@@ -392,7 +392,7 @@ export default function DetailPlace({ id: propId }) {
 
                     {/* ĐÁNH GIÁ TỪ DU KHÁCH */}
                                                     <div className="space-y-6 pt-4 border-t border-slate-200">
-                                                        <h3 className="text-xl font-bold text-slate-900">
+                                                        <h3 className="text-xl font-bold text-[#163438]">
                                                             Đánh giá từ du khách ({reviewList.length})
                                                         </h3>
 
@@ -502,7 +502,7 @@ export default function DetailPlace({ id: propId }) {
                                                                                     type="button"
                                                                                     onClick={handlePrevImage}
                                                                                     aria-label="Ảnh trước"
-                                                                                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-xl cursor-pointer border border-white/10"
+                                                                                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-[0_16px_60px_-24px_rgba(0,105,113,0.25)] cursor-pointer border border-white/10"
                                                                                 >
                                                                                     <ChevronLeft className="w-7 h-7" />
                                                                                 </button>
@@ -510,7 +510,7 @@ export default function DetailPlace({ id: propId }) {
                                                                                     type="button"
                                                                                     onClick={handleNextImage}
                                                                                     aria-label="Ảnh tiếp theo"
-                                                                                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-xl cursor-pointer border border-white/10"
+                                                                                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-[0_16px_60px_-24px_rgba(0,105,113,0.25)] cursor-pointer border border-white/10"
                                                                                 >
                                                                                     <ChevronRight className="w-7 h-7" />
                                                                                 </button>

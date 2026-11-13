@@ -8,7 +8,7 @@ import StandardPostCard from './StandardPostCard';
 export default function CommunityFeed({ posts, currentUserId, onDeleted, onUpdated, }) {
   if (!posts || posts.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center border border-slate-100 text-slate-400 font-medium">
+      <div className="rounded-2xl border border-dashed border-teal-200 bg-teal-50/40 p-10 text-center text-sm leading-7 text-slate-500">
         Chưa có bài viết nào trong cộng đồng. Hãy là người đầu tiên đăng bài!
       </div>
     );
