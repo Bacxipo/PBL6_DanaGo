@@ -71,13 +71,13 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4 bg-gray-50">
-      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden border border-gray-100">
+    <div className="dana-form-page min-h-[calc(100vh-140px)] flex items-center justify-center p-4 py-10 bg-[#f7fafa]">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_16px_60px_-24px_rgba(0,105,113,0.25)] flex flex-col md:flex-row overflow-hidden border border-teal-100/70">
 
         {/* Cột trái: Form Đăng ký */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Đăng ký tài khoản</h2>
+            <h2 className="text-2xl font-bold text-[#163438]">Đăng ký tài khoản</h2>
             <p className="text-xs text-gray-500 mt-1">Nhập thông tin bên dưới để tạo tài khoản</p>
           </div>
 
@@ -91,7 +91,7 @@ export default function Register() {
                   type="text"
                   required
                   placeholder="Nhập họ và tên"
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                 />
@@ -107,7 +107,7 @@ export default function Register() {
                   type="text"
                   required
                   placeholder="Nhập tên đăng nhập"
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -123,7 +123,7 @@ export default function Register() {
                   type="email"
                   required
                   placeholder="Nhập địa chỉ email"
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -140,7 +140,7 @@ export default function Register() {
                   required
                   minLength={6}
                   placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -156,7 +156,7 @@ export default function Register() {
                   type="password"
                   required
                   placeholder="Nhập lại mật khẩu"
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
+                  className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
@@ -184,7 +184,7 @@ export default function Register() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-3 border border-gray-300 py-2.5 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-center gap-3 border border-slate-200 py-2.5 rounded-full text-sm font-semibold text-gray-700 hover:bg-[#f7fafa] transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -206,7 +206,7 @@ export default function Register() {
         {/* Cột phải: Ảnh Cầu Vàng */}
         <div className="relative w-full md:w-1/2 min-h-[350px] md:min-h-[550px] hidden md:block">
           <Image src={imgRegister} alt="Đăng ký" fill priority className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#073d46]/85 via-black/20 to-transparent" />
           <h3 className="absolute bottom-8 left-8 text-white text-2xl font-bold max-w-xs leading-snug">
             Bắt đầu hành trình của bạn
           </h3>

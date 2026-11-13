@@ -6,9 +6,29 @@ import Link from 'next/link';
 import Rating from '../ui/Rating';
 import Image from 'next/image';
 
-export default function PlaceCard({ id, name, img, des, stars, price, category, address, favoriteState, matchScore }) {
-    const isFav = favoriteState?.favorites.some((item) => item.destinationId === Number(id)) || false;
-    const disabled = !favoriteState || favoriteState.loading || favoriteState.saving || (favoriteState.signedIn && Boolean(favoriteState.error)) || !Number.isSafeInteger(Number(id)) || Number(id) <= 0;
+export default function PlaceCard({
+    id,
+    name,
+    img,
+    des,
+    stars,
+    price,
+    category,
+    address,
+    distance,
+    favoriteState,
+}) {
+    const isFav =
+        favoriteState?.favorites.some(
+            (item) => item.destinationId === Number(id),
+        ) || false;
+    const disabled =
+        !favoriteState ||
+        favoriteState.loading ||
+        favoriteState.saving ||
+        (favoriteState.signedIn && Boolean(favoriteState.error)) ||
+        !Number.isSafeInteger(Number(id)) ||
+        Number(id) <= 0;
     const error = favoriteState?.error;
     const retry = favoriteState?.refresh;
 
@@ -29,14 +49,14 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                             src={imgSrc}
                             alt={name}
                             fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 25vw"
                             className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"
                         />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
                     {category && (
-                        <span className="absolute top-3 left-3 bg-[#006971]/85 backdrop-blur-md text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                        <span className="absolute top-3 left-3 max-w-[calc(100%-4rem)] truncate bg-[#006971]/85 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-sm">
                             {category}
                         </span>
                     )}
@@ -47,9 +67,11 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                         onClick={handleHeartClick}
                         disabled={disabled}
                         aria-pressed={isFav}
-                        aria-label={isFav ? 'Bỏ yêu thích' : 'Lưu vào yêu thích'}
+                        aria-label={
+                            isFav ? 'Bỏ yêu thích' : 'Lưu vào yêu thích'
+                        }
                         className="absolute top-3 right-3 p-1.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xs transition cursor-pointer z-10"
-                        title={isFav ? "Bỏ yêu thích" : "Yêu thích"}
+                        title={isFav ? 'Bỏ yêu thích' : 'Yêu thích'}
                     >
                         <Heart
                             className={`w-4 h-4 transition-all duration-200 ${isFav
@@ -66,7 +88,10 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                     )}
 
                     {price && (
-                        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold text-[#006971] shadow-sm">
+                        <div
+                            title={price}
+                            className="absolute bottom-3 right-3 max-w-[calc(100%-1.5rem)] truncate bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-semibold text-[#006971] shadow-sm"
+                        >
                             {price}
                         </div>
                     )}
@@ -85,9 +110,11 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                         onClick={handleHeartClick}
                         disabled={disabled}
                         aria-pressed={isFav}
-                        aria-label={isFav ? 'Bỏ yêu thích' : 'Lưu vào yêu thích'}
+                        aria-label={
+                            isFav ? 'Bỏ yêu thích' : 'Lưu vào yêu thích'
+                        }
                         className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-200/70 hover:bg-gray-300 transition cursor-pointer z-10"
-                        title={isFav ? "Bỏ yêu thích" : "Yêu thích"}
+                        title={isFav ? 'Bỏ yêu thích' : 'Yêu thích'}
                     >
                         <Heart
                             className={`w-4 h-4 transition-all duration-200 ${isFav
@@ -98,15 +125,20 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                     </button>
 
                     {/* Trạng thái trống khi chưa có hình ảnh */}
-                    <div className="flex flex-col items-center justify-center gap-1.5 text-gray-400 select-none">
+                    <div className="flex flex-col items-center justify-center gap-1.5 text-teal-700/50 select-none">
                         <div className="w-12 h-12 rounded-full bg-gray-200/60 flex items-center justify-center text-gray-400">
                             <ImageIcon className="w-6 h-6 stroke-[1.5]" />
                         </div>
-                        <span className="text-xs text-gray-400 font-medium">Chưa có hình ảnh</span>
+                        <span className="max-w-[80%] text-center text-xs font-medium line-clamp-2">
+                            {name}
+                        </span>
                     </div>
 
                     {price && (
-                        <div className="absolute bottom-3 right-3 bg-white/95 border border-gray-200/80 px-3 py-1 rounded-lg text-xs font-bold text-[#006971] shadow-xs">
+                        <div
+                            title={price}
+                            className="absolute bottom-3 right-3 max-w-[calc(100%-1.5rem)] truncate bg-white/95 border border-gray-200/80 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-[#006971] shadow-xs"
+                        >
                             {price}
                         </div>
                     )}
@@ -114,12 +146,24 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
             )}
 
             <div className="p-4 flex flex-col flex-grow justify-between gap-3">
-                {error && <div role="alert" className="text-xs text-red-600">
-                    {error}
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); retry(); }} className="ml-2 underline">Thử lại</button>
-                </div>}
+                {error && (
+                    <div role="alert" className="text-xs text-red-600">
+                        {error}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                retry();
+                            }}
+                            className="ml-2 underline"
+                        >
+                            Thử lại
+                        </button>
+                    </div>
+                )}
                 <div>
-                    <h3 className="font-bold text-base text-gray-800 group-hover:text-[#006971] transition-colors line-clamp-1">
+                    <h3 className="min-h-12 font-semibold text-base leading-6 text-[#163438] group-hover:text-[#006971] transition-colors line-clamp-2">
                         {name}
                     </h3>
                     <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
@@ -128,12 +172,22 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
                 </div>
 
                 <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1 text-gray-500 font-medium">
+                    <div className="flex min-w-0 items-center gap-1 pr-2 text-gray-500 font-medium">
                         <MapPin className="w-3.5 h-3.5 text-[#006971] shrink-0" />
-                        <span className="truncate max-w-[120px]">{address || "Đà Nẵng"}</span>
+                        <span
+                            className="truncate"
+                            title={`${address || 'Đà Nẵng'}${distance ? `, ${distance}` : ''}`}
+                        >
+                            {address || 'Đà Nẵng'}
+                        </span>
+                        {distance && (
+                            <span className="shrink-0 font-semibold text-[#006971]">
+                                · {distance}
+                            </span>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md text-amber-700 font-semibold border border-amber-200/50">
+                    <div className="flex shrink-0 items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md text-amber-700 font-semibold border border-amber-200/50">
                         <Rating rating={stars} />
                     </div>
                 </div>
@@ -143,7 +197,10 @@ export default function PlaceCard({ id, name, img, des, stars, price, category, 
 
     if (id) {
         return (
-            <Link href={`/explore/place/${id}`} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col justify-between cursor-pointer">
+            <Link
+                href={`/explore/place/${id}`}
+                className="group flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-200 hover:border-teal-200 hover:shadow-lg motion-safe:hover:-translate-y-1"
+            >
                 {content}
             </Link>
         );

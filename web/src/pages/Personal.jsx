@@ -15,8 +15,8 @@ export default function Personal() {
     const getButtonClass = (key) => {
         const isActive = activeButton === key;
         return `w-full p-3 rounded-xl flex items-center gap-x-3 transition-all duration-200 font-semibold text-sm cursor-pointer ${isActive
-                ? 'bg-[#006971] text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-[#006971]'
+                ? 'bg-teal-50 text-[#006971] ring-1 ring-teal-100'
+                : 'bg-transparent text-slate-600 hover:bg-teal-50 hover:text-[#006971]'
             }`;
     };
 
@@ -26,9 +26,9 @@ export default function Personal() {
         router.replace('/login');
     };
     return (
-        <section className='w-full flex gap-8 max-w-7xl mx-auto py-8 px-4'>
+        <section className='dana-content-page w-full flex gap-8 max-w-7xl mx-auto py-8 px-4'>
             {/* Sidebar Menu */}
-            <div className='sticky top-24 self-start flex flex-col gap-3 p-4 bg-white rounded-2xl shadow-sm border border-gray-100 w-1/4 h-fit max-h-[calc(100dvh-7rem)] overflow-y-auto shrink-0'>
+            <div className='sticky top-24 self-start flex flex-col gap-3 p-4 bg-white rounded-2xl shadow-sm border border-teal-100/70 w-1/4 h-fit max-h-[calc(100dvh-7rem)] overflow-y-auto shrink-0'>
                 <button
                     className={getButtonClass('personalpage')}
                     onClick={() => setActiveButton('personalpage')}
@@ -71,7 +71,7 @@ export default function Personal() {
             </div>
 
             {/* Main Content View */}
-            <div className='w-3/4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px]'>
+            <div className='w-3/4 bg-white p-6 rounded-2xl shadow-sm border border-teal-100/70 min-h-[500px]'>
                 {activeButton === 'personalpage' && <PersonalPage />}
                 {activeButton === 'itinerary' && <ItineraryDetail />}
                 {activeButton === 'favoritePlaces' && <FavoritePlace />}

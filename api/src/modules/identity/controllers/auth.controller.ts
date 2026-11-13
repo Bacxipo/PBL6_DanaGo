@@ -1,4 +1,4 @@
-import { GoogleLoginDto } from '../dto/google-login.dto';
+import { GoogleLoginDto, LinkGoogleDto } from '../dto/google-login.dto';
 import { GoogleIdTokenDto } from '../dto/google-id-token.dto';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
@@ -26,6 +26,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async google(@Body() dto: GoogleLoginDto): Promise<AuthResponseDto> {
     return this.authService.loginWithGoogle(dto.accessToken);
+  }
+
+  @Post('google/link')
+  @HttpCode(HttpStatus.OK)
+  async linkGoogle(@Body() dto: LinkGoogleDto): Promise<AuthResponseDto> {
+    return this.authService.linkGoogle(dto);
   }
 
   @Post('login')

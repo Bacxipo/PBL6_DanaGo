@@ -7,9 +7,9 @@ import ItineraryDetail from '@/components/comon/itinerary/ItineraryDetail';
 
 export default function ItineraryPage() {
     return (
-        <div className="w-full min-h-screen bg-slate-50/60 pb-16">
+        <div className="dana-content-page w-full min-h-screen bg-slate-50/60 pb-16">
             {/* Hero Header */}
-            <div className="bg-gradient-to-r from-[#004e54] via-[#006971] to-[#00828c] text-white py-10 px-4 mb-8 shadow-sm">
+            <div className="bg-gradient-to-r from-[#073d46] via-[#006971] to-[#258d89] text-white py-10 px-4 mb-8 shadow-sm">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="space-y-2 max-w-2xl text-center md:text-left">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-semibold text-amber-200 border border-white/20">

@@ -62,13 +62,13 @@ export default function Interests() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4 bg-gray-50">
-      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden border border-gray-100">
+    <div className="dana-form-page min-h-[calc(100vh-140px)] flex items-center justify-center p-4 py-10 bg-[#f7fafa]">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_16px_60px_-24px_rgba(0,105,113,0.25)] flex flex-col md:flex-row overflow-hidden border border-teal-100/70">
 
         {/* Cột trái: Danh sách sở thích */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Thứ bạn quan tâm là gì ?</h2>
+            <h2 className="text-2xl font-bold text-[#163438]">Thứ bạn quan tâm là gì ?</h2>
             <p className="text-xs text-gray-500 mt-1">Hãy chia sẻ nó với chúng tôi và mọi người</p>
           </div>
 
