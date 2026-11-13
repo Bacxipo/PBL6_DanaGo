@@ -156,6 +156,22 @@ export class DestinationRepository {
     return this.mapToEntity(updated);
   }
 
+  async updateFeatured(
+    id: number,
+    isFeatured: boolean,
+  ): Promise<DestinationEntity> {
+    const updated = await this.prisma.destination.update({
+      where: { id },
+      data: { isFeatured },
+      include: {
+        images: true,
+        category: true,
+      },
+    });
+
+    return this.mapToEntity(updated);
+  }
+
   async delete(id: number): Promise<boolean> {
     await this.prisma.destination.delete({
       where: { id },
