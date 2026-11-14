@@ -7,7 +7,7 @@ import { useApi, removeById, timeAgo, getImageUrl, getImageId } from '@/lib/util
 import Avatar from '@/components/Avatar';
 import { useAction, useAuth, usePending } from '@/lib/context';
 import type { ContentStatus } from '@/lib/types';
-import { CheckCircle2, XCircle, ExternalLink, MapPin, MessageSquare, Heart, Star } from 'lucide-react';
+import { CheckCircle2, XCircle, ExternalLink, MapPin, MessageSquare, Heart, Star, Trash2 } from 'lucide-react';
 import { destinationApi, feedApi, reviewApi, userApi } from '@/lib/api';
 
 type Tab = 'reviews' | 'pois' | 'posts';
@@ -47,12 +47,9 @@ export default function ModerationPage() {
   const userName = (id?: number) => users.data?.find((u) => u.id === id)?.fullName ?? (id ? `Tài khoản #${id}` : 'Quản trị viên');
 
   // Đổi trạng thái xong thì bỏ mục khỏi danh sách đang lọc
-  const moderate = (kind: Tab, id: number, next: ContentStatus) =>
+  const moderate = (kind: 'pois' | 'posts', id: number, next: ContentStatus) =>
     run(async () => {
-      if (kind === 'reviews') {
-        await reviewApi.setStatus(id, next);
-        reviews.setData((xs) => removeById(xs, id));
-      } else if (kind === 'pois') {
+      if (kind === 'pois') {
         await destinationApi.setStatus(id, next);
         pois.setData((xs) => removeById(xs, id));
       } else {
@@ -61,6 +58,16 @@ export default function ModerationPage() {
       }
       refresh();
     }, next === 'APPROVED' ? 'Đã phê duyệt.' : 'Đã từ chối.');
+
+  // Đánh giá không còn hàng chờ duyệt nên thay "Từ chối" bằng "Xóa" (hỏi xác nhận vì không hoàn tác được)
+  const removeReview = (id: number, author: string, place: string) => {
+    if (!window.confirm(`Bạn có chắc muốn XÓA đánh giá của "${author}" tại "${place}"?\n\nĐánh giá sẽ bị xóa vĩnh viễn và không thể khôi phục.`)) return;
+    run(async () => {
+      await reviewApi.remove(id);
+      reviews.setData((xs) => removeById(xs, id));
+      refresh();
+    }, 'Đã xóa đánh giá.');
+  };
 
   const tabs = [
     { key: 'reviews' as const, label: 'Đánh giá của du khách', icon: Star, count: counts.reviews },
@@ -114,7 +121,14 @@ export default function ModerationPage() {
                       </div>
                       <div className="flex md:flex-col items-center md:items-end justify-between gap-3 shrink-0">
                         <StatusBadge status={r.status} />
-                        <ReviewButtons status={r.status} busy={busy} onSet={(s) => moderate('reviews', r.id, s)} />
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => removeReview(r.id, r.user?.fullName ?? `Tài khoản #${r.userId}`, r.destination?.name ?? `Điểm đến #${r.destinationId}`)}
+                          className="px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Xóa
+                        </button>
                       </div>
                     </div>
                   ))}

@@ -185,7 +185,9 @@ export const categoryApi = {
 export const reviewApi = {
   // Review giờ luôn APPROVED ngay khi tạo/sửa -> chỉ còn ý nghĩa xem danh sách đã duyệt
   listApproved: () => api.get<Review[]>('/community/reviews/admin/approved'),
-  setStatus: (id: number, status: ContentStatus) => setStatus<Review>('/community/reviews', id, status)
+  setStatus: (id: number, status: ContentStatus) => setStatus<Review>('/community/reviews', id, status),
+  // Xóa hẳn đánh giá (ADMIN xóa được của mọi người; backend tự tính lại điểm sao trung bình của điểm đến)
+  remove: (id: number) => api.delete<{ message: string }>(`/community/reviews/${id}`)
 };
 
 export const statsApi = {
