@@ -21,6 +21,7 @@ import { DestinationResponseDto, DestinationImageDto } from '../dto/destination-
 import { CreateDestinationDto } from '../dto/create-destination.dto';
 import { UpdateDestinationDto } from '../dto/update-destination.dto';
 import { UpdateDestinationStatusDto } from '../dto/update-destination-status.dto';
+import { UpdateDestinationFeaturedDto } from '../dto/update-destination-featured.dto';
 import { OptionalJwtAuthGuard } from '../../../shared/guards/optional-jwt-auth.guard';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
@@ -134,6 +135,17 @@ export class DestinationController {
     @Body() dto: UpdateDestinationStatusDto,
   ): Promise<DestinationResponseDto> {
     return this.destinationService.updateDestinationStatus(id, dto);
+  }
+
+  @Patch(':id/featured')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiOperation({ summary: 'Bật/tắt địa điểm nổi bật (chỉ địa điểm đã duyệt)' })
+  async updateFeatured(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateDestinationFeaturedDto,
+  ): Promise<DestinationResponseDto> {
+    return this.destinationService.updateDestinationFeatured(id, dto);
   }
 
   @Delete(':id')

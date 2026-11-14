@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { AsyncContent } from '@/components/ui';
-import { useApi, avatarFallback, formatDate, timeAgo, todayIso, getImageUrl } from '@/lib/utils';
+import { useApi, formatDate, timeAgo, todayIso, getImageUrl } from '@/lib/utils';
+import Avatar from '@/components/Avatar';
 import { useAction, useAuth, usePending } from '@/lib/context';
 import { Calendar, CheckCircle2, ChevronRight, ImageOff, Inbox, MapPin, MessageSquare, ShieldAlert, Star, Users, type LucideIcon } from 'lucide-react';
 import { destinationApi, eventApi, feedApi, userApi } from '@/lib/api';
@@ -183,7 +184,7 @@ export default function DashboardPage() {
                     <div className="divide-y divide-gray-100">
                       {[...users.data].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((u) => (
                         <div key={u.id} className="py-2.5 flex items-center gap-3">
-                          <img src={u.avatarUrl || avatarFallback(u.username)} alt="" className="w-9 h-9 rounded-lg bg-[#e6f4f2] border border-gray-200 object-cover" />
+                          <Avatar src={u.avatarUrl} className="w-9 h-9 rounded-lg bg-[#e6f4f2] border border-gray-200 object-cover" />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-gray-900">{u.fullName}</p>
                             <p className="text-[11px] text-gray-400 truncate">{u.email}</p>

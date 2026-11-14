@@ -12,6 +12,7 @@ import FeaturedPlaces from '../components/home/FeaturedPlaces';
 import RecommendedPlaces from '../components/home/RecommendedPlaces';
 import NearbyPlaces from '../components/home/NearbyPlaces';
 import ItineraryBanner from '../components/home/ItineraryBanner';
+import UpcomingEvents from '../components/comon/event/UpcomingEvents';
 
 export default function Home() {
     const [favoriteItems, setFavoriteItems] = useState([]);
@@ -122,6 +123,7 @@ export default function Home() {
             <HomeHero />
             <HomeCategories />
             <FeaturedPlaces favoriteState={favoriteState} />
+            <UpcomingEvents />
             <RecommendedPlaces favoriteState={favoriteState} />
             <NearbyPlaces favoriteState={favoriteState} />
             <ItineraryBanner />

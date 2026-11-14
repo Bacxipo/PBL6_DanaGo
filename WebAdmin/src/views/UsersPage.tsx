@@ -3,7 +3,8 @@
 import React, { useMemo, useState } from 'react';
 import Header from '@/components/Header';
 import { Modal, Field, ModalActions, inputClass, PageHeading, searchInputClass, selectClass, AsyncContent } from '@/components/ui';
-import { useApi, upsertById, avatarFallback, formatDate } from '@/lib/utils';
+import { useApi, upsertById, formatDate } from '@/lib/utils';
+import Avatar from '@/components/Avatar';
 import { useAction, useAuth } from '@/lib/context';
 import type { CreateUserInput, User, UserRole, UserStatus } from '@/lib/types';
 import { UserPlus, Search, Shield, Mail, Users, UserCheck, Clock, Lock } from 'lucide-react';
@@ -149,7 +150,7 @@ export default function UsersPage() {
                             <tr key={user.id} className="hover:bg-[#e6f4f2]/60 transition-colors">
                               <td className="py-3.5 px-4">
                                 <div className="flex items-center gap-3">
-                                  <img src={user.avatarUrl || avatarFallback(user.username)} alt="" className="w-10 h-10 rounded-xl bg-[#e6f4f2] border border-gray-200 object-cover" />
+                                  <Avatar src={user.avatarUrl} className="w-10 h-10 rounded-xl bg-[#e6f4f2] border border-gray-200 object-cover" />
                                   <div>
                                     <p className="font-bold text-gray-900">
                                       {user.fullName} {isSelf && <span className="text-[10px] text-[#006971]">(bạn)</span>}

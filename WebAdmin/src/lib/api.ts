@@ -124,7 +124,13 @@ export const userApi = {
   list: () => api.get<User[]>('/identity/users'),
   create: (input: CreateUserInput) => api.post<User>('/identity/users', input),
   setStatus: (id: number, status: UserStatus) => api.patch<User>(`/identity/users/${id}/status`, { status }),
-  setRole: (id: number, role: UserRole) => api.patch<User>(`/identity/users/${id}/role`, { role })
+  setRole: (id: number, role: UserRole) => api.patch<User>(`/identity/users/${id}/role`, { role }),
+  // Đổi ảnh đại diện của chính mình (mọi vai trò đều gọi được) - PATCH /identity/users/me/avatar, field "file"
+  updateMyAvatar: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.patch<User>('/identity/users/me/avatar', formData);
+  }
 };
 
 export const destinationApi = {
@@ -134,6 +140,8 @@ export const destinationApi = {
   create: (input: DestinationInput) => createApproved<Destination>('/destinations', input),
   update: (id: number, input: DestinationInput) => api.put<Destination>(`/destinations/${id}`, input),
   setStatus: (id: number, status: ContentStatus) => setStatus<Destination>('/destinations', id, status),
+  // Bật/tắt địa điểm nổi bật (trang chủ du khách) - chỉ địa điểm đã duyệt
+  setFeatured: (id: number, isFeatured: boolean) => api.patch<Destination>(`/destinations/${id}/featured`, { isFeatured }),
   remove: (id: number) => api.delete(`/destinations/${id}`),
   // Upload danh sách file ảnh lên backend (POST /destinations/:id/images)
   uploadImages: (destinationId: number, files: File[]) => {
@@ -177,7 +185,9 @@ export const categoryApi = {
 export const reviewApi = {
   // Review giờ luôn APPROVED ngay khi tạo/sửa -> chỉ còn ý nghĩa xem danh sách đã duyệt
   listApproved: () => api.get<Review[]>('/community/reviews/admin/approved'),
-  setStatus: (id: number, status: ContentStatus) => setStatus<Review>('/community/reviews', id, status)
+  setStatus: (id: number, status: ContentStatus) => setStatus<Review>('/community/reviews', id, status),
+  // Xóa hẳn đánh giá (ADMIN xóa được của mọi người; backend tự tính lại điểm sao trung bình của điểm đến)
+  remove: (id: number) => api.delete<{ message: string }>(`/community/reviews/${id}`)
 };
 
 export const statsApi = {

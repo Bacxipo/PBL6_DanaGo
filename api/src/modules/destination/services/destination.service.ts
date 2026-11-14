@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DestinationRepository } from '../repositories/destination.repository';
 import { DestinationMapper } from '../mappers/destination.mapper';
 import { DestinationResponseDto, DestinationImageDto } from '../dto/destination-response.dto';
 import { CreateDestinationDto } from '../dto/create-destination.dto';
 import { UpdateDestinationDto } from '../dto/update-destination.dto';
 import { UpdateDestinationStatusDto } from '../dto/update-destination-status.dto';
+import { UpdateDestinationFeaturedDto } from '../dto/update-destination-featured.dto';
 import { DestinationNotFoundException } from '../exceptions/destination-not-found.exception';
 import { SupabaseStorageService } from '../../../shared/storage/supabase-storage.service';
 import { ContentStatus } from '@prisma/client';
@@ -56,6 +57,16 @@ export class DestinationService {
   async updateDestinationStatus(id: number, dto: UpdateDestinationStatusDto): Promise<DestinationResponseDto> {
     await this.getDestinationById(id);
     const updated = await this.destinationRepository.updateStatus(id, dto.status);
+    return DestinationMapper.toResponseDto(updated);
+  }
+
+  // Bật/tắt "địa điểm nổi bật" (hiện ở trang chủ). Chỉ địa điểm đã duyệt mới được đặt nổi bật.
+  async updateDestinationFeatured(id: number, dto: UpdateDestinationFeaturedDto): Promise<DestinationResponseDto> {
+    const current = await this.getDestinationById(id);
+    if (dto.isFeatured && current.status !== ContentStatus.APPROVED) {
+      throw new BadRequestException('Chỉ địa điểm đã được duyệt mới có thể đặt làm nổi bật.');
+    }
+    const updated = await this.destinationRepository.updateFeatured(id, dto.isFeatured);
     return DestinationMapper.toResponseDto(updated);
   }
 

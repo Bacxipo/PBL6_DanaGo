@@ -3,7 +3,8 @@
 import React, { useMemo, useState, useRef } from 'react';
 import Header from '@/components/Header';
 import { Modal, Field, ModalActions, inputClass, PageHeading, searchInputClass, selectClass, StatusBadge, AsyncContent } from '@/components/ui';
-import { useApi, upsertById, removeById, orUndefined, getImageUrl, getImageId } from '@/lib/utils';
+import { useApi, upsertById, removeById, orUndefined, getImageUrl, getImageId, normalizeSearch } from '@/lib/utils';
+import Pagination from '@/components/Pagination';
 import { useAction, usePending } from '@/lib/context';
 import { CONTENT_STATUS_LABEL, CONTENT_STATUSES, DISTRICTS, type ContentStatus, type Destination, type DestinationInput, type DestinationImage } from '@/lib/types';
 import { Search, MapPin, Edit, Trash2, Star, Compass, CheckCircle2, ImageOff, Upload, X, ImageIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
@@ -53,6 +54,10 @@ interface PendingUploadFile {
   previewUrl: string;
 }
 
+const PAGE_SIZE = 20; // số điểm đến mỗi trang
+// Trang chủ du khách chỉ lấy tối đa chừng này địa điểm nổi bật (xem web/src/pages/Home.jsx: getFeaturedDestinations(6))
+const HOME_FEATURED_LIMIT = 6;
+
 export default function DestinationsPage() {
   const { data, loading, error, reload, setData } = useApi(destinationApi.listAll);
   const { data: categoriesData } = useApi(categoryApi.list);
@@ -65,6 +70,8 @@ export default function DestinationsPage() {
   const [district, setDistrict] = useState('ALL');
   const [status, setStatus] = useState<ContentStatus | 'ALL'>('ALL');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Destination | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -75,16 +82,24 @@ export default function DestinationsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+    const q = normalizeSearch(search);
     return (data ?? [])
       .filter(
         (d) =>
           (district === 'ALL' || d.district === district) &&
           (status === 'ALL' || d.status === status) &&
-          (d.name.toLowerCase().includes(q) || (d.description ?? '').toLowerCase().includes(q))
+          (!featuredOnly || d.isFeatured) &&
+          (normalizeSearch(d.name).includes(q) || normalizeSearch(d.description ?? '').includes(q))
       )
       .sort((a, b) => (sortOrder === 'asc' ? a.id - b.id : b.id - a.id));
-  }, [data, search, district, status, sortOrder]);
+  }, [data, search, district, status, featuredOnly, sortOrder]);
+
+  // Phân trang (không để trang hiện tại vượt quá tổng số trang khi lọc ra ít kết quả hơn)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const paged = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+  const featuredCount = (data ?? []).filter((d) => d.isFeatured && d.status === 'APPROVED').length;
 
   const upsert = (saved: Destination) => setData((xs) => upsertById(xs, saved));
 
@@ -176,6 +191,12 @@ export default function DestinationsPage() {
       refresh();
     }, `Đã duyệt "${d.name}".`);
 
+  // Bật/tắt "nổi bật" (hiện ở trang chủ du khách)
+  const toggleFeatured = (d: Destination) =>
+    run(async () => {
+      upsert(await destinationApi.setFeatured(d.id, !d.isFeatured));
+    }, d.isFeatured ? `Đã bỏ nổi bật "${d.name}".` : `Đã đặt "${d.name}" làm điểm đến nổi bật.`);
+
   const remove = (d: Destination) => {
     if (!window.confirm(`Xóa "${d.name}"? Các dữ liệu liên quan (ảnh, đánh giá, đối tác) cũng bị xóa.`)) return;
     run(async () => {
@@ -232,12 +253,12 @@ export default function DestinationsPage() {
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Tìm theo tên, mô tả..."
               className={searchInputClass}
             />
           </div>
-          <select value={district} onChange={(e) => setDistrict(e.target.value)} className={selectClass} aria-label="Lọc quận/huyện">
+          <select value={district} onChange={(e) => { setDistrict(e.target.value); setPage(1); }} className={selectClass} aria-label="Lọc quận/huyện">
             <option value="ALL">Tất cả quận/huyện</option>
             {DISTRICTS.map((d) => (
               <option key={d}>{d}</option>
@@ -245,7 +266,7 @@ export default function DestinationsPage() {
           </select>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value as ContentStatus | 'ALL')}
+            onChange={(e) => { setStatus(e.target.value as ContentStatus | 'ALL'); setPage(1); }}
             className={selectClass}
             aria-label="Lọc trạng thái"
           >
@@ -256,6 +277,21 @@ export default function DestinationsPage() {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            onClick={() => { setFeaturedOnly((v) => !v); setPage(1); }}
+            aria-pressed={featuredOnly}
+            title={`Trang chủ du khách hiển thị tối đa ${HOME_FEATURED_LIMIT} điểm đến nổi bật (ưu tiên điểm đánh giá cao hơn)`}
+            className={`inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border font-semibold transition-colors cursor-pointer ${
+              featuredOnly ? 'bg-[#FFB347]/20 border-[#FFB347] text-[#a43c12]' : 'bg-white border-[#e2e8f0] text-gray-600 hover:border-[#FFB347]'
+            }`}
+          >
+            <Star className={`w-3.5 h-3.5 ${featuredOnly ? 'fill-[#FFB347] text-[#FFB347]' : 'text-gray-400'}`} />
+            Nổi bật
+            <span className={`px-1.5 rounded-full text-[10px] font-bold ${featuredCount > HOME_FEATURED_LIMIT ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-600'}`}>
+              {featuredCount}/{HOME_FEATURED_LIMIT}
+            </span>
+          </button>
         </div>
 
         <AsyncContent loading={loading} error={error} data={data} onRetry={reload}>
@@ -297,7 +333,7 @@ export default function DestinationsPage() {
                         </td>
                       </tr>
                     ) : (
-                      filtered.map((d) => {
+                      paged.map((d) => {
                         const firstImgUrl = getImageUrl(d.images?.[0]);
                         const catName = d.categoryName || categories.find((c) => c.id === d.categoryId)?.name;
                         const imageCount = d.images?.length ?? 0;
@@ -328,7 +364,14 @@ export default function DestinationsPage() {
                                   )}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-bold text-gray-900 text-sm">{d.name}</p>
+                                  <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5 flex-wrap">
+                                    {d.name}
+                                    {d.isFeatured && (
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#FFB347]/20 text-[#a43c12] text-[10px] font-bold">
+                                        <Star className="w-2.5 h-2.5 fill-[#FFB347] text-[#FFB347]" /> Nổi bật
+                                      </span>
+                                    )}
+                                  </p>
                                   {d.addressUrl && (
                                     <a
                                       href={d.addressUrl}
@@ -376,6 +419,21 @@ export default function DestinationsPage() {
                                   </button>
                                 )}
                                 <button
+                                  onClick={() => toggleFeatured(d)}
+                                  disabled={busy || (d.status !== 'APPROVED' && !d.isFeatured)}
+                                  title={
+                                    d.isFeatured
+                                      ? 'Bỏ khỏi danh sách nổi bật'
+                                      : d.status === 'APPROVED'
+                                        ? 'Đặt làm điểm đến nổi bật (hiện ở trang chủ)'
+                                        : 'Chỉ điểm đến đã duyệt mới đặt được nổi bật'
+                                  }
+                                  aria-pressed={!!d.isFeatured}
+                                  className="p-1.5 text-gray-400 hover:text-[#a43c12] hover:bg-[#FFB347]/15 rounded-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  <Star className={`w-4 h-4 ${d.isFeatured ? 'fill-[#FFB347] text-[#FFB347]' : ''}`} />
+                                </button>
+                                <button
                                   onClick={() => openForm(d)}
                                   title="Chỉnh sửa & Quản lý ảnh"
                                   className="p-1.5 text-gray-500 hover:text-[#006971] hover:bg-[#e6f4f2] rounded-lg cursor-pointer"
@@ -399,9 +457,18 @@ export default function DestinationsPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="p-4 border-t border-gray-100 text-xs text-gray-500">
-                Hiển thị <b>{filtered.length}</b> trên tổng số <b>{all.length}</b> điểm đến
-              </p>
+              <div className="p-4 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-3">
+                <p className="text-xs text-gray-500">
+                  {filtered.length === 0 ? (
+                    <>Không có điểm đến nào</>
+                  ) : (
+                    <>
+                      Hiển thị <b>{pageStart + 1}–{pageStart + paged.length}</b> trong <b>{filtered.length}</b> điểm đến phù hợp (tổng <b>{all.length}</b>, {PAGE_SIZE} điểm đến/trang)
+                    </>
+                  )}
+                </p>
+                <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+              </div>
             </div>
           )}
         </AsyncContent>
