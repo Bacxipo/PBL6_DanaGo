@@ -125,7 +125,7 @@ export default function AiPlanMap({
                                 </div>
                                 <div class="font-bold text-gray-900 text-sm leading-tight">${item.name}</div>
                                 ${item.district ? `<div class="text-gray-500 text-2xs">📍 ${item.district}, ${item.region || ''}</div>` : ''}
-                                ${item.price_est > 0 ? `<div class="text-amber-600 font-semibold text-2xs">💰 ~${item.price_est.toLocaleString('vi-VN')} đ</div>` : ''}
+                                ${item.price_excluded ? `<div class="text-orange-600 font-semibold text-2xs">🍽️ ${item.price_text || 'Tùy theo món ăn'}</div>` : item.price_est > 0 ? `<div class="text-amber-600 font-semibold text-2xs">💰 ~${item.price_est.toLocaleString('vi-VN')} đ</div>` : ''}
                             </div>
                         `;
 

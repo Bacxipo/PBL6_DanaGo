@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Rating from '../components/comon/ui/Rating';
 import PlaceList from "../components/comon/place/PlaceList";
-import { Loader2, RefreshCw, AlertCircle, Search, X, Sparkles, Send, CornerDownLeft } from 'lucide-react';
+import PlaceCardSkeleton from '../components/home/PlaceCardSkeleton';
+import { RefreshCw, AlertCircle, Search, X, Loader2, Send, Sparkles } from 'lucide-react';
 import { getRawDestinations, getDestinationCategories, normalizeDestinationCard } from "@/lib/destination-api";
 
 import { searchPlaces } from '@/utils/filterPlace';
@@ -193,10 +194,10 @@ export default function Explore() {
     };
 
     return (
-        <section className="w-full flex flex-col lg:flex-row gap-6 px-4 sm:px-6 lg:px-8 py-6">
+        <section className="dana-content-page w-full flex flex-col lg:flex-row gap-6 px-4 sm:px-6 lg:px-8 py-6">
             {/* Cột Bộ Lọc Bên Trái */}
-            <aside className="w-full lg:w-72 shrink-0 h-fit lg:sticky lg:top-24 flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
+            <aside className="w-full lg:w-72 shrink-0 h-fit lg:sticky lg:top-24 flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                <div className="flex items-center justify-between mb-5">
                     <h3 className="font-bold text-gray-800">Bộ lọc</h3>
                     <button
                         type="button"
@@ -271,7 +272,7 @@ export default function Explore() {
                     <select
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none cursor-pointer focus:border-[#006971]"
+                        className="w-full bg-[#f7fafa] border border-slate-200/80 rounded-xl px-3 py-2 text-sm outline-none cursor-pointer focus:border-[#006971]"
                     >
                         {districtsList.map((dist, idx) => (
                             <option key={idx} value={dist}>
@@ -358,7 +359,7 @@ export default function Explore() {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Tìm kiếm theo tên địa điểm (Bà Nà, Mỹ Khê, Sơn Trà...)..."
-                                className="w-full pl-10 pr-10 py-2.5 bg-gray-50/60 border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/20 transition-all"
+                                className="w-full pl-11 pr-11 py-3 bg-white border border-slate-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/20 transition-all shadow-xs"
                             />
                             {searchTerm && (
                                 <button
@@ -473,10 +474,7 @@ export default function Explore() {
 
                 <div className="w-full flex flex-col">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center flex-1 gap-3 text-gray-500 min-h-[400px]">
-                            <Loader2 className="w-8 h-8 animate-spin text-[#006971]" />
-                            <p className="text-sm font-medium">Đang tải danh sách điểm đến từ API...</p>
-                        </div>
+                        <PlaceCardSkeleton label="Đang tải danh sách điểm đến…" />
                     ) : error ? (
                         <div className="flex flex-col items-center justify-center flex-1 gap-3 text-red-500 min-h-[400px]">
                             <AlertCircle className="w-10 h-10" />

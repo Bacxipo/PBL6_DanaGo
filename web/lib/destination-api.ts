@@ -100,6 +100,9 @@ export interface GetDestinationsParams {
   categoryId?: number;
   district?: string;
 }
+export interface NearbyDestination extends DestinationCardItem {
+  distance?: string;
+}
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -251,4 +254,36 @@ export async function getDestinationCategories(): Promise<DestinationCategory[]>
     console.warn('Lỗi lấy danh mục điểm đến:', err);
     return [];
   }
+}
+export async function getNearbyDestinations(
+  lat: number,
+  lng: number,
+  limit = 6,
+  signal?: AbortSignal,
+): Promise<NearbyDestination[]> {
+  const query = new URLSearchParams({
+    lat: String(lat),
+    lng: String(lng),
+    limit: String(limit),
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/destinations/nearby?${query}`,
+    { signal, cache: 'no-store' },
+  );
+
+  if (!response.ok) {
+    throw new Error('Không tải được địa điểm gần bạn.');
+  }
+
+  const data = await response.json();
+
+  if (!Array.isArray(data)) {
+    throw new Error('Dữ liệu địa điểm không hợp lệ.');
+  }
+
+  return data.map((item) => ({
+    ...normalizeDestinationCard(item),
+    distance: item.distance,
+  }));
 }

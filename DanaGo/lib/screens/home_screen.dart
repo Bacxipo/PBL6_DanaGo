@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/destination_item.dart';
 import 'package:smarttrip/screens/Detail_place_screen.dart';
+import 'package:smarttrip/screens/lodging_screen.dart';
 import 'package:smarttrip/screens/user_profile_posts_screen.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/destination_service.dart';
@@ -200,7 +201,53 @@ class _HomeScreenState extends State<HomeScreen> {
             color: AppColors.primary,
           ),
         ),
-        centerTitle: true,
+        centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LodgingScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.hotel_rounded,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'Nơi lưu trú',
+                      style: TextStyle(
+                        fontFamily: 'Be Vietnam Pro',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

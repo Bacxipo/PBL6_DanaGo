@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, MapPin, ShieldCheck, Users, BarChart3, Calendar, Tags, LogOut, Compass, ExternalLink, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, MapPin, Hotel, ShieldCheck, Users, BarChart3, Calendar, Tags, LogOut, Compass, ExternalLink, type LucideIcon } from 'lucide-react';
 import { useAuth, usePending } from '@/lib/context';
 import { ROLE_LABEL } from '@/lib/types';
 import Avatar from '@/components/Avatar';
@@ -28,6 +28,7 @@ export default function Sidebar() {
   const navItems: NavItem[] = [
     { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
     { to: '/destinations', label: 'Điểm đến du lịch', icon: MapPin },
+    { to: '/lodgings', label: 'Nơi lưu trú', icon: Hotel },
     { to: '/categories', label: 'Danh mục', icon: Tags },
     { to: '/moderation', label: 'Kiểm duyệt nội dung', icon: ShieldCheck, badge: moderation },
     { to: '/users', label: 'Quản lý tài khoản', icon: Users, adminOnly: true },

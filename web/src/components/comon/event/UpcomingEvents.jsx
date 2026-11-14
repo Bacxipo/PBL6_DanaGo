@@ -39,7 +39,10 @@ export default function UpcomingEvents() {
   return (
     <div className="w-full max-w-7xl mx-auto px-2">
       <div className="flex items-center justify-between mb-6 gap-3">
-        <h2 className="text-black font-bold text-2xl md:text-3xl">Sự kiện sắp diễn ra</h2>
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#006971]">Đừng bỏ lỡ</p>
+          <h2 className="font-bold text-2xl tracking-tight text-[#163438] md:text-3xl">Sự kiện sắp diễn ra</h2>
+        </div>
         <div className="flex items-center gap-3">
           {upcoming.length > 4 && (
             <div className="hidden sm:flex items-center gap-2">

@@ -73,11 +73,12 @@ export default function Community() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6">
+    <div className="dana-content-page min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Community Header */}
-        <div className="space-y-1 mb-6">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+        <div className="mb-6 space-y-3 rounded-2xl border border-teal-100 bg-gradient-to-br from-white to-teal-50/70 p-6 sm:p-8">
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#006971]">Góc chuyện trò & trải nghiệm</span>
+          <h1 className="text-3xl font-extrabold text-[#163438] tracking-tight">
             Cộng đồng DanaGo
           </h1>
           <p className="text-slate-500 font-medium text-base">
@@ -98,7 +99,13 @@ export default function Community() {
         )}
         {/* Feed List */}
         {loading ? (
-          <p>Đang tải bài viết...</p>
+          <div role="status" aria-label="Đang tải bài viết" className="space-y-6">
+            <span className="sr-only">Đang tải bài viết…</span>
+            {[0, 1].map((item) => <div key={item} aria-hidden="true" className="space-y-5 rounded-2xl border border-slate-200/70 bg-white p-6 motion-safe:animate-pulse">
+              <div className="flex items-center gap-3"><div className="h-10 w-10 rounded-full bg-teal-50" /><div className="h-3 w-32 rounded bg-slate-200" /></div>
+              <div className="h-3 rounded bg-slate-100" /><div className="h-3 w-3/4 rounded bg-slate-100" /><div className="h-48 rounded-xl bg-slate-100" />
+            </div>)}
+          </div>
         ) : feedError ? (
           <p role="alert" className="text-red-600">
             {feedError}

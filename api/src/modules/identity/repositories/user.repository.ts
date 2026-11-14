@@ -1,10 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { UserRole, UserStatus } from '@prisma/client';
 import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
 export class UserRepository {
+  async linkSupabaseIdentity(id: number, supabaseId: string, passwordHash: string): Promise<UserEntity> {
+    try {
+      const updated = await this.prisma.user.updateMany({
+        where: { id, passwordHash, status: 'ACTIVE', OR: [{ supabaseId: null }, { supabaseId }] },
+        data: { supabaseId },
+      });
+      if (updated.count !== 1) throw new ConflictException('Tài khoản đã thay đổi hoặc đã liên kết Google khác.');
+    } catch (error) {
+      if (error?.code === 'P2002') throw new ConflictException('Google này đã liên kết với tài khoản khác.');
+      throw error;
+    }
+    return (await this.findById(id))!;
+  }
+
   async changePassword(id: number, previousHash: string, passwordHash: string): Promise<boolean> {
     const result = await this.prisma.user.updateMany({
       where: { id, passwordHash: previousHash, supabaseId: null, status: 'ACTIVE' },

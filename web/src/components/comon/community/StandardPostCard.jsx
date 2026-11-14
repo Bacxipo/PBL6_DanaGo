@@ -186,7 +186,7 @@ export default function StandardPostCard({ post, currentUserId, onDeleted, onUpd
   };
 
   return (
-    <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4 mb-6 transition hover:shadow-md">
+    <div className="mb-6 space-y-4 rounded-3xl border border-slate-200/70 bg-white p-5 shadow-[0_4px_24px_-16px_rgba(7,61,70,0.2)] transition-shadow hover:shadow-md">
 
       {/* ================= 1. HEADER ================= */}
       <div className="flex items-start justify-between">

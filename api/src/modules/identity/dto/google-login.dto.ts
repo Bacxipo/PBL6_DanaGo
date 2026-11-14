@@ -6,3 +6,14 @@ export class GoogleLoginDto {
   @MaxLength(16384)
   accessToken: string;
 }
+export class LinkGoogleDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(16384)
+  accessToken: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(256)
+  password: string;
+}

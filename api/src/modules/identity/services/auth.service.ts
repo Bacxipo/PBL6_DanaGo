@@ -10,13 +10,16 @@ import { AuthResponseDto } from '../dto/auth-response.dto';
 import { UserMapper } from '../mappers/user.mapper';
 import { UserAlreadyExistsException } from '../exceptions/user-already-exists.exception';
 import { InvalidCredentialsException } from '../exceptions/invalid-credentials.exception';
+import { LinkGoogleDto } from '../dto/google-login.dto';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
+  private readonly linkAttempts = new Map<string, { count: number; expires: number }>();
   constructor(
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
     const existingEmail = await this.userRepository.findByEmail(dto.email);
@@ -97,7 +100,7 @@ export class AuthService {
     return this.loginWithGoogle(data.session.access_token);
   }
 
-  async loginWithGoogle(accessToken: string): Promise<AuthResponseDto> {
+  private async verifyGoogle(accessToken: string) {
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY
       || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
@@ -109,7 +112,32 @@ export class AuthService {
       || !identity.identities?.some((item) => item.provider === 'google')) {
       throw new UnauthorizedException('Phiên đăng nhập Google không hợp lệ.');
     }
-    const googleIdentity = identity.identities.find((item) => item.provider === 'google');
+    return { ...identity, email: identity.email, identities: identity.identities! };
+  }
+
+  async linkGoogle(dto: LinkGoogleDto): Promise<AuthResponseDto> {
+    const identity = await this.verifyGoogle(dto.accessToken);
+    const now = Date.now();
+    for (const [key, attempt] of this.linkAttempts) {
+      if (attempt.expires <= now) this.linkAttempts.delete(key);
+    }
+    const attempt = this.linkAttempts.get(identity.id) ?? { count: 0, expires: now + 600000 };
+    if (attempt.count >= 5) throw new HttpException('Đã thử quá nhiều lần. Vui lòng thử lại sau 10 phút.', HttpStatus.TOO_MANY_REQUESTS);
+    attempt.count++;
+    this.linkAttempts.set(identity.id, attempt);
+    const user = await this.userRepository.findByEmail(identity.email!);
+    if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
+      throw new UnauthorizedException('Mật khẩu DanaGo không đúng.');
+    }
+    if (user.status !== 'ACTIVE') throw new ForbiddenException('Tài khoản chưa hoạt động hoặc đã bị khóa.');
+    const linked = await this.userRepository.linkSupabaseIdentity(user.id, identity.id, user.passwordHash);
+    this.linkAttempts.delete(identity.id);
+    return { accessToken: this.generateToken(linked.id, linked.username, linked.role), user: UserMapper.toResponseDto(linked) };
+  }
+
+  async loginWithGoogle(accessToken: string): Promise<AuthResponseDto> {
+    const identity = await this.verifyGoogle(accessToken);
+    const googleIdentity = identity.identities!.find((item) => item.provider === 'google');
     const picture = googleIdentity?.identity_data?.avatar_url
       || googleIdentity?.identity_data?.picture
       || identity.user_metadata.avatar_url
@@ -122,8 +150,13 @@ export class AuthService {
     }
     let user = await this.userRepository.findBySupabaseId(identity.id);
     if (!user) {
-      if (await this.userRepository.findByEmail(identity.email)) {
-        throw new ConflictException('Email đã có tài khoản DanaGo. Vui lòng đăng nhập bằng mật khẩu; liên kết Google chưa được hỗ trợ.');
+      const existingUser = await this.userRepository.findByEmail(identity.email);
+
+      if (existingUser) {
+        throw new ConflictException({
+          code: 'ACCOUNT_LINK_REQUIRED',
+          message: 'Nhập mật khẩu DanaGo để liên kết tài khoản Google.',
+        });
       }
       try {
         user = await this.userRepository.create({

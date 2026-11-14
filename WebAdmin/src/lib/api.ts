@@ -1,4 +1,4 @@
-import { CONTENT_STATUSES, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateUserInput, type Destination, type DestinationImage, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
+import { CONTENT_STATUSES, type AmenityItem, type AuthResponse, type Category, type CategoryInput, type ContentStatus, type CreateUserInput, type Destination, type DestinationImage, type DestinationInput, type EventInput, type EventItem, type FeedPost, type Lodging, type LodgingInput, type Review, type Trends, type User, type UserRole, type UserStatus } from './types';
 
 // Luôn gọi backend thật; đặt NEXT_PUBLIC_API_URL khi cần trỏ sang host khác (mặc định localhost:5000).
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -195,4 +195,21 @@ export const statsApi = {
 export const feedApi = {
   listByStatus: (status: ContentStatus) => api.get<FeedPost[]>('/feed/posts', { status }),
   setStatus: (id: number, status: ContentStatus) => setStatus<FeedPost>('/feed/posts', id, status)
+};
+
+export const lodgingApi = {
+  listAll: () => api.get<Lodging[]>('/lodgings', { status: 'ALL' }),
+  listByStatus: (status: ContentStatus) => api.get<Lodging[]>('/lodgings', { status }),
+  getById: (id: number) => api.get<Lodging>(`/lodgings/${id}`),
+  getAmenities: () => api.get<AmenityItem[]>('/lodgings/amenities'),
+  create: (input: LodgingInput) => api.post<Lodging>('/lodgings', input),
+  update: (id: number, input: LodgingInput) => api.put<Lodging>(`/lodgings/${id}`, input),
+  setStatus: (id: number, status: ContentStatus) => setStatus<Lodging>('/lodgings', id, status),
+  remove: (id: number) => api.delete(`/lodgings/${id}`),
+  uploadImages: (lodgingId: number, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('images', file));
+    return api.post<DestinationImage[]>(`/lodgings/${lodgingId}/images`, formData);
+  },
+  deleteImage: (imageId: number) => api.delete<{ message: string }>(`/lodgings/images/${imageId}`)
 };
