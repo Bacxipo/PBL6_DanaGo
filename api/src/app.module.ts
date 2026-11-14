@@ -13,6 +13,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { EventModule } from './modules/event/event.module';
 import { FavoriteModule } from './modules/favorite/favorite.module';
 import { LodgingModule } from './modules/lodging/lodging.module';
+import { StatisticsModule } from './modules/statistics/statistics.module';
 @Module({
   imports: [
     DatabaseModule,
@@ -27,6 +28,7 @@ import { LodgingModule } from './modules/lodging/lodging.module';
     EventModule,
     FavoriteModule,
     LodgingModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
