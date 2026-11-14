@@ -14,6 +14,7 @@ import {
   AsyncContent,
 } from '@/components/ui';
 import { useApi, upsertById, removeById, orUndefined, getImageUrl, getImageId, formatVND } from '@/lib/utils';
+import Pagination from '@/components/Pagination';
 import { useAction, usePending } from '@/lib/context';
 import {
   CONTENT_STATUS_LABEL,
@@ -105,6 +106,8 @@ interface PendingUploadFile {
   previewUrl: string;
 }
 
+const PAGE_SIZE = 20; // số nơi lưu trú mỗi trang
+
 export default function LodgingsPage() {
   const { data, loading, error, reload, setData } = useApi(lodgingApi.listAll);
   const { data: amenitiesData } = useApi(lodgingApi.getAmenities);
@@ -118,6 +121,7 @@ export default function LodgingsPage() {
   const [district, setDistrict] = useState('ALL');
   const [status, setStatus] = useState<ContentStatus | 'ALL'>('ALL');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(1);
 
   const [editing, setEditing] = useState<Lodging | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -142,6 +146,12 @@ export default function LodgingsPage() {
       )
       .sort((a, b) => (sortOrder === 'asc' ? a.id - b.id : b.id - a.id));
   }, [data, search, typeFilter, district, status, sortOrder]);
+
+  // Phân trang (không để trang hiện tại vượt quá tổng số trang khi lọc ra ít kết quả hơn)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const paged = filtered.slice(pageStart, pageStart + PAGE_SIZE);
 
   const upsert = (saved: Lodging) => setData((xs) => upsertById(xs, saved));
 
@@ -284,7 +294,7 @@ export default function LodgingsPage() {
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Tìm theo tên khách sạn, mô tả, khu vực..."
               className={searchInputClass}
             />
@@ -292,7 +302,7 @@ export default function LodgingsPage() {
 
           <select
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
             className={selectClass}
             aria-label="Lọc loại nơi ở"
           >
@@ -306,7 +316,7 @@ export default function LodgingsPage() {
 
           <select
             value={district}
-            onChange={(e) => setDistrict(e.target.value)}
+            onChange={(e) => { setDistrict(e.target.value); setPage(1); }}
             className={selectClass}
             aria-label="Lọc quận/huyện"
           >
@@ -320,7 +330,7 @@ export default function LodgingsPage() {
 
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value as ContentStatus | 'ALL')}
+            onChange={(e) => { setStatus(e.target.value as ContentStatus | 'ALL'); setPage(1); }}
             className={selectClass}
             aria-label="Lọc trạng thái"
           >
@@ -371,7 +381,7 @@ export default function LodgingsPage() {
                         </td>
                       </tr>
                     ) : (
-                      filtered.map((l) => {
+                      paged.map((l) => {
                         const firstImgUrl = getImageUrl(l.images?.[0]);
                         const imageCount = l.images?.length ?? 0;
 
@@ -469,9 +479,18 @@ export default function LodgingsPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="p-4 border-t border-gray-100 text-xs text-gray-500">
-                Hiển thị <b>{filtered.length}</b> trên tổng số <b>{all.length}</b> nơi lưu trú
-              </p>
+              <div className="p-4 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-3">
+                <p className="text-xs text-gray-500">
+                  {filtered.length === 0 ? (
+                    <>Không có nơi lưu trú nào</>
+                  ) : (
+                    <>
+                      Hiển thị <b>{pageStart + 1}–{pageStart + paged.length}</b> trong <b>{filtered.length}</b> nơi lưu trú phù hợp (tổng <b>{all.length}</b>, {PAGE_SIZE} nơi/trang)
+                    </>
+                  )}
+                </p>
+                <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+              </div>
             </div>
           )}
         </AsyncContent>
