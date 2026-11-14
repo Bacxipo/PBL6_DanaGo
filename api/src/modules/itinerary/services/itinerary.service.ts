@@ -11,65 +11,83 @@ export class ItineraryService {
   constructor(private readonly itineraryRepository: ItineraryRepository) { }
 
   async getUserItineraries(userId: number, user: Requester) {
-      if (userId !== Number(user.sub) && !canManageAll(user)) {
-        throw new ForbiddenException('Bạn chỉ được xem lịch trình của chính mình.');
-      }
-      return this.itineraryRepository.findByUserId(userId);
+    if (userId !== Number(user.sub) && !canManageAll(user)) {
+      throw new ForbiddenException('Bạn chỉ được xem lịch trình của chính mình.');
     }
+    return this.itineraryRepository.findByUserId(userId);
+  }
 
   async getItineraryById(id: number, user: Requester) {
-      const itinerary = await this.itineraryRepository.findById(id);
-      if (!itinerary) {
-        throw new NotFoundException(`Lịch trình #${id} không tồn tại`);
-      }
-      if (itinerary.userId !== Number(user.sub) && !canManageAll(user)) {
-        throw new ForbiddenException('Bạn không có quyền xem lịch trình này.');
-      }
-      return itinerary;
+    const itinerary = await this.itineraryRepository.findById(id);
+    if (!itinerary) {
+      throw new NotFoundException(`Lịch trình #${id} không tồn tại`);
     }
+    if (itinerary.userId !== Number(user.sub) && !canManageAll(user)) {
+      throw new ForbiddenException('Bạn không có quyền xem lịch trình này.');
+    }
+    return itinerary;
+  }
 
   async getAllChecklists() {
-      return this.itineraryRepository.getAllChecklists();
-    }
+    return this.itineraryRepository.getAllChecklists();
+  }
 
   async getChecklistsByItinerary(itineraryId: number) {
-      return this.itineraryRepository.findChecklistsByItinerary(itineraryId);
-    }
+    return this.itineraryRepository.findChecklistsByItinerary(itineraryId);
+  }
 
   async getChecklistsByItem(itemId: number) {
-      return this.itineraryRepository.findChecklistsByItem(itemId);
-    }
+    return this.itineraryRepository.findChecklistsByItem(itemId);
+  }
 
   async createChecklistItem(itemId: number, dto: CreateChecklistDto) {
-      return this.itineraryRepository.createChecklistItem(
-        itemId,
-        dto.itemName,
-        dto.isChecked ?? false,
-      );
-    }
+    return this.itineraryRepository.createChecklistItem(
+      itemId,
+      dto.itemName,
+      dto.isChecked ?? false,
+    );
+  }
 
   async updateChecklistItem(id: number, dto: UpdateChecklistDto) {
-      return this.itineraryRepository.updateChecklistItem(id, dto);
-    }
+    return this.itineraryRepository.updateChecklistItem(id, dto);
+  }
 
   async deleteChecklistItem(id: number) {
-      return this.itineraryRepository.deleteChecklistItem(id);
-    }
+    return this.itineraryRepository.deleteChecklistItem(id);
+  }
 
   async deleteItinerary(id: number, user: Requester) {
-      await this.getItineraryById(id, user);
-      return this.itineraryRepository.deleteItinerary(id);
-    }
+    await this.getItineraryById(id, user);
+    return this.itineraryRepository.deleteItinerary(id);
+  }
 
   // Luôn gán lịch trình cho người đang đăng nhập (bỏ qua userId client gửi lên)
   async saveFullItinerary(dto: SaveFullItineraryDto, userId: number) {
-      const id = dto.id && !isNaN(Number(dto.id)) ? Number(dto.id) : null;
-      if (id) {
-        const existing = await this.itineraryRepository.findById(id);
-        if (existing && existing.userId !== userId) {
-          throw new ForbiddenException('Bạn không có quyền sửa lịch trình này.');
-        }
+    const candidate = Number(dto.id);
+
+    const databaseId =
+      Number.isInteger(candidate) &&
+        candidate > 0 &&
+        candidate <= 2147483647
+        ? candidate
+        : undefined;
+
+    if (databaseId) {
+      const existing = await this.itineraryRepository.findById(databaseId);
+
+      if (!existing) {
+        throw new NotFoundException('Lịch trình không tồn tại.');
       }
-      return this.itineraryRepository.saveFullItinerary({ ...dto, userId });
+
+      if (existing.userId !== userId) {
+        throw new ForbiddenException('Bạn không có quyền sửa lịch trình này.');
+      }
     }
+
+    return this.itineraryRepository.saveFullItinerary({
+      ...dto,
+      id: databaseId,
+      userId,
+    });
   }
+}

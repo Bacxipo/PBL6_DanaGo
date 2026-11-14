@@ -34,15 +34,22 @@ export function getItinerariesStorageKey(): string {
 }
 
 export async function saveItineraryFull(itineraryData: any) {
-  try {
-    return await fetchApi('/itineraries/save-full', {
-      method: 'POST',
-      body: JSON.stringify(itineraryData),
-    });
-  } catch (err) {
-    console.warn('Lưu vào API backend thất bại (sử dụng local fallback):', err);
-    return null;
-  }
+  const candidate = Number(itineraryData.id);
+
+  const databaseId =
+    Number.isInteger(candidate) &&
+      candidate > 0 &&
+      candidate <= 2147483647
+      ? candidate
+      : undefined;
+
+  return fetchApi<{ id: number }>('/itineraries/save-full', {
+    method: 'POST',
+    body: JSON.stringify({
+      ...itineraryData,
+      id: databaseId,
+    }),
+  });
 }
 
 export async function fetchItinerariesByUser(userId: number | string) {

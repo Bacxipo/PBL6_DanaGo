@@ -245,26 +245,39 @@ export default function ItineraryDetail({ isStandalone = false }) {
 
     // NÚT LƯU LỊCH TRÌNH VÀ CHECKLIST VÀO DATABASE
     const handleSaveCurrentItinerary = async () => {
-        if (!workingItinerary) return;
+        if (!workingItinerary) return false;
 
-        // Cập nhật State cục bộ & localStorage
-        setItineraries((prev) =>
-            prev.map((it) => (it.id === workingItinerary.id ? workingItinerary : it))
-        );
-        setHasUnsavedChanges(false);
-        setToastMessage('Đã lưu toàn bộ lịch trình và checklist thành công!');
+        const originalId = workingItinerary.id;
 
-        // Gửi lưu trực tiếp vào PostgreSQL (bảng itinerary, itinerary_item, checklist_item)
         try {
             const savedDb = await saveItineraryFull(workingItinerary);
-            if (savedDb && savedDb.id) {
-                console.log('Lịch trình và checklist đã được đồng bộ với CSDL PostgreSQL ID:', savedDb.id);
-            }
-        } catch (err) {
-            console.warn('Đồng bộ backend DB thất bại (dữ liệu đã an toàn ở local):', err);
+
+            const savedItinerary = {
+                ...workingItinerary,
+                id: savedDb.id,
+            };
+
+            setItineraries((previous) =>
+                previous.map((item) =>
+                    item.id === originalId ? savedItinerary : item
+                )
+            );
+
+            setWorkingItinerary(savedItinerary);
+            setSelectedItineraryId(savedDb.id);
+            setHasUnsavedChanges(false);
+            setToastMessage('Đã lưu lịch trình vào hệ thống thành công!');
+
+            return true;
+        } catch (error) {
+            console.error('Lưu lịch trình thất bại:', error);
+            setToastMessage(
+                'Chưa lưu được lên hệ thống. Vui lòng thử lại.'
+            );
+
+            return false;
         }
     };
-
     // Khi bấm "Quay lại danh sách": Kiểm tra xem có thay đổi chưa lưu không
     const handleRequestBackToList = () => {
         if (hasUnsavedChanges) {
@@ -276,8 +289,9 @@ export default function ItineraryDetail({ isStandalone = false }) {
     };
 
     // Xử lý xác nhận: Lưu & Quay lại
-    const handleConfirmSaveAndLeave = () => {
-        handleSaveCurrentItinerary();
+    const handleConfirmSaveAndLeave = async () => {
+        const saved = await handleSaveCurrentItinerary();
+        if (!saved) return;
         setIsConfirmLeaveOpen(false);
         setSelectedItineraryId(null);
         setWorkingItinerary(null);
