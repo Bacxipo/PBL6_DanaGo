@@ -16,9 +16,8 @@ import {
     RotateCcw,
     CheckCircle2,
 } from 'lucide-react';
-import { saveItineraryFull, getCurrentUserId } from '@/lib/itinerary-api';
+import { saveItineraryFull, getCurrentUserId, getItinerariesStorageKey } from '@/lib/itinerary-api';
 
-const STORAGE_KEY = 'danago_itineraries';
 
 export default function PlanResultView({
     plan,
@@ -140,7 +139,7 @@ export default function PlanResultView({
 
             // 2. Đồng bộ thêm vào localStorage
             let existing = [];
-            const savedStr = localStorage.getItem(STORAGE_KEY);
+            const savedStr = localStorage.getItem(getItinerariesStorageKey());
             if (savedStr) {
                 try {
                     const parsed = JSON.parse(savedStr);
@@ -151,7 +150,7 @@ export default function PlanResultView({
             }
 
             const updated = [finalItinerary, ...existing];
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+            localStorage.setItem(getItinerariesStorageKey(), JSON.stringify(updated));
 
             setSavedSuccess(true);
             setTimeout(() => {

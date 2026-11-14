@@ -8,7 +8,7 @@ import CreateItineraryModal from './CreateItineraryModal';
 import PlaceDetailModal from '../place/PlaceDetailModal';
 import ConfirmLeaveModal from './ConfirmLeaveModal';
 
-import { sampleItineraries, quickSearchPlacesData } from '@/database/data';
+import { quickSearchPlacesData } from '@/database/data';
 import {
     saveItineraryFull,
     updateChecklistItemApi,
@@ -16,10 +16,10 @@ import {
     fetchItinerariesByUser,
     deleteItineraryApi,
     getCurrentUserId,
+    getItinerariesStorageKey,
 } from '@/lib/itinerary-api';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-const STORAGE_KEY = 'danago_itineraries';
 
 // Helper tính danh sách các ngày
 const calculateDaysList = (startDateStr, endDateStr, daysMap = {}) => {
@@ -62,18 +62,16 @@ export default function ItineraryDetail({ isStandalone = false }) {
     const [itineraries, setItineraries] = useState(() => {
         if (typeof window !== 'undefined') {
             try {
-                const saved = localStorage.getItem(STORAGE_KEY);
+                const saved = localStorage.getItem(getItinerariesStorageKey());
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) return parsed;
                 }
             } catch (e) {
                 console.warn('Lỗi đọc lịch trình từ localStorage:', e);
             }
         }
-        return sampleItineraries;
+        return [];
     });
 
     const [selectedItineraryId, setSelectedItineraryId] = useState(null);
@@ -97,7 +95,9 @@ export default function ItineraryDetail({ isStandalone = false }) {
     useEffect(() => {
         const syncItinerariesFromDb = async () => {
             try {
-                const currentUserId = getCurrentUserId() || 1;
+                const currentUserId = getCurrentUserId();
+                // Chưa đăng nhập thì không có lịch trình nào để tải
+                if (!currentUserId) return;
                 const dbList = await fetchItinerariesByUser(currentUserId);
                 if (Array.isArray(dbList) && dbList.length > 0) {
                     // Chuyển đổi dữ liệu từ PostgreSQL sang định dạng UI
@@ -177,7 +177,7 @@ export default function ItineraryDetail({ isStandalone = false }) {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(itineraries));
+                localStorage.setItem(getItinerariesStorageKey(), JSON.stringify(itineraries));
             } catch (e) {
                 console.error('Lỗi khi lưu lịch trình vào localStorage:', e);
             }

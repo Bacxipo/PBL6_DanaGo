@@ -7,17 +7,25 @@ import {
   Param,
   Body,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { ItineraryService } from '../services/itinerary.service';
 import { CreateChecklistDto, UpdateChecklistDto, SaveFullItineraryDto } from '../dto/checklist.dto';
 
+// Phải đăng nhập; lịch trình chỉ chủ sở hữu (hoặc ADMIN/STAFF) mới xem/sửa/xóa được
+@UseGuards(JwtAuthGuard)
 @Controller('itineraries')
 export class ItineraryController {
   constructor(private readonly itineraryService: ItineraryService) { }
 
   @Get('user/:userId')
-  async getUserItineraries(@Param('userId', ParseIntPipe) userId: number) {
-    return this.itineraryService.getUserItineraries(userId);
+  async getUserItineraries(
+    @Param('userId', ParseIntPipe) userId: number,
+    @CurrentUser() user: { sub: number; role: string },
+  ) {
+    return this.itineraryService.getUserItineraries(userId, user);
   }
 
   @Get('checklists/all')
@@ -26,18 +34,27 @@ export class ItineraryController {
   }
 
   @Get(':id')
-  async getItineraryById(@Param('id', ParseIntPipe) id: number) {
-    return this.itineraryService.getItineraryById(id);
+  async getItineraryById(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { sub: number; role: string },
+  ) {
+    return this.itineraryService.getItineraryById(id, user);
   }
 
   @Post('save-full')
-  async saveFullItinerary(@Body() dto: SaveFullItineraryDto) {
-    return this.itineraryService.saveFullItinerary(dto);
+  async saveFullItinerary(
+    @Body() dto: SaveFullItineraryDto,
+    @CurrentUser('sub') userId: number,
+  ) {
+    return this.itineraryService.saveFullItinerary(dto, userId);
   }
 
   @Delete(':id')
-  async deleteItinerary(@Param('id', ParseIntPipe) id: number) {
-    return this.itineraryService.deleteItinerary(id);
+  async deleteItinerary(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { sub: number; role: string },
+  ) {
+    return this.itineraryService.deleteItinerary(id, user);
   }
 
   @Get(':itineraryId/checklists')

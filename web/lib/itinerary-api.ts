@@ -26,6 +26,13 @@ export function getCurrentUserId(): number | null {
   return null;
 }
 
+// Khóa localStorage lưu lịch trình theo từng tài khoản (chưa đăng nhập -> 'guest')
+// để các tài khoản dùng chung một trình duyệt không thấy lịch trình của nhau.
+export function getItinerariesStorageKey(): string {
+  const userId = getCurrentUserId();
+  return `danago_itineraries:${userId ?? 'guest'}`;
+}
+
 export async function saveItineraryFull(itineraryData: any) {
   try {
     return await fetchApi('/itineraries/save-full', {
@@ -38,7 +45,7 @@ export async function saveItineraryFull(itineraryData: any) {
   }
 }
 
-export async function fetchItinerariesByUser(userId: number | string = 1) {
+export async function fetchItinerariesByUser(userId: number | string) {
   try {
     return await fetchApi<any[]>(`/itineraries/user/${userId}`);
   } catch (err) {
