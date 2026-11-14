@@ -6,7 +6,7 @@ import { Modal, Field, ModalActions, inputClass, PageHeading, searchInputClass, 
 import { useApi, upsertById, removeById, formatDate, orUndefined, getImageUrl, getImageId, todayIso } from '@/lib/utils';
 import { useAction, usePending } from '@/lib/context';
 import SearchSelect, { type SearchSelectOption } from '@/components/SearchSelect';
-import { CONTENT_STATUS_LABEL, CONTENT_STATUSES, getTimeline, TIMELINE_LABEL, type ContentStatus, type EventItem, type EventTimeline, type DestinationImage } from '@/lib/types';
+import { getTimeline, TIMELINE_LABEL, type ContentStatus, type EventItem, type EventTimeline, type DestinationImage } from '@/lib/types';
 import { Calendar, Search, MapPin, Edit, Trash2, ImageOff, Ticket, CheckCircle2, XCircle, Upload, X } from 'lucide-react';
 import { destinationApi, eventApi } from '@/lib/api';
 
@@ -32,7 +32,7 @@ export default function EventsPage() {
   const { run, busy } = useAction();
 
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<ContentStatus | 'ALL'>('ALL');
+  const [timelineFilter, setTimelineFilter] = useState<EventTimeline | 'ALL'>('ALL');
   const [editing, setEditing] = useState<EventItem | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -50,10 +50,11 @@ export default function EventsPage() {
   const rows = useMemo(() => {
     const q = search.toLowerCase();
     return (data ?? [])
-      .filter((ev) => (status === 'ALL' || ev.status === status) && (ev.name.toLowerCase().includes(q) || (ev.locationNote ?? '').toLowerCase().includes(q) || (ev.destination?.name ?? '').toLowerCase().includes(q)))
+      .filter((ev) => ev.name.toLowerCase().includes(q) || (ev.locationNote ?? '').toLowerCase().includes(q) || (ev.destination?.name ?? '').toLowerCase().includes(q))
       .map((ev) => ({ ev, timeline: getTimeline(ev) }))
+      .filter(({ timeline }) => timelineFilter === 'ALL' || timeline === timelineFilter)
       .sort((a, b) => TIMELINE_ORDER[a.timeline] - TIMELINE_ORDER[b.timeline] || a.ev.startDate.localeCompare(b.ev.startDate));
-  }, [data, search, status]);
+  }, [data, search, timelineFilter]);
 
   const upsert = (saved: EventItem) => setData((xs) => upsertById(xs, saved));
 
@@ -187,9 +188,9 @@ export default function EventsPage() {
             <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input type="search" placeholder="Tìm sự kiện, địa điểm..." value={search} onChange={(e) => setSearch(e.target.value)} className={searchInputClass} />
           </div>
-          <select value={status} onChange={(e) => setStatus(e.target.value as ContentStatus | 'ALL')} className={selectClass} aria-label="Lọc trạng thái duyệt">
-            <option value="ALL">Mọi trạng thái duyệt</option>
-            {CONTENT_STATUSES.map((s) => <option key={s} value={s}>{CONTENT_STATUS_LABEL[s]}</option>)}
+          <select value={timelineFilter} onChange={(e) => setTimelineFilter(e.target.value as EventTimeline | 'ALL')} className={selectClass} aria-label="Lọc theo thời gian diễn ra">
+            <option value="ALL">Mọi thời gian</option>
+            {(['HAPPENING', 'UPCOMING', 'ENDED'] as EventTimeline[]).map((t) => <option key={t} value={t}>{TIMELINE_LABEL[t]}</option>)}
           </select>
         </div>
 
