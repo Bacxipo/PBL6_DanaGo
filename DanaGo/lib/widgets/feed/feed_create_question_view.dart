@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
@@ -5,12 +6,18 @@ class FeedCreateQuestionView extends StatefulWidget {
   final TextEditingController titleController;
   final TextEditingController contentController;
   final Function(String category)? onCategorySelected;
+  final List<String> selectedImages;
+  final VoidCallback? onAddImage;
+  final Function(int index)? onRemoveImage;
 
   const FeedCreateQuestionView({
     super.key,
     required this.titleController,
     required this.contentController,
     this.onCategorySelected,
+    this.selectedImages = const [],
+    this.onAddImage,
+    this.onRemoveImage,
   });
 
   @override
@@ -39,7 +46,11 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
         // Header: Category label
         const Row(
           children: [
-            Icon(Icons.help_outline_rounded, size: 18, color: AppColors.primary),
+            Icon(
+              Icons.help_outline_rounded,
+              size: 18,
+              color: AppColors.primary,
+            ),
             SizedBox(width: 6),
             Text(
               'CHỦ ĐỀ CÂU HỎI',
@@ -92,7 +103,9 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary
-                        : const Color(0xFFEFF5F5),
+                        : (isDark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFEFF5F5)),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
@@ -102,15 +115,24 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
                   ),
                   child: Row(
                     children: [
-                      Text(item['emoji']!, style: const TextStyle(fontSize: 13)),
+                      Text(
+                        item['emoji']!,
+                        style: const TextStyle(fontSize: 13),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         item['title']!,
                         style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark
+                                    ? Colors.white70
+                                    : AppColors.textPrimary),
                         ),
                       ),
                     ],
@@ -126,13 +148,13 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'TIÊU ĐỀ THẮC MẮC',
               style: TextStyle(
                 fontFamily: 'Be Vietnam Pro',
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: isDark ? Colors.white70 : AppColors.textPrimary,
               ),
             ),
             ValueListenableBuilder<TextEditingValue>(
@@ -164,7 +186,8 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
             controller: widget.titleController,
             maxLength: 90,
             decoration: const InputDecoration(
-              hintText: 'VD: Quán hải sản tươi ngon giá hợp lý gần biển Mỹ Khê?',
+              hintText:
+                  'VD: Quán hải sản tươi ngon giá hợp lý gần biển Mỹ Khê?',
               hintStyle: TextStyle(
                 fontFamily: 'Be Vietnam Pro',
                 fontSize: 13,
@@ -186,14 +209,14 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
         // Question Details Textarea
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Text(
               'CHI TIẾT CÂU HỎI',
               style: TextStyle(
                 fontFamily: 'Be Vietnam Pro',
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: isDark ? Colors.white70 : AppColors.textPrimary,
               ),
             ),
             Text(
@@ -219,7 +242,7 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
           child: TextField(
             controller: widget.contentController,
             maxLines: 5,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText:
                   'Mô tả chi tiết thắc mắc của bạn (thời gian đi, số lượng người, sở thích cụ thể để cộng đồng thổ địa Đà Nẵng tư vấn chuẩn xác nhất)...',
               hintStyle: TextStyle(
@@ -230,11 +253,11 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
               ),
               border: InputBorder.none,
             ),
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Be Vietnam Pro',
               fontSize: 14,
               height: 1.45,
-              color: AppColors.textPrimary,
+              color: isDark ? Colors.white : AppColors.textPrimary,
             ),
           ),
         ),
@@ -243,60 +266,89 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
         // Attach images (Max 3)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Text(
               'HÌNH ẢNH ĐÍNH KÈM',
               style: TextStyle(
                 fontFamily: 'Be Vietnam Pro',
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: isDark ? Colors.white70 : AppColors.textPrimary,
               ),
             ),
             Text(
-              'Tối đa 3 ảnh',
+              '${widget.selectedImages.length}/3 ảnh',
               style: TextStyle(
                 fontFamily: 'Be Vietnam Pro',
                 fontSize: 11,
-                color: AppColors.neutral,
+                color: isDark ? Colors.white54 : AppColors.neutral,
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                ),
-              ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate_outlined,
-                    size: 24,
-                    color: AppColors.primary,
+        SizedBox(
+          height: 80,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: widget.selectedImages.length < 3
+                ? widget.selectedImages.length + 1
+                : widget.selectedImages.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              if (index == widget.selectedImages.length) {
+                return InkWell(
+                  onTap: widget.onAddImage,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_photo_alternate_outlined, size: 24, color: AppColors.primary),
+                        SizedBox(height: 4),
+                        Text('Thêm ảnh', style: TextStyle(fontFamily: 'Be Vietnam Pro', fontSize: 11, color: AppColors.primary)),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Thêm ảnh',
-                    style: TextStyle(
-                      fontFamily: 'Be Vietnam Pro',
-                      fontSize: 11,
-                      color: AppColors.primary,
+                );
+              }
+              return Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      File(widget.selectedImages[index]),
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 3,
+                    right: 3,
+                    child: GestureDetector(
+                      onTap: () => widget.onRemoveImage?.call(index),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
         const SizedBox(height: 16),
 
@@ -304,14 +356,20 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0FDF4),
+            color: isDark
+                ? const Color(0xFF064E3B).withValues(alpha: 0.3)
+                : const Color(0xFFF0FDF4),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFBBF7D0)),
+            border: Border.all(
+              color: isDark
+                  ? const Color(0xFF059669).withValues(alpha: 0.4)
+                  : const Color(0xFFBBF7D0),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(
                     Icons.lightbulb_outline_rounded,
@@ -325,7 +383,9 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
                       fontFamily: 'Be Vietnam Pro',
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF15803D),
+                      color: isDark
+                          ? const Color(0xFF86EFAC)
+                          : const Color(0xFF15803D),
                     ),
                   ),
                 ],
@@ -349,25 +409,28 @@ class _FeedCreateQuestionViewState extends State<FeedCreateQuestionView> {
   }
 
   Widget _buildGuidelineItem(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '• ',
             style: TextStyle(
-              color: Color(0xFF16A34A),
+              color: isDark ? const Color(0xFFA7F3D0) : const Color(0xFF166534),
               fontWeight: FontWeight.bold,
             ),
           ),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Be Vietnam Pro',
                 fontSize: 11.5,
-                color: Color(0xFF166534),
+                color: isDark
+                    ? const Color(0xFFA7F3D0)
+                    : const Color(0xFF166534),
                 height: 1.35,
               ),
             ),

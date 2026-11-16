@@ -60,7 +60,7 @@ export class FeedRepository {
           content: dto.content.trim(),
           destinationId,
           postType: dto.postType ?? FeedPostType.NORMAL,
-          status: ContentStatus.PENDING,
+          status: dto.postType === FeedPostType.NEW_DESTINATION ? ContentStatus.PENDING : ContentStatus.APPROVED,
           images: { create: (dto.images ?? []).map((imageUrl) => ({ imageUrl })) },
         },
         include: feedPostInclude,

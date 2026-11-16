@@ -5,6 +5,7 @@ import 'package:smarttrip/screens/notifications_screen.dart';
 import 'package:smarttrip/screens/user_profile_posts_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/feed/feed_post_card.dart';
+import 'package:smarttrip/services/feed_service.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -14,13 +15,13 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  late List<FeedPostModel> _posts;
+  List<FeedPostModel> _posts = [];
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _posts = FeedPostModel.getMockPosts();
+    _handleRefresh();
   }
 
   @override
@@ -30,10 +31,8 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _handleRefresh() async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    setState(() {
-      _posts = FeedPostModel.getMockPosts();
-    });
+    final data = await FeedService.instance.getPosts();
+    if (mounted) setState(() => _posts = data);
   }
 
   Future<void> _openCreatePost() async {
@@ -122,7 +121,9 @@ class _FeedScreenState extends State<FeedScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.2 : 0.03,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),

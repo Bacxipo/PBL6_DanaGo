@@ -54,15 +54,15 @@ class DestinationItem {
       title: json['name'] as String? ?? '',
       category: (json['categoryName'] as String? ?? '').toUpperCase(),
       imageUrl: firstImage,
-      rating: (json['avgRating'] as num?)?.toDouble() ?? 0.0,
+      rating: double.tryParse(json['avgRating']?.toString() ?? '') ?? 0.0,
       tag: tag,
       distance: json['distance'] as String?,
       description: json['description'] as String?,
       address: json['district'] as String?,
       openHours: json['openHours'] as String?,
       galleryImages: galleryUrls.isNotEmpty ? galleryUrls : null,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
+      latitude: double.tryParse(json['latitude']?.toString() ?? ''),
+      longitude: double.tryParse(json['longitude']?.toString() ?? ''),
     );
   }
 }

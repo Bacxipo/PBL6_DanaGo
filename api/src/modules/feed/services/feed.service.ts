@@ -181,7 +181,7 @@ export class FeedService {
   }
 
   async getComments(postId: number) {
-    await this.getApprovedPost(postId);
+    await this.getPostById(postId);
     return this.feedRepository.getCommentsByPostId(postId);
   }
   async deletePost(id: number, userId: number) {

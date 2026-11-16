@@ -5,6 +5,7 @@ import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/feed/feed_post_card.dart';
 import 'package:smarttrip/widgets/user_profile/user_profile_empty_posts.dart';
 import 'package:smarttrip/widgets/user_profile/user_profile_header.dart';
+import 'package:smarttrip/services/feed_service.dart';
 
 class UserProfilePostsScreen extends StatefulWidget {
   final String authorName;
@@ -29,23 +30,26 @@ class UserProfilePostsScreen extends StatefulWidget {
 class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late List<FeedPostModel> _userPosts;
+  List<FeedPostModel> _userPosts = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadUserPosts();
+  }
 
-    if (widget.initialPosts != null) {
-      _userPosts = List.from(widget.initialPosts!);
-    } else {
-      // Find matching posts by author or generate demo posts
-      final allMock = FeedPostModel.getMockPosts();
-      final matched = allMock
-          .where((p) => p.authorName.toLowerCase() == widget.authorName.toLowerCase())
-          .toList();
-      _userPosts = matched;
-    }
+  Future<void> _loadUserPosts() async {
+    final posts = widget.isCurrentUser
+        ? await FeedService.instance.getMyPosts()
+        : (await FeedService.instance.getPosts())
+              .where(
+                (p) =>
+                    p.authorName.toLowerCase() ==
+                    widget.authorName.toLowerCase(),
+              )
+              .toList();
+    if (mounted) setState(() => _userPosts = posts);
   }
 
   @override
@@ -102,7 +106,11 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
             ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Chia sẻ trang cá nhân của ${widget.authorName}')),
+                SnackBar(
+                  content: Text(
+                    'Chia sẻ trang cá nhân của ${widget.authorName}',
+                  ),
+                ),
               );
             },
           ),
@@ -219,7 +227,10 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Container(
               color: AppColors.bgSecondary,
-              child: const Icon(Icons.image_not_supported, color: AppColors.textHint),
+              child: const Icon(
+                Icons.image_not_supported,
+                color: AppColors.textHint,
+              ),
             ),
           ),
         );
@@ -228,7 +239,9 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
   }
 
   Widget _buildQuestionsList() {
-    final questions = _userPosts.where((p) => p.type == PostType.question).toList();
+    final questions = _userPosts
+        .where((p) => p.type == PostType.question)
+        .toList();
     if (questions.isEmpty) {
       return const SingleChildScrollView(
         physics: AlwaysScrollableScrollPhysics(),
@@ -270,7 +283,11 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => tabBar.preferredSize.height + 1.0;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
-import 'package:smarttrip/theme/app_colors.dart';
 
 class FeedImageGallery extends StatelessWidget {
   final List<PostImageItem> images;
@@ -18,226 +17,323 @@ class FeedImageGallery extends StatelessWidget {
     this.bannerExtraImagesText,
   });
 
+  void _openViewer(BuildContext context, int initialIndex) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _FullScreenImageViewer(
+          images: images,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (images.isEmpty) return const SizedBox.shrink();
 
-    if (isCollageBanner) {
-      return _buildCollageBanner(context);
+    final count = images.length;
+    Widget grid;
+
+    if (count == 1) {
+      grid = _buildSingle(context, 0);
+    } else if (count == 2) {
+      grid = _buildTwo(context);
+    } else if (count == 3) {
+      grid = _buildThree(context);
+    } else if (count == 4) {
+      grid = _buildFour(context);
+    } else {
+      grid = _buildFiveOrMore(context);
     }
 
-    if (images.length == 2) {
-      return _buildTwoImageGrid(context);
-    }
-
-    return _buildSingleImage(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: grid,
+    );
   }
 
-  Widget _buildTwoImageGrid(BuildContext context) {
+  // 1 ảnh full
+  Widget _buildSingle(BuildContext context, int index) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: _buildTile(context, index),
+    );
+  }
+
+  // 2 ảnh song song
+  Widget _buildTwo(BuildContext context) {
     return SizedBox(
-      height: 192,
+      height: 220,
       child: Row(
         children: [
-          Expanded(child: _buildImageTile(images[0])),
-          const SizedBox(width: 8),
-          Expanded(child: _buildImageTile(images[1])),
+          Expanded(child: _buildTile(context, 0)),
+          const SizedBox(width: 4),
+          Expanded(child: _buildTile(context, 1)),
         ],
       ),
     );
   }
 
-  Widget _buildImageTile(PostImageItem item) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Stack(
-        fit: StackFit.expand,
+  // 3 ảnh: 1 lớn bên trái, 2 nhỏ bên phải
+  Widget _buildThree(BuildContext context) {
+    return SizedBox(
+      height: 240,
+      child: Row(
         children: [
-          Image.network(
-            item.imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              color: Colors.grey.shade200,
-              child: const Icon(Icons.broken_image, color: Colors.grey),
+          Expanded(flex: 2, child: _buildTile(context, 0)),
+          const SizedBox(width: 4),
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Expanded(child: _buildTile(context, 1)),
+                const SizedBox(height: 4),
+                Expanded(child: _buildTile(context, 2)),
+              ],
             ),
           ),
-          // Subtle dark gradient at bottom for text readability
-          if (item.caption != null && item.caption!.isNotEmpty) ...[
-            Positioned(
-              bottom: 8,
-              left: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A2E35).withValues(alpha: 0.65),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  item.caption!,
-                  style: const TextStyle(
-                    fontFamily: 'Be Vietnam Pro',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _buildCollageBanner(BuildContext context) {
-    final heroImage = images.first.imageUrl;
-
-    return Container(
-      height: 208,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              heroImage,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: Colors.grey.shade200,
-                child: const Icon(Icons.broken_image, color: Colors.grey),
-              ),
+  // 4 ảnh: lưới 2x2
+  Widget _buildFour(BuildContext context) {
+    return SizedBox(
+      height: 240,
+      child: Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: _buildTile(context, 0)),
+                const SizedBox(width: 4),
+                Expanded(child: _buildTile(context, 1)),
+              ],
             ),
-            // Gradient scrim
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.15),
-                      Colors.black.withValues(alpha: 0.75),
-                    ],
-                    stops: const [0.4, 0.7, 1.0],
-                  ),
-                ),
-              ),
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: _buildTile(context, 2)),
+                const SizedBox(width: 4),
+                Expanded(child: _buildTile(context, 3)),
+              ],
             ),
-            // Top Right Extra Images Count Badge
-            if (bannerExtraImagesText != null)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A2E35).withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.photo_library_rounded,
-                        size: 14,
-                        color: AppColors.accentLight,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        bannerExtraImagesText!,
-                        style: const TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            // Bottom Information Overlay
-            if (bannerHighlightTitle != null || bannerPriceTag != null)
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 12,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (bannerHighlightTitle != null)
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.restaurant_menu_rounded,
-                              size: 16,
-                              color: AppColors.accentLight,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                bannerHighlightTitle!,
-                                style: const TextStyle(
-                                  fontFamily: 'Be Vietnam Pro',
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFE0F7F8),
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (bannerPriceTag != null) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.95),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          bannerPriceTag!,
-                          style: const TextStyle(
-                            fontFamily: 'Be Vietnam Pro',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSingleImage(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+  // 5+ ảnh: Cột trái 2 ảnh, cột phải 3 ảnh (ảnh cuối có overlay +N)
+  Widget _buildFiveOrMore(BuildContext context) {
+    final remaining = images.length - 5;
+    return SizedBox(
+      height: 280,
+      child: Row(
+        children: [
+          // Cột trái: 2 ảnh
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Expanded(child: _buildTile(context, 0)),
+                const SizedBox(height: 4),
+                Expanded(child: _buildTile(context, 1)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Cột phải: 3 ảnh
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Expanded(child: _buildTile(context, 2)),
+                const SizedBox(height: 4),
+                Expanded(child: _buildTile(context, 3)),
+                const SizedBox(height: 4),
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildTile(context, 4),
+                      if (remaining > 0)
+                        GestureDetector(
+                          onTap: () => _openViewer(context, 4),
+                          child: Container(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '+$remaining',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Be Vietnam Pro',
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTile(BuildContext context, int index) {
+    return GestureDetector(
+      onTap: () => _openViewer(context, index),
       child: Image.network(
-        images.first.imageUrl,
-        height: 190,
-        width: double.infinity,
+        images[index].imageUrl,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          height: 190,
-          color: Colors.grey.shade200,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.grey.shade300,
           child: const Icon(Icons.broken_image, color: Colors.grey),
         ),
+      ),
+    );
+  }
+}
+
+// Màn hình xem ảnh toàn màn hình có chuyển ảnh và mũi tên trái/phải
+class _FullScreenImageViewer extends StatefulWidget {
+  final List<PostImageItem> images;
+  final int initialIndex;
+
+  const _FullScreenImageViewer({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // PageView vuốt xem ảnh
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.images.length,
+            onPageChanged: (i) => setState(() => _currentIndex = i),
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 3.5,
+                child: Center(
+                  child: Image.network(
+                    widget.images[index].imageUrl,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Header: Nút Đóng & Bộ đếm số ảnh
+          Positioned(
+            top: 40,
+            left: 16,
+            right: 16,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Text(
+                  '${_currentIndex + 1} / ${widget.images.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Be Vietnam Pro',
+                  ),
+                ),
+                const SizedBox(width: 48), // Cân bằng với icon nút đóng
+              ],
+            ),
+          ),
+
+          // Mũi tên chuyển ảnh sang trái
+          if (_currentIndex > 0)
+            Positioned(
+              left: 12,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: IconButton(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.5),
+                  ),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
+                  onPressed: () {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                ),
+              ),
+            ),
+
+          // Mũi tên chuyển ảnh sang phải
+          if (_currentIndex < widget.images.length - 1)
+            Positioned(
+              right: 12,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: IconButton(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.5),
+                  ),
+                  icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 22),
+                  onPressed: () {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

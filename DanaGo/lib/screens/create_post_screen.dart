@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:smarttrip/models/feed_post_model.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/feed/feed_create_experience_view.dart';
 import 'package:smarttrip/widgets/feed/feed_create_place_view.dart';
 import 'package:smarttrip/widgets/feed/feed_create_question_view.dart';
 import 'package:smarttrip/widgets/feed/feed_create_tab_bar.dart';
+import 'package:smarttrip/services/feed_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -20,6 +21,37 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _expTitleController = TextEditingController();
   final TextEditingController _expContentController = TextEditingController();
   double _expRating = 5.0;
+  int? _selectedDestinationId;
+  List<String> _selectedImagePaths = [];
+  Map<String, dynamic> _placeData = {};
+  bool _isPickerActive = false;
+
+  Future<void> _pickImages() async {
+    if (_isPickerActive) return;
+    _isPickerActive = true;
+    try {
+      final picker = ImagePicker();
+      final images = await picker.pickMultiImage(
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 75,
+      );
+      if (images.isNotEmpty && mounted) {
+        setState(() {
+          for (final img in images) {
+            if (_selectedImagePaths.length < 5 &&
+                !_selectedImagePaths.contains(img.path)) {
+              _selectedImagePaths.add(img.path);
+            }
+          }
+        });
+      }
+    } catch (_) {
+      // Bỏ qua lỗi already_active hoặc huỷ chọn
+    } finally {
+      _isPickerActive = false;
+    }
+  }
 
   // Controllers for Tab 1: Hỏi đáp
   final TextEditingController _qTitleController = TextEditingController();
@@ -47,6 +79,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         _expTitleController.clear();
         _expContentController.clear();
         _expRating = 5.0;
+        _selectedDestinationId = null;
+        _selectedImagePaths.clear();
         break;
       case 1:
         _qTitleController.clear();
@@ -69,54 +103,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     });
   }
 
-  void _submitPost() {
-    FeedPostModel? newPost;
-
+  void _submitPost() async {
+    String content = '';
     if (_currentTabIndex == 0) {
-      final content = _expContentController.text.trim();
+      content = _expContentController.text.trim();
       if (content.isEmpty) {
         _showErrorSnackBar('Vui lòng nhập nội dung chia sẻ trải nghiệm!');
         return;
       }
-      newPost = FeedPostModel(
-        id: 'post_${DateTime.now().millisecondsSinceEpoch}',
-        type: PostType.experience,
-        authorName: 'Bạn (Người dùng)',
-        authorAvatar: FeedPostModel.userDefaultAvatar,
-        timeAgo: 'Vừa xong',
-        isVerified: true,
-        locationName: 'Đà Nẵng',
-        title: _expTitleController.text.trim().isEmpty
-            ? null
-            : _expTitleController.text.trim(),
-        content: content,
-        rating: _expRating,
-        images: const [
-          PostImageItem(
-            imageUrl:
-                'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-            caption: 'Ảnh chuyến đi',
-          ),
-        ],
-      );
     } else if (_currentTabIndex == 1) {
       final title = _qTitleController.text.trim();
-      final content = _qContentController.text.trim();
+      final body = _qContentController.text.trim();
       if (title.isEmpty) {
         _showErrorSnackBar('Vui lòng nhập tiêu đề câu hỏi thắc mắc!');
         return;
       }
-      newPost = FeedPostModel(
-        id: 'post_${DateTime.now().millisecondsSinceEpoch}',
-        type: PostType.question,
-        authorName: 'Bạn (Người dùng)',
-        authorAvatar: FeedPostModel.userDefaultAvatar,
-        timeAgo: 'Vừa xong',
-        categoryTag: _qCategory,
-        title: title,
-        content: content.isEmpty ? title : content,
-        images: const [],
-      );
+      final header = '❓ [Hỏi đáp] $_qCategory';
+      content = body.isEmpty ? '$header\n$title' : '$header\n$title\n\n$body';
     } else {
       final name = _placeNameController.text.trim();
       final desc = _placeDescController.text.trim();
@@ -124,40 +127,61 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         _showErrorSnackBar('Vui lòng nhập tên địa điểm mới!');
         return;
       }
-      newPost = FeedPostModel(
-        id: 'post_${DateTime.now().millisecondsSinceEpoch}',
-        type: PostType.newPlace,
-        authorName: 'Bạn (Người dùng)',
-        authorAvatar: FeedPostModel.userDefaultAvatar,
-        timeAgo: 'Vừa xong',
-        locationName: 'Quận Hải Châu, Đà Nẵng',
-        title: name,
-        content:
-            desc.isEmpty ? 'Gợi ý địa điểm mới cực hot tại Đà Nẵng: $name' : desc,
-        images: const [
-          PostImageItem(
-            imageUrl:
-                'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
-            caption: 'Mặt tiền quán',
-          ),
-        ],
+      if (_selectedImagePaths.isEmpty) {
+        _showErrorSnackBar(
+          'Địa điểm mới bắt buộc phải có ít nhất 1 ảnh thực tế!',
+        );
+        return;
+      }
+      content = desc.isEmpty ? 'Đề xuất địa điểm mới: $name' : '$name - $desc';
+      final proposal = {
+        'name': name,
+        'district': _placeData['district'] ?? 'Quận Hải Châu',
+        'description': desc,
+        'ticketPrice': _placeData['ticketPrice'] ?? 'Miễn phí',
+        'openHours': _placeData['openHours'] ?? '07:00 - 22:30',
+      };
+      final created = await FeedService.instance.createPost(
+        content: content,
+        postType: 'NEW_DESTINATION',
+        proposal: proposal,
+        imagePaths: _selectedImagePaths,
       );
+      if (!mounted) return;
+      if (created != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Đã gửi đề xuất địa điểm (chờ Admin duyệt)!'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        Navigator.pop(context, created);
+      } else {
+        _showErrorSnackBar('Không thể gửi đề xuất địa điểm, vui lòng thử lại!');
+      }
+      return;
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'Đăng bài viết thành công!',
-          style: TextStyle(fontFamily: 'Be Vietnam Pro', fontSize: 13),
-        ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
-      ),
+    final created = await FeedService.instance.createPost(
+      content: content,
+      destinationId: _selectedDestinationId,
+      imagePaths: _selectedImagePaths,
     );
-
-    Navigator.pop(context, newPost);
+    if (!mounted) return;
+    if (created != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Đã gửi bài viết (chờ Admin duyệt)!'),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      Navigator.pop(context, created);
+    } else {
+      _showErrorSnackBar('Không thể đăng bài viết, vui lòng thử lại!');
+    }
   }
 
   void _showErrorSnackBar(String msg) {
@@ -182,14 +206,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           titleController: _expTitleController,
           contentController: _expContentController,
           onRatingChanged: (r) => _expRating = r,
-          onAddImage: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Đã chọn 2 ảnh du lịch chất lượng cao'),
-                duration: Duration(seconds: 1),
-              ),
-            );
-          },
+          onDestinationSelected: (id) => _selectedDestinationId = id,
+          selectedImages: _selectedImagePaths,
+          onAddImage: _pickImages,
+          onRemoveImage: (index) =>
+              setState(() => _selectedImagePaths.removeAt(index)),
         );
       case 1:
         return FeedCreateQuestionView(
@@ -197,12 +218,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           titleController: _qTitleController,
           contentController: _qContentController,
           onCategorySelected: (cat) => _qCategory = cat,
+          selectedImages: _selectedImagePaths,
+          onAddImage: _pickImages,
+          onRemoveImage: (index) =>
+              setState(() => _selectedImagePaths.removeAt(index)),
         );
       case 2:
         return FeedCreatePlaceView(
           key: const ValueKey('tab_place'),
           nameController: _placeNameController,
           descController: _placeDescController,
+          onDataChanged: (data) => _placeData = data,
+          selectedImages: _selectedImagePaths,
+          onAddImage: _pickImages,
+          onRemoveImage: (index) =>
+              setState(() => _selectedImagePaths.removeAt(index)),
         );
       default:
         return const SizedBox.shrink();
@@ -275,9 +305,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
 
             // Tab Content Body (Only builds active tab)
-            Expanded(
-              child: _buildCurrentTab(),
-            ),
+            Expanded(child: _buildCurrentTab()),
           ],
         ),
       ),

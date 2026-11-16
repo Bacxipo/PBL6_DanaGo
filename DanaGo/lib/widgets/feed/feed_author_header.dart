@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
 import 'package:smarttrip/screens/user_profile_posts_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class FeedAuthorHeader extends StatelessWidget {
   final FeedPostModel post;
   final VoidCallback? onMorePressed;
 
-  const FeedAuthorHeader({
-    super.key,
-    required this.post,
-    this.onMorePressed,
-  });
+  const FeedAuthorHeader({super.key, required this.post, this.onMorePressed});
 
   void _navigateToAuthorProfile(BuildContext context) {
     Navigator.push(
@@ -39,18 +36,19 @@ class FeedAuthorHeader extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               ClipOval(
-                child: Image.network(
-                  post.authorAvatar,
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 40,
-                    height: 40,
-                    color: AppColors.primaryLight,
-                    child: const Icon(Icons.person, color: AppColors.primary, size: 22),
-                  ),
-                ),
+                child: post.authorAvatar.endsWith('.svg')
+                    ? SvgPicture.asset(
+                        post.authorAvatar,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        post.authorAvatar,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
               ),
               if (post.isVerified)
                 Positioned(
@@ -116,10 +114,7 @@ class FeedAuthorHeader extends StatelessWidget {
                   const SizedBox(width: 4),
                   const Text(
                     '•',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.neutral,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.neutral),
                   ),
                   const SizedBox(width: 4),
                   const Icon(
@@ -135,7 +130,8 @@ class FeedAuthorHeader extends StatelessWidget {
         // More options button
         IconButton(
           icon: const Icon(Icons.more_horiz_rounded, color: AppColors.neutral),
-          onPressed: onMorePressed ??
+          onPressed:
+              onMorePressed ??
               () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -189,4 +185,3 @@ class FeedAuthorHeader extends StatelessWidget {
     );
   }
 }
-

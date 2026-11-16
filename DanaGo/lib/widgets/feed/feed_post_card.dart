@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
 import 'package:smarttrip/screens/detail_place_screen.dart';
+import 'package:smarttrip/services/feed_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/feed/feed_action_bar.dart';
 import 'package:smarttrip/widgets/feed/feed_author_header.dart';
@@ -13,22 +14,19 @@ class FeedPostCard extends StatefulWidget {
   final FeedPostModel post;
   final VoidCallback? onPostUpdated;
 
-  const FeedPostCard({
-    super.key,
-    required this.post,
-    this.onPostUpdated,
-  });
+  const FeedPostCard({super.key, required this.post, this.onPostUpdated});
 
   @override
   State<FeedPostCard> createState() => _FeedPostCardState();
 }
 
 class _FeedPostCardState extends State<FeedPostCard> {
-  void _handleLike() {
+  void _handleLike() async {
     setState(() {
       widget.post.isLiked = !widget.post.isLiked;
       widget.post.likes += widget.post.isLiked ? 1 : -1;
     });
+    await FeedService.instance.toggleLike(widget.post.id);
     widget.onPostUpdated?.call();
   }
 
@@ -70,7 +68,8 @@ class _FeedPostCardState extends State<FeedPostCard> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => DetailPlaceScreen(item: widget.post.linkedDestination!),
+          builder: (_) =>
+              DetailPlaceScreen(item: widget.post.linkedDestination!),
         ),
       );
     }
@@ -111,7 +110,9 @@ class _FeedPostCardState extends State<FeedPostCard> {
           ],
 
           // 3. Question / New Place Title (if present)
-          if (post.title != null && post.title!.isNotEmpty && post.type != PostType.experience) ...[
+          if (post.title != null &&
+              post.title!.isNotEmpty &&
+              post.type != PostType.experience) ...[
             const SizedBox(height: 10),
             Text(
               post.title!,
@@ -154,7 +155,11 @@ class _FeedPostCardState extends State<FeedPostCard> {
 
           // 7. Action Bar (Like, Comment, Share, Bookmark)
           const SizedBox(height: 8),
-          const Divider(height: 16, thickness: 0.8, color: AppColors.borderLight),
+          const Divider(
+            height: 16,
+            thickness: 0.8,
+            color: AppColors.borderLight,
+          ),
           FeedActionBar(
             likesCount: post.likes,
             commentsCount: post.commentsCount,
@@ -197,4 +202,3 @@ class _FeedPostCardState extends State<FeedPostCard> {
     return RichText(text: TextSpan(children: spans));
   }
 }
-

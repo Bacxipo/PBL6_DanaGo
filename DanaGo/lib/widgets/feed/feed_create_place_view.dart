@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
@@ -5,12 +6,18 @@ class FeedCreatePlaceView extends StatefulWidget {
   final TextEditingController nameController;
   final TextEditingController descController;
   final Function(Map<String, dynamic> data)? onDataChanged;
+  final List<String> selectedImages;
+  final VoidCallback? onAddImage;
+  final Function(int index)? onRemoveImage;
 
   const FeedCreatePlaceView({
     super.key,
     required this.nameController,
     required this.descController,
     this.onDataChanged,
+    this.selectedImages = const [],
+    this.onAddImage,
+    this.onRemoveImage,
   });
 
   @override
@@ -57,6 +64,21 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
     _maxPriceController = TextEditingController(text: '65.000');
     _phoneController = TextEditingController();
     _linkController = TextEditingController();
+    _notifyParent();
+  }
+
+  void _notifyParent() {
+    final ticket = _isFree
+        ? 'Miễn phí'
+        : '${_minPriceController.text.trim()} - ${_maxPriceController.text.trim()} đ';
+    final openHours =
+        '${_openTimeController.text.trim()} - ${_closeTimeController.text.trim()}';
+    widget.onDataChanged?.call({
+      'district': _selectedDistrict,
+      'ticketPrice': ticket,
+      'openHours': openHours,
+      'address': _addressController.text.trim(),
+    });
   }
 
   @override
@@ -149,7 +171,9 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary
-                        : const Color(0xFFEFF5F5),
+                        : (isDark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFEFF5F5)),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
@@ -159,15 +183,24 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
                   ),
                   child: Row(
                     children: [
-                      Text(item['emoji']!, style: const TextStyle(fontSize: 13)),
+                      Text(
+                        item['emoji']!,
+                        style: const TextStyle(fontSize: 13),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         item['title']!,
                         style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark
+                                    ? Colors.white70
+                                    : AppColors.textPrimary),
                         ),
                       ),
                     ],
@@ -208,12 +241,19 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.borderLight),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : AppColors.borderLight,
+                  ),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
+                    dropdownColor: isDark
+                        ? const Color(0xFF1E293B)
+                        : Colors.white,
                     value: _selectedDistrict,
                     isExpanded: true,
                     items: _districts
@@ -222,16 +262,22 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
                             value: d,
                             child: Text(
                               d,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'Be Vietnam Pro',
                                 fontSize: 13,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
                               ),
                             ),
                           ),
                         )
                         .toList(),
                     onChanged: (val) {
-                      if (val != null) setState(() => _selectedDistrict = val);
+                      if (val != null) {
+                        setState(() => _selectedDistrict = val);
+                        _notifyParent();
+                      }
                     },
                   ),
                 ),
@@ -251,9 +297,13 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.borderLight),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : AppColors.borderLight,
+                  ),
                 ),
                 child: TextField(
                   controller: _addressController,
@@ -268,7 +318,11 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(vertical: 10),
                   ),
-                  style: const TextStyle(fontFamily: 'Be Vietnam Pro', fontSize: 13),
+                  style: TextStyle(
+                    fontFamily: 'Be Vietnam Pro',
+                    fontSize: 13,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -400,7 +454,10 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
                     children: [
                       Checkbox(
                         value: _isFree,
-                        onChanged: (val) => setState(() => _isFree = val ?? false),
+                        onChanged: (val) {
+                          setState(() => _isFree = val ?? false);
+                          _notifyParent();
+                        },
                         visualDensity: VisualDensity.compact,
                         activeColor: AppColors.primary,
                       ),
@@ -418,9 +475,19 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
               if (!_isFree) ...[
                 Row(
                   children: [
-                    Expanded(child: _buildSmallInput(_minPriceController, prefix: 'Từ: ')),
+                    Expanded(
+                      child: _buildSmallInput(
+                        _minPriceController,
+                        prefix: 'Từ: ',
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildSmallInput(_maxPriceController, prefix: 'Đến: ')),
+                    Expanded(
+                      child: _buildSmallInput(
+                        _maxPriceController,
+                        prefix: 'Đến: ',
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -428,21 +495,93 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // 5. Ảnh thực tế (*)
-        _buildSectionHeader('Ảnh thực tế', isRequired: true),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            _buildAddPhotoBox('Mặt tiền quán'),
-            const SizedBox(width: 10),
-            _buildAddPhotoBox('Không gian / Menu'),
-          ],
+        SizedBox(
+          height: 85,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: widget.selectedImages.length < 5
+                ? widget.selectedImages.length + 1
+                : widget.selectedImages.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              if (index == widget.selectedImages.length) {
+                return InkWell(
+                  onTap: widget.onAddImage,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 85,
+                    height: 85,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_a_photo_outlined,
+                          size: 24,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Thêm ảnh',
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 11,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      File(widget.selectedImages[index]),
+                      width: 85,
+                      height: 85,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 3,
+                    right: 3,
+                    child: GestureDetector(
+                      onTap: () => widget.onRemoveImage?.call(index),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
         const SizedBox(height: 16),
 
         // 6. Mô tả địa điểm
         _buildSectionHeader('Mô tả & Cảm xúc cá nhân'),
+
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(14),
@@ -466,7 +605,10 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
               ),
               border: InputBorder.none,
             ),
-            style: const TextStyle(fontFamily: 'Be Vietnam Pro', fontSize: 13.5),
+            style: const TextStyle(
+              fontFamily: 'Be Vietnam Pro',
+              fontSize: 13.5,
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -475,31 +617,38 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
   }
 
   Widget _buildSectionHeader(String title, {bool isRequired = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Be Vietnam Pro',
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: isDark ? Colors.white : AppColors.textPrimary,
           ),
         ),
         if (isRequired)
-          const Text(' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          const Text(
+            ' *',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          ),
       ],
     );
   }
 
   Widget _buildSmallInput(TextEditingController controller, {String? prefix}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 38,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(
+          color: isDark ? Colors.white12 : AppColors.borderLight,
+        ),
       ),
       child: TextField(
         controller: controller,
@@ -514,10 +663,11 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 9),
         ),
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Be Vietnam Pro',
           fontSize: 12.5,
           fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : AppColors.textPrimary,
         ),
       ),
     );
@@ -530,14 +680,16 @@ class _FeedCreatePlaceViewState extends State<FeedCreatePlaceView> {
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_a_photo_outlined, size: 22, color: AppColors.primary),
+            const Icon(
+              Icons.add_a_photo_outlined,
+              size: 22,
+              color: AppColors.primary,
+            ),
             const SizedBox(height: 4),
             Text(
               label,

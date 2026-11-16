@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
+import 'package:smarttrip/services/feed_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
 class FeedCommentSheet extends StatefulWidget {
   final FeedPostModel post;
   final Function(CommentItem newComment)? onCommentAdded;
 
-  const FeedCommentSheet({
-    super.key,
-    required this.post,
-    this.onCommentAdded,
-  });
+  const FeedCommentSheet({super.key, required this.post, this.onCommentAdded});
 
   static Future<void> show(
     BuildContext context, {
@@ -21,10 +19,8 @@ class FeedCommentSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => FeedCommentSheet(
-        post: post,
-        onCommentAdded: onCommentAdded,
-      ),
+      builder: (_) =>
+          FeedCommentSheet(post: post, onCommentAdded: onCommentAdded),
     );
   }
 
@@ -34,12 +30,12 @@ class FeedCommentSheet extends StatefulWidget {
 
 class _FeedCommentSheetState extends State<FeedCommentSheet> {
   final TextEditingController _commentController = TextEditingController();
-  late List<CommentItem> _comments;
+  List<CommentItem> _comments = [];
 
   @override
   void initState() {
     super.initState();
-    _comments = List.from(widget.post.comments);
+    _loadComments();
   }
 
   @override
@@ -48,26 +44,24 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
     super.dispose();
   }
 
-  void _submitComment() {
+  Future<void> _loadComments() async {
+    final data = await FeedService.instance.getComments(widget.post.id);
+    if (mounted) setState(() => _comments = data);
+  }
+
+  void _submitComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
-
-    final newComment = CommentItem(
-      id: 'cmt_${DateTime.now().millisecondsSinceEpoch}',
-      authorName: 'Bạn (Người dùng)',
-      authorAvatar: FeedPostModel.userDefaultAvatar,
-      content: text,
-      timeAgo: 'Vừa xong',
-    );
-
-    setState(() {
-      _comments.insert(0, newComment);
-      widget.post.commentsCount++;
-    });
-
-    widget.onCommentAdded?.call(newComment);
     _commentController.clear();
     FocusScope.of(context).unfocus();
+    final created = await FeedService.instance.addComment(widget.post.id, text);
+    if (created != null && mounted) {
+      setState(() {
+        _comments.add(created);
+        widget.post.commentsCount = _comments.length;
+      });
+      widget.onCommentAdded?.call(created);
+    }
   }
 
   @override
@@ -84,9 +78,7 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag handle
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 10, bottom: 6),
@@ -148,9 +140,13 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                     ),
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     itemCount: _comments.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 16),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
                     itemBuilder: (context, index) {
                       final cmt = _comments[index];
                       return _buildCommentItem(cmt, isDark);
@@ -178,17 +174,11 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
             child: Row(
               children: [
                 ClipOval(
-                  child: Image.network(
-                    'https://i.postimg.cc/tC24nW4N/avt1.jpg',
+                  child: SvgPicture.asset(
+                    'assets/images/default-avatar.svg',
                     width: 32,
                     height: 32,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 32,
-                      height: 32,
-                      color: AppColors.primaryLight,
-                      child: const Icon(Icons.person, color: AppColors.primary, size: 16),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -196,7 +186,9 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEFF5F5),
+                      color: isDark
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFEFF5F5),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
@@ -224,7 +216,10 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: _submitComment,
-                  icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+                  icon: const Icon(
+                    Icons.send_rounded,
+                    color: AppColors.primary,
+                  ),
                   visualDensity: VisualDensity.compact,
                 ),
               ],
@@ -240,18 +235,19 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipOval(
-          child: Image.network(
-            cmt.authorAvatar,
-            width: 32,
-            height: 32,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              width: 32,
-              height: 32,
-              color: AppColors.primaryLight,
-              child: const Icon(Icons.person, color: AppColors.primary, size: 16),
-            ),
-          ),
+          child: cmt.authorAvatar.endsWith('.svg')
+              ? SvgPicture.asset(
+                  cmt.authorAvatar,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                )
+              : Image.network(
+                  cmt.authorAvatar,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                ),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -259,9 +255,14 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F6F6),
+                  color: isDark
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFFF3F6F6),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
@@ -283,7 +284,9 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                         fontFamily: 'Be Vietnam Pro',
                         fontSize: 13,
                         height: 1.35,
-                        color: isDark ? Colors.white70 : AppColors.textSecondary,
+                        color: isDark
+                            ? Colors.white70
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -315,7 +318,9 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                         fontFamily: 'Be Vietnam Pro',
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: cmt.isLiked ? const Color(0xFFEF4444) : AppColors.textSecondary,
+                        color: cmt.isLiked
+                            ? const Color(0xFFEF4444)
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ),

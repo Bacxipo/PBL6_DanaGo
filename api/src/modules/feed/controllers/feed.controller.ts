@@ -22,7 +22,7 @@ export class FeedController {
   @UseInterceptors(
     FilesInterceptor('files', 5, {
       limits: {
-        fileSize: 5 * 1024 * 1024,
+        fileSize: 15 * 1024 * 1024,
       },
       fileFilter: (_request, file, callback) => {
         const allowedTypes = [
