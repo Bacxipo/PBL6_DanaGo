@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Calendar,
@@ -15,6 +15,7 @@ import {
     Save,
     RotateCcw,
     CheckCircle2,
+    Loader2,
 } from 'lucide-react';
 import { saveItineraryFull, getCurrentUserId, getItinerariesStorageKey } from '@/lib/itinerary-api';
 
@@ -29,7 +30,9 @@ export default function PlanResultView({
 }) {
     const router = useRouter();
     const [activeDayTab, setActiveDayTab] = useState(0); // 0 = all days
+    const [isSaving, setIsSaving] = useState(false);
     const [savedSuccess, setSavedSuccess] = useState(false);
+    const savingRef = useRef(false);
 
     if (!plan || !plan.days) return null;
 
@@ -51,6 +54,9 @@ export default function PlanResultView({
 
     // Lưu toàn bộ lịch trình AI tạo ra vào danh sách Lịch trình cá nhân (Itinerary)
     const handleSaveToItinerary = async () => {
+        if (savingRef.current || isSaving || savedSuccess) return;
+        savingRef.current = true;
+        setIsSaving(true);
         try {
             const start = startDateStr || new Date().toISOString().split('T')[0];
             const end = endDateStr || (() => {
@@ -152,26 +158,59 @@ export default function PlanResultView({
             const updated = [finalItinerary, ...existing];
             localStorage.setItem(getItinerariesStorageKey(), JSON.stringify(updated));
 
+            setIsSaving(false);
             setSavedSuccess(true);
             setTimeout(() => {
                 router.push('/itinerary');
-            }, 1000);
-        } catch (err) {
-            console.error('Lỗi khi lưu lịch trình sang Itinerary:', err);
-        }
-    };
+        }, 1200);
+    } catch (err) {
+        console.error('Lỗi khi lưu lịch trình sang Itinerary:', err);
+        savingRef.current = false;
+        setIsSaving(false);
+    }
+};
 
-    const daysToDisplay = activeDayTab === 0
-        ? plan.days
-        : plan.days.filter((d) => d.day === activeDayTab);
+const daysToDisplay = activeDayTab === 0
+    ? plan.days
+    : plan.days.filter((d) => d.day === activeDayTab);
 
-    // Kiểm tra xem có ngày nào không xếp được điểm tham quan do ngân sách / tiêu chí không
-    const hasEmptyDays = plan.days.some(
-        (d) => !d.items || d.items.length === 0 || d.items.filter((it) => it.type === 'attraction').length === 0
-    );
+// Kiểm tra xem có ngày nào không xếp được điểm tham quan do ngân sách / tiêu chí không
+const hasEmptyDays = plan.days.some(
+    (d) => !d.items || d.items.length === 0 || d.items.filter((it) => it.type === 'attraction').length === 0
+);
 
-    return (
-        <div className="space-y-6">
+return (
+        <div className="space-y-6 relative">
+            {/* THÔNG BÁO NỔI (TOAST) KHI ĐANG LƯU HOẶC ĐÃ LƯU THÀNH CÔNG */}
+            {(isSaving || savedSuccess) && (
+                <div className="fixed top-20 right-6 z-50 animate-in fade-in slide-in-from-top-3 duration-200">
+                    <div
+                        className={`px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-xs sm:text-sm font-bold ${savedSuccess
+                                ? 'bg-emerald-600 border-emerald-500 text-white'
+                                : 'bg-[#006971] border-teal-500 text-white'
+                            }`}
+                    >
+                        {savedSuccess ? (
+                            <CheckCircle2 size={18} className="shrink-0 text-emerald-100" />
+                        ) : (
+                            <Loader2 size={18} className="shrink-0 animate-spin text-teal-100" />
+                        )}
+                        <div>
+                            <div>
+                                {savedSuccess
+                                    ? 'Đã lưu lịch trình thành công!'
+                                    : 'Đang lưu lịch trình và tạo checklist...'}
+                            </div>
+                            <div className="text-2xs font-medium opacity-90 mt-0.5">
+                                {savedSuccess
+                                    ? 'Đang chuyển bạn sang trang Lịch trình cá nhân...'
+                                    : 'Vui lòng chờ giây lát, hệ thống đang đồng bộ dữ liệu.'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* THÔNG BÁO NỔI BẬT NẾU CÓ NGÀY THIẾU HOẠT ĐỘNG */}
             {hasEmptyDays && (
                 <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 space-y-2.5 shadow-xs">
@@ -220,14 +259,26 @@ export default function PlanResultView({
                         <button
                             type="button"
                             onClick={handleSaveToItinerary}
-                            disabled={savedSuccess}
+                            disabled={isSaving || savedSuccess}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 ${savedSuccess
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-[#006971] hover:bg-[#00555c] text-white active:scale-95'
+                                    ? 'bg-emerald-600 text-white cursor-not-allowed'
+                                    : isSaving
+                                        ? 'bg-[#006971]/80 text-white cursor-wait'
+                                        : 'bg-[#006971] hover:bg-[#00555c] text-white active:scale-95 cursor-pointer'
                                 }`}
                         >
-                            <Save size={14} />
-                            {savedSuccess ? 'Đang chuyển sang Lịch trình...' : 'Lưu & Xem trong Lịch trình'}
+                            {isSaving ? (
+                                <Loader2 size={14} className="animate-spin" />
+                            ) : savedSuccess ? (
+                                <CheckCircle2 size={14} />
+                            ) : (
+                                <Save size={14} />
+                            )}
+                            {isSaving
+                                ? 'Đang lưu lịch trình...'
+                                : savedSuccess
+                                    ? 'Đã lưu! Đang chuyển sang Lịch trình...'
+                                    : 'Lưu & Xem trong Lịch trình'}
                         </button>
                     </div>
                 </div>
@@ -517,18 +568,30 @@ export default function PlanResultView({
                 <button
                     type="button"
                     onClick={handleSaveToItinerary}
-                    disabled={savedSuccess}
+                    disabled={isSaving || savedSuccess}
                     className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${savedSuccess
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-[#006971] hover:bg-[#00555c] text-white active:scale-95'
+                            ? 'bg-emerald-600 text-white cursor-not-allowed'
+                            : isSaving
+                                ? 'bg-[#006971]/80 text-white cursor-wait'
+                                : 'bg-[#006971] hover:bg-[#00555c] text-white active:scale-95 cursor-pointer'
                         }`}
                 >
-                    <Save size={16} />
-                    {savedSuccess ? 'Đang chuyển sang Lịch trình...' : 'Lưu Vào Lịch Trình Của Tôi'}
-                    <ArrowRight size={15} />
+                    {isSaving ? (
+                        <Loader2 size={16} className="animate-spin" />
+                    ) : savedSuccess ? (
+                        <CheckCircle2 size={16} />
+                    ) : (
+                        <Save size={16} />
+                    )}
+                    {isSaving
+                        ? 'Đang lưu lịch trình...'
+                        : savedSuccess
+                            ? 'Đã lưu! Đang chuyển sang Lịch trình...'
+                            : 'Lưu Vào Lịch Trình Của Tôi'}
+                    {!isSaving && !savedSuccess && <ArrowRight size={15} />}
                 </button>
             </div>
         </div>
-    );
+        );
 }
 
