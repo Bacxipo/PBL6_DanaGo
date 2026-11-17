@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 import trip_planner as tp
+import db_sync
 
 DATA_PATH = os.environ.get("DANAGO_DATA", "data/destination_AI.csv")
 API_KEY = os.environ.get("DANAGO_API_KEY")
@@ -27,22 +28,56 @@ LODGING_PATH = os.environ.get("DANAGO_LODGING", "data/lodging_AI.csv")
 DF = tp.load_places(DATA_PATH)
 LODGING = tp.load_lodging(LODGING_PATH) if os.path.exists(LODGING_PATH) else None
 EMB_MODEL = os.environ.get("DANAGO_EMB_MODEL", "thaitoan1908/dana_travel_model")
+_MODEL = None       # giữ instance SentenceTransformer trong RAM để reload nhanh
 EMB = None          # (model, ma trận vector, id -> hàng)
 EMB_ERROR = None
 
 
+def _rebuild_embeddings():
+    """Mã hoá lại ma trận vector embedding từ DF hiện tại mà không cần tải lại model."""
+    global _MODEL, EMB, EMB_ERROR
+    try:
+        if _MODEL is None:
+            from sentence_transformers import SentenceTransformer
+            _MODEL = SentenceTransformer(EMB_MODEL)
+        texts = DF["embedding_text"].astype(str).tolist()
+        mat = np.asarray(_MODEL.encode(texts, normalize_embeddings=True, batch_size=32))
+        EMB = (_MODEL, mat, {int(i): k for k, i in enumerate(DF["id"])})
+        EMB_ERROR = None
+    except Exception as e:
+        EMB_ERROR = str(e)
+
+
+def sync_and_reload_data():
+    """Đồng bộ từ Backend API (nếu đang chạy) vào CSV rồi nạp lại DF, LODGING và vector embedding."""
+    global DF, LODGING
+    dest_synced, _ = db_sync.sync_destinations_from_backend(DATA_PATH)
+    lodg_synced, _ = db_sync.sync_lodgings_from_backend(LODGING_PATH)
+    DF = tp.load_places(DATA_PATH)
+    LODGING = tp.load_lodging(LODGING_PATH) if os.path.exists(LODGING_PATH) else None
+    if _MODEL is not None:
+        _rebuild_embeddings()
+    return {
+        "status": "reloaded",
+        "places": int(len(DF)),
+        "lodgings": int(len(LODGING)) if LODGING is not None else 0,
+        "synced_destinations_from_db": dest_synced,
+        "synced_lodgings_from_db": lodg_synced,
+    }
+
+
 @asynccontextmanager
 async def lifespan(app):
-    """Nạp model embedding và tính vector cho mọi địa điểm một lần khi khởi động."""
-    global EMB, EMB_ERROR
+    """Đồng bộ dữ liệu mới nhất từ Backend, nạp model embedding và tính vector khi khởi động."""
     try:
-        from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer(EMB_MODEL)
-        texts = DF["embedding_text"].astype(str).tolist()
-        mat = np.asarray(model.encode(texts, normalize_embeddings=True, batch_size=32))
-        EMB = (model, mat, {int(i): k for k, i in enumerate(DF["id"])})
-    except Exception as e:  # dịch vụ vẫn chạy, chỉ /candidates có query bị từ chối
-        EMB_ERROR = str(e)
+        db_sync.sync_destinations_from_backend(DATA_PATH)
+        db_sync.sync_lodgings_from_backend(LODGING_PATH)
+        global DF, LODGING
+        DF = tp.load_places(DATA_PATH)
+        LODGING = tp.load_lodging(LODGING_PATH) if os.path.exists(LODGING_PATH) else None
+    except Exception:
+        pass
+    _rebuild_embeddings()
     yield
 
 
@@ -120,8 +155,20 @@ class PlanIn(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "places": int(len(DF)),
-            "embedding_loaded": EMB is not None, "embedding_error": EMB_ERROR}
+    return {
+        "status": "ok",
+        "places": int(len(DF)),
+        "lodgings": int(len(LODGING)) if LODGING is not None else 0,
+        "embedding_loaded": EMB is not None,
+        "embedding_error": EMB_ERROR,
+    }
+
+
+@app.post("/reload", dependencies=[Depends(require_key)])
+@app.get("/reload", dependencies=[Depends(require_key)])
+def reload_ai_data():
+    """Đồng bộ ngay dữ liệu Destination & Lodging từ Backend DB vào CSV và nạp lại bộ nhớ AI."""
+    return sync_and_reload_data()
 
 
 @app.post("/lodging", dependencies=[Depends(require_key)])

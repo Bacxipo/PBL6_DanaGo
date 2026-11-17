@@ -31,6 +31,7 @@ class PlanResultView extends StatefulWidget {
 class _PlanResultViewState extends State<PlanResultView> {
   int _activeDayTab = 0; // 0 = all days
   bool _isSaving = false;
+  bool _savedSuccess = false;
   final Set<String> _checkedChecklists = {};
 
   String _formatVND(int amount) {
@@ -48,6 +49,7 @@ class _PlanResultViewState extends State<PlanResultView> {
   }
 
   Future<void> _handleSaveItinerary() async {
+    if (_isSaving || _savedSuccess) return;
     setState(() => _isSaving = true);
     HapticFeedback.mediumImpact();
 
@@ -121,6 +123,7 @@ class _PlanResultViewState extends State<PlanResultView> {
       final success = await AiService.instance.saveItineraryFull(payload);
 
       if (mounted) {
+        setState(() => _savedSuccess = true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -458,16 +461,23 @@ class _PlanResultViewState extends State<PlanResultView> {
               Expanded(
                 flex: 3,
                 child: ElevatedButton.icon(
-                  onPressed: _isSaving ? null : _handleSaveItinerary,
+                  onPressed: (_isSaving || _savedSuccess) ? null : _handleSaveItinerary,
                   icon: _isSaving
                       ? const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : const Icon(Icons.bookmark_add_rounded, size: 18),
+                      : Icon(
+                          _savedSuccess ? Icons.check_circle_rounded : Icons.bookmark_add_rounded,
+                          size: 18,
+                        ),
                   label: Text(
-                    _isSaving ? 'Đang lưu...' : 'LƯU LỊCH TRÌNH',
+                    _isSaving
+                        ? 'Đang lưu...'
+                        : _savedSuccess
+                            ? 'ĐÃ LƯU LỊCH TRÌNH'
+                            : 'LƯU LỊCH TRÌNH',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   style: ElevatedButton.styleFrom(

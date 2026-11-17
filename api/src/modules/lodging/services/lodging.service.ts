@@ -15,7 +15,7 @@ export class LodgingService {
   constructor(
     private readonly lodgingRepository: LodgingRepository,
     private readonly storageService: SupabaseStorageService,
-  ) {}
+  ) { }
 
   async getAllAmenities(): Promise<AmenityResponseDto[]> {
     return this.lodgingRepository.getAllAmenities();
@@ -42,26 +42,49 @@ export class LodgingService {
     return LodgingMapper.toResponseDto(entity);
   }
 
+  private notifyAiServiceReload(): void {
+    const urls = [
+      process.env.AI_SERVICE_URL,
+      'http://localhost:8000',
+      'http://host.docker.internal:8000',
+    ].filter(Boolean) as string[];
+
+    void (async () => {
+      for (const base of urls) {
+        try {
+          const res = await fetch(`${base.replace(/\/$/, '')}/reload`, { method: 'POST' });
+          if (res.ok) break;
+        } catch {
+          // Bỏ qua nếu AI Service chưa bật
+        }
+      }
+    })();
+  }
+
   async createLodging(dto: CreateLodgingDto): Promise<LodgingResponseDto> {
     const created = await this.lodgingRepository.create(dto);
+    this.notifyAiServiceReload();
     return LodgingMapper.toResponseDto(created);
   }
 
   async updateLodging(id: number, dto: UpdateLodgingDto): Promise<LodgingResponseDto> {
     await this.getLodgingById(id);
     const updated = await this.lodgingRepository.update(id, dto);
+    this.notifyAiServiceReload();
     return LodgingMapper.toResponseDto(updated);
   }
 
   async updateLodgingStatus(id: number, dto: UpdateLodgingStatusDto): Promise<LodgingResponseDto> {
     await this.getLodgingById(id);
     const updated = await this.lodgingRepository.updateStatus(id, dto.status);
+    this.notifyAiServiceReload();
     return LodgingMapper.toResponseDto(updated);
   }
 
   async deleteLodging(id: number): Promise<{ message: string }> {
     await this.getLodgingById(id);
     await this.lodgingRepository.delete(id);
+    this.notifyAiServiceReload();
     return { message: `Đã xóa nơi lưu trú ID ${id} thành công.` };
   }
 

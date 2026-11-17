@@ -17,12 +17,32 @@ export class DestinationService {
     private readonly storageService: SupabaseStorageService,
   ) { }
 
+  private notifyAiServiceReload(): void {
+    const urls = [
+      process.env.AI_SERVICE_URL,
+      'http://localhost:8000',
+      'http://host.docker.internal:8000',
+    ].filter(Boolean) as string[];
+
+    void (async () => {
+      for (const base of urls) {
+        try {
+          const res = await fetch(`${base.replace(/\/$/, '')}/reload`, { method: 'POST' });
+          if (res.ok) break;
+        } catch {
+          // Bỏ qua nếu AI Service chưa bật
+        }
+      }
+    })();
+  }
+
   getCategories() {
     return this.destinationRepository.findCategories();
   }
 
   async createDestination(dto: CreateDestinationDto, userId?: number): Promise<DestinationResponseDto> {
     const created = await this.destinationRepository.create(dto, userId);
+    this.notifyAiServiceReload();
     return DestinationMapper.toResponseDto(created);
   }
 
@@ -51,12 +71,14 @@ export class DestinationService {
   async updateDestination(id: number, dto: UpdateDestinationDto): Promise<DestinationResponseDto> {
     await this.getDestinationById(id);
     const updated = await this.destinationRepository.update(id, dto);
+    this.notifyAiServiceReload();
     return DestinationMapper.toResponseDto(updated);
   }
 
   async updateDestinationStatus(id: number, dto: UpdateDestinationStatusDto): Promise<DestinationResponseDto> {
     await this.getDestinationById(id);
     const updated = await this.destinationRepository.updateStatus(id, dto.status);
+    this.notifyAiServiceReload();
     return DestinationMapper.toResponseDto(updated);
   }
 
@@ -73,6 +95,7 @@ export class DestinationService {
   async deleteDestination(id: number): Promise<{ message: string }> {
     await this.getDestinationById(id);
     await this.destinationRepository.delete(id);
+    this.notifyAiServiceReload();
     return { message: `Đã xóa điểm đến ID ${id} thành công.` };
   }
 
@@ -118,12 +141,12 @@ export class DestinationService {
 
     return { message: `Đã xóa ảnh ID ${imageId} thành công.` };
   }
-  
-  async getFeatured(limit = 10):Promise<DestinationResponseDto[]>{
-      const destinations = await this.destinationRepository.findFeatured(limit);
-    return destinations.map((dest)=> DestinationMapper.toResponseDto(dest));
+
+  async getFeatured(limit = 10): Promise<DestinationResponseDto[]> {
+    const destinations = await this.destinationRepository.findFeatured(limit);
+    return destinations.map((dest) => DestinationMapper.toResponseDto(dest));
   }
-   async getRecommended(userId?: number, limit = 6): Promise<DestinationResponseDto[]> {
+  async getRecommended(userId?: number, limit = 6): Promise<DestinationResponseDto[]> {
     const list = await this.destinationRepository.findRecommended(userId, limit);
     return list.map((dest) => DestinationMapper.toResponseDto(dest));
   }
