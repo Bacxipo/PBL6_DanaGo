@@ -6,8 +6,10 @@ export class NotificationMapper {
     return {
       id: entity.id,
       type: entity.type,
-      title: entity.title,
-      content: entity.content,
+      title: entity.title ?? undefined,
+      content: entity.content ?? undefined,
+      referenceType: entity.referenceType ?? undefined,
+      referenceId: entity.referenceId ?? undefined,
       isRead: entity.isRead,
       createdAt: entity.createdAt.toISOString(),
     };

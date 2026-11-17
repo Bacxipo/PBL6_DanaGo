@@ -10,4 +10,6 @@ export class UserResponseDto {
   status: string;
   createdAt: string;
   phoneNumber?: string | null;
+  followersCount?: number;
+  followingCount?: number;
 }

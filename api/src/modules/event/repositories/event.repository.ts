@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
-import { ContentStatus } from '@prisma/client';
+import { ContentStatus, NotificationType, UserStatus } from '@prisma/client';
 
 @Injectable()
 export class EventRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(dto: CreateEventDto, userId?: number) {
     return this.prisma.event.create({
@@ -22,11 +22,11 @@ export class EventRepository {
         createdBy: userId,
         images: dto.images && dto.images.length > 0
           ? {
-              create: dto.images.map((url) => ({
-                imageUrl: url,
-                uploadedBy: userId,
-              })),
-            }
+            create: dto.images.map((url) => ({
+              imageUrl: url,
+              uploadedBy: userId,
+            })),
+          }
           : undefined,
       },
       include: {
@@ -91,10 +91,81 @@ export class EventRepository {
   }
 
   async updateStatus(id: number, status: ContentStatus) {
-    return this.prisma.event.update({
+    const existing = await this.prisma.event.findUnique({
+      where: { id },
+      select: { status: true },
+    });
+
+    const updated = await this.prisma.event.update({
       where: { id },
       data: { status },
+      include: {
+        images: true,
+        destination: { select: { id: true, name: true, district: true } },
+      },
     });
+
+    // Khi Admin duyệt sự kiện sang APPROVED (lần đầu), tự động gửi thông báo sự kiện mới cho toàn bộ người dùng đang hoạt động
+    if (
+      existing &&
+      existing.status !== ContentStatus.APPROVED &&
+      status === ContentStatus.APPROVED
+    ) {
+      await this.broadcastEventApprovedNotification(updated);
+    }
+
+    return updated;
+  }
+
+  private formatDateVi(d: Date): string {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  private async broadcastEventApprovedNotification(event: {
+    id: number;
+    name: string;
+    description: string | null;
+    locationNote: string | null;
+    startDate: Date;
+    endDate: Date;
+    destination?: { name: string } | null;
+  }) {
+    try {
+      const users = await this.prisma.user.findMany({
+        where: { status: UserStatus.ACTIVE },
+        select: { id: true },
+      });
+      if (users.length === 0) return;
+
+      const startStr = this.formatDateVi(new Date(event.startDate));
+      const endStr = this.formatDateVi(new Date(event.endDate));
+      const dateRange = startStr === endStr ? startStr : `${startStr} - ${endStr}`;
+      const location =
+        event.locationNote?.trim() ||
+        event.destination?.name ||
+        'Đà Nẵng';
+      const title = `Sự kiện mới: ${event.name}`.slice(0, 150);
+      const summary = event.description?.trim()
+        ? ` ${event.description.trim().slice(0, 160)}`
+        : '';
+      const content = `Diễn ra ${dateRange} tại ${location}.${summary}`;
+
+      await this.prisma.notification.createMany({
+        data: users.map((u) => ({
+          userId: u.id,
+          type: NotificationType.PROMOTION,
+          title,
+          content,
+          referenceType: 'EVENT',
+          referenceId: event.id,
+        })),
+      });
+    } catch (err) {
+      console.error('broadcastEventApprovedNotification error:', err);
+    }
   }
 
   async delete(id: number) {

@@ -15,6 +15,8 @@ export class UserMapper {
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       phoneNumber: entity.phoneNumber,
+      followersCount: entity.followersCount ?? 0,
+      followingCount: entity.followingCount ?? 0,
     };
   }
 }

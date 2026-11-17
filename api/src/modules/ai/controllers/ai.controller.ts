@@ -18,21 +18,21 @@ export class AiController {
   constructor(private readonly aiService: AiService) {}
 
   @Get('sessions')
-  async getUserSessions(@CurrentUser('userId') userId: number) {
+  async getUserSessions(@CurrentUser('sub') userId: number) {
     return this.aiService.getUserSessions(userId);
   }
 
   @Get('sessions/:id')
   async getSessionDetail(
     @Param('id', ParseIntPipe) sessionId: number,
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') userId: number,
   ) {
     return this.aiService.getSessionDetail(sessionId, userId);
   }
 
   @Post('chat')
   async sendMessage(
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') userId: number,
     @Body() dto: SendChatMessageDto,
   ) {
     return this.aiService.sendMessage(userId, dto);
@@ -40,7 +40,7 @@ export class AiController {
 
   @Post('generate-itinerary')
   async generateItinerary(
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') userId: number,
     @Body() dto: GenerateItineraryAiDto,
   ) {
     return this.aiService.generateItinerary(userId, dto);

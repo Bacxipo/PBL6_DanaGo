@@ -2,7 +2,7 @@ import { timeToMinutes } from '../../../shared/utils/time.utils';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateFeedPostDto, CreateFeedCommentDto } from '../dto/create-feed-post.dto';
-import { ContentStatus, FeedPostType, Prisma } from '@prisma/client';
+import { ContentStatus, FeedPostType, NotificationType, Prisma } from '@prisma/client';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
 const feedPostInclude = {
@@ -60,7 +60,7 @@ export class FeedRepository {
           content: dto.content.trim(),
           destinationId,
           postType: dto.postType ?? FeedPostType.NORMAL,
-          status: dto.postType === FeedPostType.NEW_DESTINATION ? ContentStatus.PENDING : ContentStatus.APPROVED,
+          status: ContentStatus.PENDING,
           images: { create: (dto.images ?? []).map((imageUrl) => ({ imageUrl })) },
         },
         include: feedPostInclude,
@@ -145,6 +145,21 @@ export class FeedRepository {
           'Bài viết vừa được người khác xử lý. Vui lòng tải lại.',
         );
       }
+
+      const isApproved = status === ContentStatus.APPROVED;
+      await tx.notification.create({
+        data: {
+          userId: post.userId,
+          type: NotificationType.COMMUNITY,
+          title: isApproved ? 'Bài viết đã được duyệt' : 'Bài viết bị từ chối',
+          content: isApproved
+            ? 'Bài viết của bạn đã được Admin phê duyệt và hiển thị trên bảng tin cộng đồng!'
+            : 'Bài viết của bạn chưa phù hợp với tiêu chuẩn cộng đồng DanaGo và đã bị từ chối.',
+          referenceType: 'POST',
+          referenceId: id,
+        },
+      });
+
       return tx.feedPost.findUniqueOrThrow({
         where: { id },
         include: feedPostInclude,
@@ -192,6 +207,29 @@ export class FeedRepository {
       await this.prisma.feedLike.create({
         data: { postId, userId },
       });
+
+      const post = await this.prisma.feedPost.findUnique({
+        where: { id: postId },
+        select: { userId: true },
+      });
+      if (post && post.userId !== userId) {
+        const liker = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { fullName: true, username: true },
+        });
+        const likerName = liker?.fullName || liker?.username || 'Một người dùng';
+        await this.prisma.notification.create({
+          data: {
+            userId: post.userId,
+            type: NotificationType.COMMUNITY,
+            title: 'Lượt thích mới',
+            content: `${likerName} đã thích bài viết của bạn.`,
+            referenceType: 'POST',
+            referenceId: postId,
+          },
+        });
+      }
+
       return { liked: true };
     }
   }
@@ -207,6 +245,26 @@ export class FeedRepository {
         user: { select: { id: true, username: true, fullName: true, avatarUrl: true, supabaseId: true } },
       },
     });
+
+    const post = await this.prisma.feedPost.findUnique({
+      where: { id: postId },
+      select: { userId: true },
+    });
+    if (post && post.userId !== userId) {
+      const commenterName = comment.user.fullName || comment.user.username || 'Một người dùng';
+      const truncated = dto.content.length > 50 ? `${dto.content.slice(0, 50)}...` : dto.content;
+      await this.prisma.notification.create({
+        data: {
+          userId: post.userId,
+          type: NotificationType.COMMUNITY,
+          title: 'Bình luận mới',
+          content: `${commenterName} đã bình luận: "${truncated}"`,
+          referenceType: 'POST',
+          referenceId: postId,
+        },
+      });
+    }
+
     const { supabaseId, ...user } = comment.user;
     return { ...comment, user: { ...user, authProvider: supabaseId ? 'google' : 'password' } };
   }

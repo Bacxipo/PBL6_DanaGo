@@ -51,6 +51,8 @@ enum ContactType {
 enum NotificationType {
   ITINERARY_REMINDER
   PROMOTION
+  COMMUNITY
+  SYSTEM
 
   @@map("notification_type")
 }
@@ -84,7 +86,8 @@ model User {
   createdEvents        Event[]            @relation("CreatedEvents")
   uploadedEventImages  EventImage[]
   eventFavorites       EventFavorite[]
-
+  following            UserFollow[]       @relation("UserFollowing")
+  followers            UserFollow[]       @relation("UserFollowers")     
   @@map("user")
 }
 
@@ -266,13 +269,15 @@ model Favorite {
 }
 
 model Notification {
-  id        Int              @id @default(autoincrement())
-  userId    Int              @map("user_id")
-  type      NotificationType
-  title     String?          @db.VarChar(150)
-  content   String?          @db.Text
-  isRead    Boolean          @default(false) @map("is_read")
-  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamp()
+  id            Int              @id @default(autoincrement())
+  userId        Int              @map("user_id")
+  type          NotificationType
+  title         String?          @db.VarChar(150)
+  content       String?          @db.Text
+  referenceType String?          @map("reference_type") @db.VarChar(30)
+  referenceId   Int?             @map("reference_id")
+  isRead        Boolean          @default(false) @map("is_read")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamp()
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -465,4 +470,14 @@ model LodgingAmenity {
   @@id([lodgingId, amenityId])
   @@index([amenityId], map: "idx_lodging_amenity_amenity")
   @@map("lodging_amenity")
+}
+
+model UserFollow {
+  followerId  Int      @map("follower_id")
+  followingId Int      @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp()
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  @@id([followerId, followingId])
+  @@map("user_follow")
 }

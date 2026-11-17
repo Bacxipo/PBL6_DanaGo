@@ -82,13 +82,15 @@ export class DestinationController {
   async getFeature(@Query('limit') limit?: number){
     return this.destinationService.getFeatured(limit ? Number(limit) : 6);
   }
-    @Get('recommended')
+  @Get('recommended')
   @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Lấy danh sách địa điểm gợi ý theo sở thích người dùng' })
   async getRecommended(
-    @CurrentUser('sub') userId?: number,
+    @CurrentUser('sub') currentUserId?: number,
+    @Query('userId') queryUserId?: string,
     @Query('limit') limit?: number,
   ): Promise<DestinationResponseDto[]> {
+    const userId = currentUserId || (queryUserId ? Number(queryUserId) : undefined);
     return this.destinationService.getRecommended(userId, limit ? Number(limit) : 6);
   }
   @Get('nearby')

@@ -150,7 +150,8 @@ export class FeedService {
   }
 
   async getUserPosts(userId: number, currentUserId?: number) {
-    return this.feedRepository.findAllPosts(ContentStatus.APPROVED, currentUserId, userId);
+    const status = currentUserId && currentUserId === userId ? undefined : ContentStatus.APPROVED;
+    return this.feedRepository.findAllPosts(status, currentUserId, userId);
   }
 
   async getPostById(id: number) {

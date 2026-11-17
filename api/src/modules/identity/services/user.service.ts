@@ -135,4 +135,13 @@ export class UserService {
     return UserMapper.toResponseDto(await this.userRepository.update(id, data));
   }
 
+  async toggleFollow(followerId: number, followingId: number) {
+    const target = await this.userRepository.findById(followingId);
+    if (!target) throw new UserNotFoundException(followingId);
+    return this.userRepository.toggleFollow(followerId, followingId);
+  }
+
+  async getFollowStats(targetUserId: number, currentUserId?: number) {
+    return this.userRepository.getFollowStats(targetUserId, currentUserId);
+  }
 }

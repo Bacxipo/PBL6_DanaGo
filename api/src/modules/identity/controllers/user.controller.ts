@@ -90,7 +90,30 @@ export class UserController {
       avatarUrl: user.avatarUrl,
       authProvider: user.authProvider,
       bio: user.bio,
+      followersCount: user.followersCount ?? 0,
+      followingCount: user.followingCount ?? 0,
     };
+  }
+
+  @Post(':id/follow')
+  @UseGuards(JwtAuthGuard)
+  toggleFollow(
+    @CurrentUser('sub') currentUserId: number,
+    @Param('id', ParseIntPipe) targetUserId: number,
+  ) {
+    if (currentUserId === targetUserId) {
+      throw new BadRequestException('Không thể tự theo dõi chính mình.');
+    }
+    return this.userService.toggleFollow(currentUserId, targetUserId);
+  }
+
+  @Get(':id/follow-stats')
+  @UseGuards(JwtAuthGuard)
+  getFollowStats(
+    @Param('id', ParseIntPipe) targetUserId: number,
+    @CurrentUser('sub') currentUserId: number,
+  ) {
+    return this.userService.getFollowStats(targetUserId, currentUserId);
   }
 
   // Token ký với { sub, username, role } nên lấy mã người dùng từ 'sub'

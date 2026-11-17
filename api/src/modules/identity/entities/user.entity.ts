@@ -11,4 +11,6 @@ export class UserEntity {
   status: 'ACTIVE' | 'LOCKED' | 'PENDING';
   createdAt: Date;
   phoneNumber?: string | null;
+  followersCount?: number;
+  followingCount?: number;
 }

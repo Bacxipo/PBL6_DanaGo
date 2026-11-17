@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { UserRole, UserStatus } from '@prisma/client';
+import { NotificationType, UserRole, UserStatus } from '@prisma/client';
 import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
@@ -50,7 +50,12 @@ export class UserRepository {
   }
 
   async findById(id: number): Promise<UserEntity | null> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { followers: true, following: true } },
+      },
+    });
     if (!user) return null;
     return this.mapToEntity(user);
   }
@@ -137,6 +142,63 @@ export class UserRepository {
       status: row.status,
       createdAt: new Date(row.createdAt),
       phoneNumber: row.phoneNumber,
+      followersCount: row._count?.followers ?? 0,
+      followingCount: row._count?.following ?? 0,
     };
+  }
+
+  async toggleFollow(followerId: number, followingId: number) {
+    const existing = await this.prisma.userFollow.findUnique({
+      where: { followerId_followingId: { followerId, followingId } },
+    });
+    let isFollowing = false;
+    if (existing) {
+      await this.prisma.userFollow.delete({
+        where: { followerId_followingId: { followerId, followingId } },
+      });
+      isFollowing = false;
+    } else {
+      await this.prisma.userFollow.create({
+        data: { followerId, followingId },
+      });
+      isFollowing = true;
+
+      if (followerId !== followingId) {
+        const follower = await this.prisma.user.findUnique({
+          where: { id: followerId },
+          select: { fullName: true, username: true },
+        });
+        const followerName = follower?.fullName || follower?.username || 'Một người dùng';
+        await this.prisma.notification.create({
+          data: {
+            userId: followingId,
+            type: NotificationType.COMMUNITY,
+            title: 'Người theo dõi mới',
+            content: `${followerName} đã bắt đầu theo dõi bạn.`,
+            referenceType: 'USER',
+            referenceId: followerId,
+          },
+        });
+      }
+    }
+    const followersCount = await this.prisma.userFollow.count({
+      where: { followingId },
+    });
+    return { isFollowing, followersCount };
+  }
+
+  async getFollowStats(targetUserId: number, currentUserId?: number) {
+    const [followersCount, followingCount, isFollowing] = await Promise.all([
+      this.prisma.userFollow.count({ where: { followingId: targetUserId } }),
+      this.prisma.userFollow.count({ where: { followerId: targetUserId } }),
+      currentUserId
+        ? this.prisma.userFollow.findUnique({
+            where: {
+              followerId_followingId: { followerId: currentUserId, followingId: targetUserId },
+            },
+          }).then((res) => !!res)
+        : false,
+    ]);
+    return { followersCount, followingCount, isFollowing };
   }
 }
