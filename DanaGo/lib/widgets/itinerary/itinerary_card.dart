@@ -5,11 +5,13 @@ import 'package:smarttrip/theme/app_colors.dart';
 class ItineraryCard extends StatelessWidget {
   final Itinerary itinerary;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   const ItineraryCard({
     super.key,
     required this.itinerary,
     required this.onTap,
+    this.onDelete,
   });
 
   @override
@@ -62,6 +64,27 @@ class ItineraryCard extends StatelessWidget {
                   ),
                 ),
               ),
+              // Delete button (optional)
+              if (onDelete != null)
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: GestureDetector(
+                    onTap: onDelete,
+                    child: Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
               // Status badge
               Positioned(
                 top: 14,

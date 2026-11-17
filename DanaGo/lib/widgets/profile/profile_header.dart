@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:smarttrip/theme/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:smarttrip/theme/app_colors.dart';
 
 class ProfileHeader extends StatelessWidget {
   final Map<String, dynamic> user;

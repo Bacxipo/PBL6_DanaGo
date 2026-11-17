@@ -1,23 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/models/itinerary_model.dart';
+import 'package:smarttrip/services/itinerary_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
-// Model vật dụng cần chuẩn bị
-class ChecklistItem {
-  final String id;
-  String title;
-  bool isChecked;
-  String? activityTag;
-
-  ChecklistItem({
-    required this.id,
-    required this.title,
-    this.isChecked = false,
-    this.activityTag,
-  });
-}
-
 class ChecklistBottomSheet extends StatefulWidget {
-  const ChecklistBottomSheet({super.key});
+  final Itinerary? itinerary;
+
+  const ChecklistBottomSheet({super.key, this.itinerary});
 
   @override
   State<ChecklistBottomSheet> createState() => _ChecklistBottomSheetState();
@@ -26,46 +15,34 @@ class ChecklistBottomSheet extends StatefulWidget {
 class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   final TextEditingController _itemController = TextEditingController();
   String _filter = 'all'; // 'all' | 'pending' | 'completed'
+  bool _isLoading = true;
+  bool _isSubmitting = false;
+  List<ItineraryChecklistItem> _items = [];
+  int? _selectedItineraryItemId;
 
-  // Danh sách vật dụng mẫu thông minh cho chuyến đi Đà Nẵng
-  final List<ChecklistItem> _items = [
-    ChecklistItem(
-      id: '1',
-      title: 'CCCD / Hộ chiếu & Vé máy bay',
-      isChecked: true,
-      activityTag: 'Khởi hành',
-    ),
-    ChecklistItem(
-      id: '2',
-      title: 'Đồ bơi & Kính bơi',
-      isChecked: false,
-      activityTag: 'Bãi biển Mỹ Khê',
-    ),
-    ChecklistItem(
-      id: '3',
-      title: 'Kem chống nắng SPF 50+',
-      isChecked: false,
-      activityTag: 'Bán đảo Sơn Trà',
-    ),
-    ChecklistItem(
-      id: '4',
-      title: 'Áo khoác mỏng / Khăn quàng',
-      isChecked: false,
-      activityTag: 'Bà Nà Hills',
-    ),
-    ChecklistItem(
-      id: '5',
-      title: 'Sạc dự phòng 10.000mAh',
-      isChecked: true,
-      activityTag: 'Chung',
-    ),
-    ChecklistItem(
-      id: '6',
-      title: 'Thuốc say xe & Thuốc tiêu hóa',
-      isChecked: false,
-      activityTag: 'Chung',
-    ),
-  ];
+  List<ItineraryPlace> get _availablePlaces {
+    final it = widget.itinerary;
+    if (it == null) return [];
+    final list = <ItineraryPlace>[];
+    for (final day in it.days) {
+      for (final p in day.places) {
+        if (p.itemId != null) {
+          list.add(p);
+        }
+      }
+    }
+    return list;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final places = _availablePlaces;
+    if (places.isNotEmpty) {
+      _selectedItineraryItemId = places.first.itemId;
+    }
+    _loadChecklists();
+  }
 
   @override
   void dispose() {
@@ -73,40 +50,103 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
     super.dispose();
   }
 
-  void _addItem() {
-    final text = _itemController.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _loadChecklists() async {
+    final itineraryId = widget.itinerary?.dbId;
+    if (itineraryId == null) {
+      setState(() {
+        _items = [];
+        _isLoading = false;
+      });
+      return;
+    }
 
-    setState(() {
-      _items.insert(
-        0,
-        ChecklistItem(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          title: text,
-          isChecked: false,
-          activityTag: 'Tự thêm',
-        ),
-      );
-      _itemController.clear();
-    });
+    setState(() => _isLoading = true);
+    final fetched = await ItineraryService.instance.getChecklistsByItinerary(
+      itineraryId,
+    );
+    if (mounted) {
+      setState(() {
+        _items = fetched;
+        _isLoading = false;
+      });
+    }
   }
 
-  void _deleteItem(String id) {
+  Future<void> _addItem() async {
+    final text = _itemController.text.trim();
+    if (text.isEmpty || _isSubmitting) return;
+
+    final targetItemId = _selectedItineraryItemId;
+    if (targetItemId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Hãy thêm ít nhất 1 điểm đến và bấm Lưu trước khi thêm Checklist.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    String? tagName;
+    for (final p in _availablePlaces) {
+      if (p.itemId == targetItemId) {
+        tagName = p.name;
+        break;
+      }
+    }
+
+    final created = await ItineraryService.instance.createChecklistItem(
+      targetItemId,
+      text,
+      isChecked: false,
+      activityTag: tagName,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+        if (created != null) {
+          _items.insert(0, created);
+          _itemController.clear();
+        }
+      });
+    }
+  }
+
+  Future<void> _toggleItem(ItineraryChecklistItem item, bool checked) async {
+    setState(() => item.isChecked = checked);
+    if (item.id != null) {
+      final ok = await ItineraryService.instance.updateChecklistItem(
+        item.id!,
+        isChecked: checked,
+      );
+      if (!ok && mounted) {
+        setState(() => item.isChecked = !checked);
+      }
+    }
+  }
+
+  Future<void> _deleteItem(ItineraryChecklistItem item) async {
     setState(() {
-      _items.removeWhere((i) => i.id == id);
+      _items.remove(item);
     });
+    if (item.id != null) {
+      await ItineraryService.instance.deleteChecklistItem(item.id!);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final places = _availablePlaces;
 
-    // Tính toán tiến độ
     final total = _items.length;
     final completed = _items.where((i) => i.isChecked).length;
     final percent = total > 0 ? (completed / total) : 0.0;
 
-    // Lọc danh sách theo Tab
     final filteredItems = _items.where((item) {
       if (_filter == 'pending') return !item.isChecked;
       if (_filter == 'completed') return item.isChecked;
@@ -121,7 +161,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       ),
       child: Column(
         children: [
-          // 1. HEADER GRADIENT SAO Y BẢN WEB
+          // 1. Header
           Container(
             padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
             decoration: const BoxDecoration(
@@ -170,7 +210,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
             ),
           ),
 
-          // 2. THANH TIẾN ĐỘ CHUẨN BỊ (PROGRESS BAR)
+          // 2. Progress bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF0FDFA),
@@ -213,7 +253,8 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
                   child: LinearProgressIndicator(
                     value: percent,
                     minHeight: 6,
-                    backgroundColor: isDark ? Colors.white12 : Colors.teal.shade100,
+                    backgroundColor:
+                        isDark ? Colors.white12 : Colors.teal.shade100,
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       AppColors.primary,
                     ),
@@ -223,15 +264,61 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
             ),
           ),
 
-          // 3. Ô THÊM NHANH VẬT DỤNG
+          // 3. Chọn điểm đến gắn checklist + Ô thêm nhanh
+          if (places.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: DropdownButtonFormField<int>(
+                value: _selectedItineraryItemId,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: 'Gắn với điểm đến',
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white70 : AppColors.textSecondary,
+                  ),
+                  filled: true,
+                  fillColor:
+                      isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey.shade200,
+                    ),
+                  ),
+                ),
+                items: places
+                    .map(
+                      (p) => DropdownMenuItem<int>(
+                        value: p.itemId,
+                        child: Text(
+                          p.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _selectedItineraryItemId = val),
+              ),
+            ),
+
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
             child: Row(
               children: [
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                      color: isDark
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isDark ? Colors.white12 : Colors.grey.shade200,
@@ -258,135 +345,169 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
-                  onPressed: _addItem,
+                  onPressed: _isSubmitting ? null : _addItem,
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
-                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.add_rounded, color: Colors.white),
                 ),
               ],
             ),
           ),
 
-          // 4. BA TAB LỌC (TẤT CẢ, CẦN MANG, ĐÃ CHUẨN BỊ)
+          // 4. Filter tabs
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
                 _buildFilterChip('all', 'Tất cả ($total)', isDark),
                 const SizedBox(width: 8),
-                _buildFilterChip('pending', 'Cần mang (${total - completed})', isDark),
+                _buildFilterChip(
+                  'pending',
+                  'Cần mang (${total - completed})',
+                  isDark,
+                ),
                 const SizedBox(width: 8),
                 _buildFilterChip('completed', 'Đã mang ($completed)', isDark),
               ],
             ),
           ),
-          Divider(height: 16, color: isDark ? Colors.white12 : AppColors.divider),
+          Divider(
+            height: 16,
+            color: isDark ? Colors.white12 : AppColors.divider,
+          ),
 
-          // 5. DANH SÁCH CHECKLIST CÓ THỂ CUỘN
+          // 5. Checklist list
           Expanded(
-            child: filteredItems.isEmpty
+            child: _isLoading
                 ? const Center(
-                    child: Text(
-                      'Không có vật dụng nào trong mục này.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    itemCount: filteredItems.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 4),
-                    itemBuilder: (context, index) {
-                      final item = filteredItems[index];
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: item.isChecked
-                              ? (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC))
-                              : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDark ? Colors.white12 : Colors.grey.shade100,
+                : filteredItems.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            places.isEmpty
+                                ? 'Hãy thêm điểm đến và bấm Lưu để quản lý checklist cho chuyến đi.'
+                                : 'Chưa có vật dụng nào trong mục này.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            // Checkbox
-                            Checkbox(
-                              value: item.isChecked,
-                              activeColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              onChanged: (val) {
-                                setState(() {
-                                  item.isChecked = val ?? false;
-                                });
-                              },
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        itemCount: filteredItems.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 6),
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
                             ),
-                            // Tiêu đề vật dụng & Tag địa điểm
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.title,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: item.isChecked
-                                          ? Colors.grey
-                                          : (isDark ? Colors.white : const Color(0xFF1E293B)),
-                                      decoration: item.isChecked
-                                          ? TextDecoration.lineThrough
-                                          : null,
-                                    ),
+                            decoration: BoxDecoration(
+                              color: item.isChecked
+                                  ? (isDark
+                                      ? const Color(0xFF0F172A)
+                                      : const Color(0xFFF8FAFC))
+                                  : (isDark
+                                      ? const Color(0xFF1E293B)
+                                      : Colors.white),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.white12
+                                    : Colors.grey.shade100,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Checkbox(
+                                  value: item.isChecked,
+                                  activeColor: AppColors.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
-                                  if (item.activityTag != null)
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 2),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 1,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: isDark
-                                            ? AppColors.primary.withValues(alpha: 0.15)
-                                            : Colors.teal.shade50,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        item.activityTag!,
+                                  onChanged: (val) =>
+                                      _toggleItem(item, val ?? false),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.itemName,
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          color: isDark ? const Color(0xFF2DD4BF) : Colors.teal.shade800,
-                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: item.isChecked
+                                              ? Colors.grey
+                                              : (isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF1E293B)),
+                                          decoration: item.isChecked
+                                              ? TextDecoration.lineThrough
+                                              : null,
                                         ),
                                       ),
-                                    ),
-                                ],
-                              ),
+                                      if (item.activityTag != null &&
+                                          item.activityTag!.isNotEmpty)
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 1,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? AppColors.primary
+                                                    .withValues(alpha: 0.15)
+                                                : Colors.teal.shade50,
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            item.activityTag!,
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: isDark
+                                                  ? const Color(0xFF2DD4BF)
+                                                  : Colors.teal.shade800,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () => _deleteItem(item),
+                                  icon: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    size: 18,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
-                            // Nút xóa
-                            IconButton(
-                              onPressed: () => _deleteItem(item.id),
-                              icon: const Icon(
-                                Icons.delete_outline_rounded,
-                                size: 18,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

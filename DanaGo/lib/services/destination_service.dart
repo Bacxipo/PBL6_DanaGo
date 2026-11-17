@@ -78,11 +78,12 @@ class DestinationService {
     }
   }
 
-  Future<List<DestinationItem>> getRecommended({int limit = 6}) async {
+  Future<List<DestinationItem>> getRecommended({int limit = 6, int? userId}) async {
     try {
-      final res = await ApiClient.instance.get(
-        '/destinations/recommended?limit=$limit',
-      );
+      final query = userId != null
+          ? '/destinations/recommended?limit=$limit&userId=$userId'
+          : '/destinations/recommended?limit=$limit';
+      final res = await ApiClient.instance.get(query);
       if (res is List) {
         return res.map((e) => DestinationItem.fromJson(e)).toList();
       }

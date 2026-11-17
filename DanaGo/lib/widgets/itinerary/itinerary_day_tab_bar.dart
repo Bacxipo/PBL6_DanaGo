@@ -44,18 +44,18 @@ class ItineraryDayTabBar extends StatelessWidget {
                   color: AppColors.success.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.auto_awesome,
+                    const Icon(
+                      Icons.calendar_today_rounded,
                       size: 12,
                       color: AppColors.success,
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(
-                      'AI tự động lúc 10:24',
-                      style: TextStyle(
+                      '${itinerary.days.length} ngày • ${itinerary.placeCount} điểm',
+                      style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.success,
                         fontWeight: FontWeight.w600,

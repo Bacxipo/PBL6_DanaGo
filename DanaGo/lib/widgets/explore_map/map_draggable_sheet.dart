@@ -7,11 +7,19 @@ import 'package:smarttrip/widgets/search/search_result_card.dart';
 class MapDraggableSheet extends StatelessWidget {
   final List<MapPlaceItem> places;
   final ValueChanged<SearchResultItem> onPlaceTap;
+  final bool isAiActive;
+  final bool isAiLoading;
+  final String aiActiveQuery;
+  final VoidCallback? onClearAi;
 
   const MapDraggableSheet({
     super.key,
     required this.places,
     required this.onPlaceTap,
+    this.isAiActive = false,
+    this.isAiLoading = false,
+    this.aiActiveQuery = '',
+    this.onClearAi,
   });
 
   @override
@@ -54,47 +62,103 @@ class MapDraggableSheet extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tìm kiếm gần bạn',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : AppColors.textPrimary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (isAiActive) ...[
+                              const Icon(
+                                Icons.auto_awesome,
+                                size: 17,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 6),
+                            ],
+                            Flexible(
+                              child: Text(
+                                isAiActive
+                                    ? 'Gợi ý thông minh bằng AI'
+                                    : 'Tìm kiếm gần bạn',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Hiển thị các địa điểm xung quanh bạn',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
+                        const SizedBox(height: 2),
+                        Text(
+                          isAiLoading
+                              ? 'AI đang phân tích trải nghiệm phù hợp...'
+                              : isAiActive
+                                  ? 'Tìm thấy ${places.length} điểm đến phù hợp với "$aiActiveQuery"'
+                                  : 'Hiển thị ${places.length} địa điểm xung quanh bạn',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textTertiary,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'Xem danh sách',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
+                      ],
                     ),
                   ),
+                  if (isAiActive && onClearAi != null)
+                    TextButton(
+                      onPressed: onClearAi,
+                      child: const Text(
+                        'Xem tất cả',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 14),
-              ...places.map(
-                (mapPlace) => SearchResultCard(
-                  item: mapPlace.item,
-                  onTap: () => onPlaceTap(mapPlace.item),
+              if (isAiLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 36),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                )
+              else if (places.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.explore_off_outlined,
+                          size: 46,
+                          color: AppColors.primary.withValues(alpha: 0.35),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Không tìm thấy địa điểm phù hợp',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ...places.map(
+                  (mapPlace) => SearchResultCard(
+                    item: mapPlace.item,
+                    onTap: () => onPlaceTap(mapPlace.item),
+                  ),
                 ),
-              ),
             ],
           ),
         );

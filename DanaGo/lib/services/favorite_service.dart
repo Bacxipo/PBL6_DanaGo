@@ -9,6 +9,11 @@ class FavoriteService extends ChangeNotifier {
   final Set<String> _favoriteIds = {};
   int get favoriteCount => _favoriteIds.length;
 
+  void clear() {
+    _favoriteIds.clear();
+    notifyListeners();
+  }
+
   Future<List<DestinationItem>> getFavorites() async {
     try {
       final res = await ApiClient.instance.get('/favorites');

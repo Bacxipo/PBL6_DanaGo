@@ -1,3 +1,5 @@
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:smarttrip/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
 import 'package:smarttrip/screens/create_post_screen.dart';
@@ -6,6 +8,7 @@ import 'package:smarttrip/screens/user_profile_posts_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/feed/feed_post_card.dart';
 import 'package:smarttrip/services/feed_service.dart';
+import 'package:smarttrip/services/notification_service.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -16,22 +19,44 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   List<FeedPostModel> _posts = [];
+  String? _userAvatar;
+  String _userName = "Bạn";
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _loadUserProfile();
+    AuthService.instance.addListener(_loadUserProfile);
     _handleRefresh();
   }
 
   @override
   void dispose() {
+    AuthService.instance.removeListener(_loadUserProfile);
     _scrollController.dispose();
     super.dispose();
   }
 
+  Future<void> _loadUserProfile() async {
+    final profile = await AuthService.instance.getProfile();
+    if (profile != null && mounted) {
+      final userId = (profile['id'] as num?)?.toInt();
+      setState(() {
+        _userAvatar = profile['avatarUrl'] as String?;
+        _userName = (profile['fullName'] as String?) ?? 'Bạn';
+      });
+      NotificationService.instance.refreshUnreadCount(userId: userId);
+    }
+  }
+
   Future<void> _handleRefresh() async {
     final data = await FeedService.instance.getPosts();
+    final profile = await AuthService.instance.getProfile();
+    final userId = (profile?['id'] as num?)?.toInt();
+    if (userId != null) {
+      NotificationService.instance.refreshUnreadCount(userId: userId);
+    }
     if (mounted) setState(() => _posts = data);
   }
 
@@ -89,17 +114,76 @@ class _FeedScreenState extends State<FeedScreen> {
                               color: AppColors.primary,
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.notifications_none_rounded,
-                              color: AppColors.primary,
-                              size: 26,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const NotificationsScreen(),
+                          ListenableBuilder(
+                            listenable: NotificationService.instance,
+                            builder: (context, _) {
+                              final unread =
+                                  NotificationService.instance.unreadCount;
+                              return InkWell(
+                                borderRadius: BorderRadius.circular(24),
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const NotificationsScreen(),
+                                    ),
+                                  );
+                                  NotificationService.instance
+                                      .refreshUnreadCount();
+                                },
+                                child: SizedBox(
+                                  width: 44,
+                                  height: 44,
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    alignment: Alignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.notifications_none_rounded,
+                                        color: AppColors.primary,
+                                        size: 27,
+                                      ),
+                                      if (unread > 0)
+                                        Positioned(
+                                          right: 3,
+                                          top: 3,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 5,
+                                              vertical: 1.5,
+                                            ),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 18,
+                                              minHeight: 18,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.error,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: Theme.of(
+                                                  context,
+                                                ).scaffoldBackgroundColor,
+                                                width: 1.5,
+                                              ),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                unread > 99 ? '99+' : '$unread',
+                                                style: const TextStyle(
+                                                  fontFamily: 'Be Vietnam Pro',
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.white,
+                                                  height: 1.1,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               );
                             },
@@ -136,10 +220,13 @@ class _FeedScreenState extends State<FeedScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const UserProfilePostsScreen(
-                                        authorName: 'Nguyễn Văn A',
+                                      builder: (_) => UserProfilePostsScreen(
+                                        authorName: _userName,
                                         authorAvatar:
-                                            'https://i.postimg.cc/tC24nW4N/avt1.jpg',
+                                            (_userAvatar != null &&
+                                                _userAvatar!.isNotEmpty)
+                                            ? _userAvatar!
+                                            : 'assets/images/default-avatar.svg',
                                         isVerified: true,
                                         isCurrentUser: true,
                                       ),
@@ -147,22 +234,28 @@ class _FeedScreenState extends State<FeedScreen> {
                                   );
                                 },
                                 child: ClipOval(
-                                  child: Image.network(
-                                    'https://i.postimg.cc/tC24nW4N/avt1.jpg',
-                                    width: 36,
-                                    height: 36,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
-                                      width: 36,
-                                      height: 36,
-                                      color: AppColors.primaryLight,
-                                      child: const Icon(
-                                        Icons.person,
-                                        color: AppColors.primary,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
+                                  child:
+                                      (_userAvatar != null &&
+                                          _userAvatar!.isNotEmpty)
+                                      ? Image.network(
+                                          _userAvatar!,
+                                          width: 36,
+                                          height: 36,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              SvgPicture.asset(
+                                                'assets/images/default-avatar.svg',
+                                                width: 36,
+                                                height: 36,
+                                                fit: BoxFit.cover,
+                                              ),
+                                        )
+                                      : SvgPicture.asset(
+                                          'assets/images/default-avatar.svg',
+                                          width: 36,
+                                          height: 36,
+                                          fit: BoxFit.cover,
+                                        ),
                                 ),
                               ),
                               const SizedBox(width: 12),

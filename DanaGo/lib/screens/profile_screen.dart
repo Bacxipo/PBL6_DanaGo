@@ -15,6 +15,8 @@ import 'package:smarttrip/widgets/profile/profile_stats_pill.dart';
 import 'package:smarttrip/theme/theme_controller.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/favorite_service.dart';
+import 'package:smarttrip/services/itinerary_service.dart';
+import 'package:smarttrip/services/notification_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -39,30 +41,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadUserProfile();
-    FavoriteService.instance.addListener(_onFavoritesChanged);
-    ReviewService.instance.addListener(_onFavoritesChanged);
+    FavoriteService.instance.addListener(_onStatsChanged);
+    ReviewService.instance.addListener(_onStatsChanged);
+    ItineraryService.instance.addListener(_onStatsChanged);
   }
 
   @override
   void dispose() {
-    FavoriteService.instance.removeListener(_onFavoritesChanged);
-    ReviewService.instance.removeListener(_onFavoritesChanged);
+    FavoriteService.instance.removeListener(_onStatsChanged);
+    ReviewService.instance.removeListener(_onStatsChanged);
+    ItineraryService.instance.removeListener(_onStatsChanged);
     super.dispose();
   }
 
-  void _onFavoritesChanged() {
+  void _onStatsChanged() {
     if (mounted) {
       setState(() {
         _user['favoritesCount'] = FavoriteService.instance.favoriteCount;
         _user['reviewsCount'] = ReviewService.instance.myReviewsCount;
+        _user['tripsCount'] = ItineraryService.instance.myItinerariesCount;
       });
     }
   }
 
   Future<void> _loadUserProfile() async {
     final profile = await AuthService.instance.getProfile();
+    final userId = (profile?['id'] as num?)?.toInt();
     await FavoriteService.instance.getFavorites();
     await ReviewService.instance.getMyReviews();
+    if (userId != null) {
+      await ItineraryService.instance.getUserItineraries(userId);
+      NotificationService.instance.refreshUnreadCount(userId: userId);
+    }
     if (mounted) {
       setState(() {
         if (profile != null) {
@@ -107,6 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         _user['favoritesCount'] = FavoriteService.instance.favoriteCount;
         _user['reviewsCount'] = ReviewService.instance.myReviewsCount;
+        _user['tripsCount'] = ItineraryService.instance.myItinerariesCount;
       });
     }
   }
@@ -164,9 +175,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => UserProfilePostsScreen(
-          authorName: _user['name'] ?? 'Nguyễn Văn A',
-          authorAvatar:
-              _user['avatar'] ?? 'https://i.postimg.cc/X7QYBdY8/avt2.jpg',
+          authorName: _user['name'] ?? 'Bạn',
+          authorAvatar: _user['avatar'] ?? 'assets/images/default-avatar.svg',
           isVerified: true,
           isCurrentUser: true,
         ),
@@ -250,6 +260,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.notifications_none_rounded,
                       title: 'Thông báo',
                       subtitle: 'Quản lý thông báo',
+                      trailing: ListenableBuilder(
+                        listenable: NotificationService.instance,
+                        builder: (context, _) {
+                          final unread =
+                              NotificationService.instance.unreadCount;
+                          if (unread <= 0) {
+                            return const Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppColors.textTertiary,
+                            );
+                          }
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.error,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              unread > 99 ? '99+' : '$unread',
+                              style: const TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                       onTap: _navigateToNotifications,
                     ),
                     ProfileMenuItem(
@@ -288,7 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           : 'Đang dùng giao diện sáng',
                       trailing: Switch(
                         value: isDark,
-                        activeColor: AppColors.primary,
+                        activeThumbColor: AppColors.primary,
                         onChanged: (val) {
                           ThemeController.toggleTheme(val);
                         },
@@ -377,15 +419,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSectionLabel(String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Be Vietnam Pro',
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: AppColors.textTertiary,
+          color: isDark ? const Color(0xFF94A3B8) : AppColors.textTertiary,
           letterSpacing: 0.5,
         ),
       ),
@@ -393,75 +436,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showLogoutDialog() {
+    bool isLoggingOut = false;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Đăng xuất',
-          style: TextStyle(
-            fontFamily: 'Be Vietnam Pro',
-            fontWeight: FontWeight.w700,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
+          title: const Text(
+            'Đăng xuất',
+            style: TextStyle(
+              fontFamily: 'Be Vietnam Pro',
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: const Text(
+            'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
+            style: TextStyle(
+              fontFamily: 'Be Vietnam Pro',
+              color: AppColors.textSecondary,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoggingOut
+                  ? null
+                  : () => Navigator.pop(dialogContext),
+              child: const Text(
+                'Hủy',
+                style: TextStyle(
+                  fontFamily: 'Be Vietnam Pro',
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: isLoggingOut
+                  ? null
+                  : () async {
+                      setDialogState(() => isLoggingOut = true);
+                      try {
+                        await AuthService.instance.logout();
+                      } catch (_) {}
+                      try {
+                        await GoogleAuthService.instance.signOut();
+                      } catch (_) {}
+
+                      if (!mounted) return;
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: isLoggingOut
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Đăng xuất',
+                      style: TextStyle(
+                        fontFamily: 'Be Vietnam Pro',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ],
         ),
-        content: const Text(
-          'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
-          style: TextStyle(
-            fontFamily: 'Be Vietnam Pro',
-            color: AppColors.textSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Hủy',
-              style: TextStyle(
-                fontFamily: 'Be Vietnam Pro',
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                await AuthService.instance.logout();
-                await GoogleAuthService.instance.signOut();
-
-                if (!context.mounted) return;
-                Navigator.pop(context);
-
-                if (!mounted) return;
-
-                Navigator.of(this.context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              } catch (_) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Chưa thể đăng xuất. Vui lòng thử lại.'),
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Đăng xuất',
-              style: TextStyle(
-                fontFamily: 'Be Vietnam Pro',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

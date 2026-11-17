@@ -7,6 +7,7 @@ class ItineraryTimelineItem extends StatelessWidget {
   final int index;
   final int total;
   final VoidCallback? onTap;
+  final VoidCallback? onRemove;
 
   const ItineraryTimelineItem({
     super.key,
@@ -14,6 +15,7 @@ class ItineraryTimelineItem extends StatelessWidget {
     required this.index,
     required this.total,
     this.onTap,
+    this.onRemove,
   });
 
   Color _priceColor(String price) {
@@ -126,11 +128,21 @@ class ItineraryTimelineItem extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(
-                                Icons.drag_indicator_rounded,
-                                color: AppColors.border,
-                                size: 18,
-                              ),
+                              if (onRemove != null)
+                                GestureDetector(
+                                  onTap: onRemove,
+                                  child: const Icon(
+                                    Icons.close_rounded,
+                                    color: AppColors.textTertiary,
+                                    size: 18,
+                                  ),
+                                )
+                              else
+                                const Icon(
+                                  Icons.drag_indicator_rounded,
+                                  color: AppColors.border,
+                                  size: 18,
+                                ),
                             ],
                           ),
                         ),

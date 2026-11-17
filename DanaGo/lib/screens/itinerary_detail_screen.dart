@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:smarttrip/models/destination_item.dart';
 import 'package:smarttrip/models/itinerary_model.dart';
-import 'package:smarttrip/screens/suggest_itinerary_screen.dart';
+import 'package:smarttrip/screens/detail_place_screen.dart';
+import 'package:smarttrip/services/destination_service.dart';
+import 'package:smarttrip/services/itinerary_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
+import 'package:smarttrip/widgets/ai_plan/select_places_sheet.dart';
+import 'package:smarttrip/widgets/itinerary/checklist_bottom_sheet.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_bottom_bar.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_day_tab_bar.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_timeline_item.dart';
-import 'package:smarttrip/widgets/itinerary/checklist_bottom_sheet.dart';
-import 'explore_map_screen.dart';
 import 'main_screen.dart';
 
 class ItineraryDetailScreen extends StatefulWidget {
@@ -20,35 +23,53 @@ class ItineraryDetailScreen extends StatefulWidget {
 }
 
 class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  late Itinerary _itinerary;
   int _selectedDay = 0;
   bool _isSaved = true;
-  void _saveItinerary() {
-    setState(() {
-      _isSaved = true; // Chuyển trạng thái về Đã lưu
-    });
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✅ Đã lưu toàn bộ thay đổi lịch trình!'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    final dayCount = widget.itinerary.days.isEmpty
-        ? 1
-        : widget.itinerary.days.length;
-    _tabController = TabController(length: dayCount, vsync: this);
+    _itinerary = widget.itinerary;
+    _initTabController(_itinerary.days.length);
+    _refreshFromServer();
+  }
+
+  void _initTabController(int length, {int initialIndex = 0}) {
+    final safeLen = length <= 0 ? 1 : length;
+    final safeIdx = initialIndex.clamp(0, safeLen - 1);
+    _tabController = TabController(
+      length: safeLen,
+      vsync: this,
+      initialIndex: safeIdx,
+    );
+    _selectedDay = safeIdx;
     _tabController.addListener(() {
-      setState(() => _selectedDay = _tabController.index);
+      if (!_tabController.indexIsChanging && mounted) {
+        setState(() => _selectedDay = _tabController.index);
+      }
     });
+  }
+
+  Future<void> _refreshFromServer() async {
+    final dbId = _itinerary.dbId;
+    if (dbId == null) return;
+    final fresh = await ItineraryService.instance.getItineraryById(dbId);
+    if (fresh != null && mounted) {
+      final prevLen = _tabController.length;
+      final prevIdx = _selectedDay;
+      setState(() {
+        _itinerary = fresh;
+        _isSaved = true;
+        if (fresh.days.length != prevLen && fresh.days.isNotEmpty) {
+          _tabController.dispose();
+          _initTabController(fresh.days.length, initialIndex: prevIdx);
+        }
+      });
+    }
   }
 
   @override
@@ -57,9 +78,150 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
     super.dispose();
   }
 
+  Future<bool> _saveItinerary({bool silent = false}) async {
+    if (_isSaving) return false;
+    setState(() => _isSaving = true);
+    HapticFeedback.lightImpact();
+
+    try {
+      final saved = await ItineraryService.instance.saveFullItinerary(
+        _itinerary.toSavePayload(),
+      );
+      if (saved != null && mounted) {
+        final prevLen = _tabController.length;
+        final prevIdx = _selectedDay;
+        setState(() {
+          _itinerary = saved;
+          _isSaved = true;
+          if (saved.days.length != prevLen && saved.days.isNotEmpty) {
+            _tabController.dispose();
+            _initTabController(saved.days.length, initialIndex: prevIdx);
+          }
+        });
+        if (!silent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã lưu toàn bộ thay đổi lịch trình!'),
+              backgroundColor: AppColors.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (mounted && !silent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi lưu lịch trình: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _openChecklist() async {
+    // Nếu có thay đổi chưa lưu, lưu trước để các điểm đến có ID trong DB
+    if (!_isSaved) {
+      await _saveItinerary(silent: true);
+    }
+    if (!mounted) return;
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => ChecklistBottomSheet(itinerary: _itinerary),
+    );
+    _refreshFromServer();
+  }
+
+  Future<void> _addPlacesToDay(int dayListIndex) async {
+    final picked = await showModalBottomSheet<List<DestinationItem>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const SelectPlacesSheet(initialSelected: []),
+    );
+
+    if (picked == null || picked.isEmpty || !mounted) return;
+
+    final updatedDays = List<ItineraryDay>.from(_itinerary.days);
+    final currentDay = updatedDays[dayListIndex];
+    final currentPlaces = List<ItineraryPlace>.from(currentDay.places);
+
+    for (final dest in picked) {
+      final baseHour = (8 + currentPlaces.length * 2).clamp(8, 20);
+      final endHour = (baseHour + 2).clamp(10, 22);
+      final startStr = '${baseHour.toString().padLeft(2, '0')}:00';
+      final endStr = '${endHour.toString().padLeft(2, '0')}:00';
+      final destPrice = dest.price ?? 0;
+
+      currentPlaces.add(
+        ItineraryPlace(
+          destinationId: int.tryParse(dest.id),
+          name: dest.title,
+          imageUrl: dest.imageUrl.isNotEmpty
+              ? dest.imageUrl
+              : ItineraryPlace.defaultPlaceImage,
+          startTime: startStr,
+          endTime: endStr,
+          timeRange: '$startStr - $endStr',
+          duration: '2h',
+          description: dest.description ?? 'Tham quan & Khám phá',
+          rating: dest.rating > 0 ? dest.rating : 4.5,
+          price: dest.tag.isNotEmpty ? dest.tag : 'Miễn phí',
+          budget: destPrice,
+          travelTime: 'Di chuyển linh hoạt',
+          travelMode: dest.category.isNotEmpty ? dest.category : 'Tham quan',
+          address: dest.address ?? 'Đà Nẵng',
+          itemType: 'attraction',
+          tag: dest.category.isNotEmpty ? dest.category : 'Tham quan',
+        ),
+      );
+    }
+
+    updatedDays[dayListIndex] = currentDay.copyWith(places: currentPlaces);
+    setState(() {
+      _itinerary = _itinerary.copyWith(days: updatedDays);
+      _isSaved = false;
+    });
+  }
+
+  void _removePlaceFromDay(int dayListIndex, int placeIndex) {
+    final updatedDays = List<ItineraryDay>.from(_itinerary.days);
+    final currentDay = updatedDays[dayListIndex];
+    final currentPlaces = List<ItineraryPlace>.from(currentDay.places);
+    currentPlaces.removeAt(placeIndex);
+    updatedDays[dayListIndex] = currentDay.copyWith(places: currentPlaces);
+
+    setState(() {
+      _itinerary = _itinerary.copyWith(days: updatedDays);
+      _isSaved = false;
+    });
+  }
+
+  Future<void> _openPlaceDetail(ItineraryPlace place) async {
+    final destId = place.destinationId;
+    if (destId == null) return;
+    final dest = await DestinationService.instance.getById(destId);
+    if (dest != null && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => DetailPlaceScreen(item: dest)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final it = widget.itinerary;
+    final it = _itinerary;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -82,8 +244,8 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
-                      children: it.days.map((day) {
-                        return _buildDayContent(day, isDark);
+                      children: it.days.asMap().entries.map((entry) {
+                        return _buildDayContent(entry.key, entry.value, isDark);
                       }).toList(),
                     ),
                   ),
@@ -91,12 +253,15 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
               ),
       ),
       bottomNavigationBar: ItineraryBottomBar(
-        onAutoSave: _saveItinerary,
+        onAutoSave: () => _saveItinerary(),
         onAddPlace: () {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (_) => const MainScreen(initialIndex: 4),
+              builder: (_) => const MainScreen(
+                initialIndex: 1,
+                initialExploreAiMode: true,
+              ),
             ),
             (route) => false,
           );
@@ -110,8 +275,6 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
       expandedHeight: 280,
       pinned: true,
       backgroundColor: AppColors.primary,
-
-      // 1. Nút Quay về
       leading: GestureDetector(
         onTap: () => Navigator.pop(context),
         child: Container(
@@ -124,16 +287,9 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
         ),
       ),
       actions: [
-        // --- NÚT CHECKLIST ---
+        // Checklist button
         GestureDetector(
-          onTap: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (ctx) => const ChecklistBottomSheet(),
-            );
-          },
+          onTap: _openChecklist,
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -170,9 +326,9 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
             ),
           ),
         ),
-        // --- NÚT ĐÃ LƯU
+        // Save button
         GestureDetector(
-          onTap: _saveItinerary,
+          onTap: _isSaving ? null : () => _saveItinerary(),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             margin: const EdgeInsets.only(
@@ -201,14 +357,24 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  _isSaved ? Icons.check_rounded : Icons.save_rounded,
-                  size: 15,
-                  color: _isSaved ? const Color(0xFF047857) : Colors.white,
-                ),
+                if (_isSaving)
+                  const SizedBox(
+                    width: 13,
+                    height: 13,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                else
+                  Icon(
+                    _isSaved ? Icons.check_rounded : Icons.save_rounded,
+                    size: 15,
+                    color: _isSaved ? const Color(0xFF047857) : Colors.white,
+                  ),
                 const SizedBox(width: 4),
                 Text(
-                  _isSaved ? 'Đã lưu' : 'Lưu',
+                  _isSaving ? 'Đang lưu' : (_isSaved ? 'Đã lưu' : 'Lưu'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -246,7 +412,6 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Status badge
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -314,7 +479,6 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // Info chips
                   Row(
                     children: [
                       if (it.costPerPerson > 0)
@@ -363,7 +527,7 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
     );
   }
 
-  Widget _buildDayContent(ItineraryDay day, bool isDark) {
+  Widget _buildDayContent(int dayListIndex, ItineraryDay day, bool isDark) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
       itemCount: day.places.length + 2,
@@ -372,7 +536,9 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              '${day.label}: ${_getDayTitle(day)} — ${day.places.length} điểm',
+              day.places.isNotEmpty
+                  ? '${day.label}: ${_getDayTitle(day)} — ${day.places.length} điểm'
+                  : '${day.label} (${day.date}) — Chưa có điểm đến',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -382,14 +548,19 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
           );
         }
         if (index == day.places.length + 1) {
-          return _buildAddPlaceButton(day);
+          return Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: _buildAddPlaceButton(dayListIndex, day),
+          );
         }
         final placeIndex = index - 1;
+        final place = day.places[placeIndex];
         return ItineraryTimelineItem(
-          place: day.places[placeIndex],
+          place: place,
           index: placeIndex,
           total: day.places.length,
-          onTap: () {},
+          onTap: () => _openPlaceDetail(place),
+          onRemove: () => _removePlaceFromDay(dayListIndex, placeIndex),
         );
       },
     );
@@ -402,18 +573,10 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
     return '';
   }
 
-  Widget _buildAddPlaceButton(ItineraryDay day) {
+  Widget _buildAddPlaceButton(int dayListIndex, ItineraryDay day) {
     return Center(
       child: OutlinedButton.icon(
-        onPressed: () {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const MainScreen(initialIndex: 1),
-            ),
-            (route) => false,
-          );
-        },
+        onPressed: () => _addPlacesToDay(dayListIndex),
         icon: const Icon(
           Icons.add_location_alt_outlined,
           size: 18,
@@ -449,8 +612,8 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
           ),
           const SizedBox(height: 12),
           const Text(
-            'Chưa có lịch trình chi tiết',
-            style: TextStyle(fontSize: 16, color: AppColors.textTertiary),
+            'Chưa có ngày nào trong lịch trình',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
           ),
         ],
       ),
@@ -458,9 +621,14 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
   }
 
   String _formatCurrency(double amount) {
-    if (amount >= 1000000) {
-      return '${(amount / 1000000).toStringAsFixed(1)}Tr';
+    final s = amount.toInt().toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      buffer.write(s[i]);
+      count++;
+      if (count % 3 == 0 && i > 0) buffer.write('.');
     }
-    return '${(amount / 1000).toStringAsFixed(0)}K';
+    return '${buffer.toString().split('').reversed.join()}đ';
   }
 }

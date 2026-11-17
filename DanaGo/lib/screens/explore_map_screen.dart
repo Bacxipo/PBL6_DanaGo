@@ -11,11 +11,14 @@ import 'package:smarttrip/widgets/explore_map/map_pin_marker.dart';
 import 'package:smarttrip/widgets/explore_map/map_search_header.dart';
 import 'package:smarttrip/widgets/explore_map/map_preview_sheet.dart';
 import 'package:smarttrip/widgets/explore_map/map_draggable_sheet.dart';
+import 'package:smarttrip/services/ai_service.dart';
 import 'package:smarttrip/services/destination_service.dart';
 import 'package:geolocator/geolocator.dart';
 
 class ExploreMapScreen extends StatefulWidget {
-  const ExploreMapScreen({super.key});
+  final bool initialAiMode;
+
+  const ExploreMapScreen({super.key, this.initialAiMode = false});
 
   @override
   State<ExploreMapScreen> createState() => _ExploreMapScreenState();
@@ -23,12 +26,20 @@ class ExploreMapScreen extends StatefulWidget {
 
 class _ExploreMapScreenState extends State<ExploreMapScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
+  final TextEditingController _aiCtrl = TextEditingController();
   final MapController _mapController = MapController();
   SearchFilterModel _currentFilter = const SearchFilterModel();
   final Set<String> _activeChips = {'Gần tôi', 'Đang mở cửa'};
   SearchResultItem? _selectedPlace;
   LatLng? _myLocation;
   bool _isLoadingLocation = false;
+
+  // Chế độ AI Semantic Search (đồng bộ Web Explore)
+  bool _isAiMode = false;
+  bool _isAiLoading = false;
+  String _aiActiveQuery = '';
+  String? _aiError;
+  List<MapPlaceItem>? _aiPlaces;
 
   // Hàm xin quyền và lấy tọa độ GPS thực tế
   Future<void> _getCurrentLocation() async {
@@ -123,8 +134,107 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _aiCtrl.dispose();
     _mapController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleAiSearch(String queryText) async {
+    final text = queryText.trim();
+    if (text.isEmpty) return;
+
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isAiMode = true;
+      _isAiLoading = true;
+      _aiError = null;
+      _aiActiveQuery = text;
+    });
+
+    try {
+      final rawTop = await AiService.instance.searchCandidates(
+        query: text,
+        topK: 50,
+      );
+
+      // Map kết quả từ AI với danh sách _mapPlaces thật để giữ ảnh, tọa độ, chi tiết đầy đủ
+      final mapped = <MapPlaceItem>[];
+      for (final aiItem in rawTop) {
+        final aiIdStr = aiItem['id']?.toString() ?? '';
+        final scoreRaw = aiItem['match_score'];
+        final matchScore = scoreRaw is num ? scoreRaw.toDouble() : null;
+
+        MapPlaceItem? matched;
+        for (final mp in _mapPlaces) {
+          if (mp.item.id == aiIdStr) {
+            matched = MapPlaceItem(
+              location: mp.location,
+              item: mp.item.copyWith(matchScore: matchScore),
+            );
+            break;
+          }
+        }
+
+        if (matched != null) {
+          mapped.add(matched);
+        } else {
+          final lat = (aiItem['latitude'] as num?)?.toDouble() ?? 16.0614;
+          final lng = (aiItem['longitude'] as num?)?.toDouble() ?? 108.2272;
+          final district = aiItem['district']?.toString();
+          mapped.add(
+            MapPlaceItem(
+              location: LatLng(lat, lng),
+              item: SearchResultItem(
+                id: aiIdStr,
+                title: (aiItem['name'] ?? 'Địa điểm Đà Nẵng').toString(),
+                imageUrl:
+                    'https://jmwoffnpyqqglvvzgzah.supabase.co/storage/v1/object/public/destination_image/dest-18/cau-rong-da-nang%20(7)-min.jpg',
+                badge: (aiItem['category'] ?? 'KHÁM PHÁ')
+                    .toString()
+                    .toUpperCase(),
+                badgeColor: AppColors.primary,
+                address: (district != null && district.isNotEmpty)
+                    ? '$district, Đà Nẵng'
+                    : 'Đà Nẵng',
+                rating: (aiItem['avg_rating'] as num?)?.toDouble() ?? 4.5,
+                reviewCount: 0,
+                distance: '',
+                tagLabel: (aiItem['price_text'] ?? 'Miễn phí').toString(),
+                tagColor: AppColors.primary,
+                matchScore: matchScore,
+              ),
+            ),
+          );
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _aiPlaces = mapped;
+          _isAiLoading = false;
+        });
+        if (mapped.isNotEmpty) {
+          _mapController.move(mapped.first.location, 13.8);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _aiError = e.toString().replaceFirst('Exception: ', '');
+          _isAiLoading = false;
+        });
+      }
+    }
+  }
+
+  void _clearAiSearch() {
+    setState(() {
+      _aiPlaces = null;
+      _aiCtrl.clear();
+      _aiActiveQuery = '';
+      _aiError = null;
+      _isAiMode = false;
+    });
   }
 
   bool _matchesSearchQuery(SearchResultItem item, String query) {
@@ -194,10 +304,11 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   }
 
   List<MapPlaceItem> get _filteredPlaces {
+    final source = _aiPlaces ?? _mapPlaces;
     final query = _searchCtrl.text.trim().toLowerCase();
-    return _mapPlaces.where((mapPlace) {
+    return source.where((mapPlace) {
       final item = mapPlace.item;
-      if (!_matchesSearchQuery(item, query)) {
+      if (_aiPlaces == null && !_matchesSearchQuery(item, query)) {
         return false;
       }
       if (!_matchesCategoryFilter(item.badge, _currentFilter.category)) {
@@ -249,6 +360,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   @override
   void initState() {
     super.initState();
+    _isAiMode = widget.initialAiMode;
     _getCurrentLocation();
     _loadMapPlaces();
   }
@@ -394,6 +506,22 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
             right: 0,
             child: MapSearchHeader(
               controller: _searchCtrl,
+              aiController: _aiCtrl,
+              isAiMode: _isAiMode,
+              hasAiResults: _aiPlaces != null,
+              isAiLoading: _isAiLoading,
+              aiActiveQuery: _aiActiveQuery,
+              aiError: _aiError,
+              onModeChanged: (aiMode) {
+                setState(() {
+                  _isAiMode = aiMode;
+                  if (!aiMode) {
+                    _aiPlaces = null;
+                    _aiError = null;
+                    _aiActiveQuery = '';
+                  }
+                });
+              },
               onFilterTap: _openFilterBottomSheet,
               activeChips: _activeChips,
               onSearchChanged: (_) => setState(() {}),
@@ -404,11 +532,17 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                       : _activeChips.add(label);
                 });
               },
+              onAiSearchSubmit: _handleAiSearch,
+              onClearAi: _clearAiSearch,
             ),
           ),
           MapDraggableSheet(
             places: _filteredPlaces,
             onPlaceTap: _navigateToDetail,
+            isAiActive: _aiPlaces != null,
+            isAiLoading: _isAiLoading,
+            aiActiveQuery: _aiActiveQuery,
+            onClearAi: _clearAiSearch,
           ),
         ],
       ),

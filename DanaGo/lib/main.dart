@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
                   context,
                 ).textScaler.clamp(minScaleFactor: 0.85, maxScaleFactor: 1.05),
               ),
-              child: child!,
+              child: ExcludeSemantics(child: child!),
             );
           },
           home: isLoggedIn ? const MainScreen() : const OnboardingScreen(),

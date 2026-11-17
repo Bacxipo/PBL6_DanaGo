@@ -10,6 +10,11 @@ class ReviewService extends ChangeNotifier {
 
   int _myReviewsCount = 0;
   int get myReviewsCount => _myReviewsCount;
+
+  void clear() {
+    _myReviewsCount = 0;
+    notifyListeners();
+  }
   Future<List<ReviewItemModel>> getDestinationReviews(
     String destinationId,
   ) async {

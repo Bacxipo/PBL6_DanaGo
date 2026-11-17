@@ -128,24 +128,28 @@ class _PlanResultViewState extends State<PlanResultView> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                Icon(
+                  success ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     success
-                        ? '✅ Đã lưu lịch trình thành công vào mục Lịch trình!'
-                        : 'Lưu lịch trình thành công vào thiết bị!',
+                        ? 'Đã lưu lịch trình thành công vào mục Lịch trình!'
+                        : 'Không thể lưu lịch trình. Vui lòng đăng nhập và thử lại.',
                   ),
                 ),
               ],
             ),
-            backgroundColor: AppColors.primary,
+            backgroundColor: success ? AppColors.primary : Colors.red,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
           ),
         );
 
-        if (widget.onSavedSuccess != null) {
+        if (success && widget.onSavedSuccess != null) {
           widget.onSavedSuccess!();
         }
       }

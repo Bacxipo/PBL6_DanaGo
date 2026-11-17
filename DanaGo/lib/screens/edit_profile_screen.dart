@@ -1,4 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:smarttrip/services/auth_service.dart';
+import 'package:smarttrip/services/destination_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -17,17 +22,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String _selectedGender = 'Nam';
   DateTime? _birthDate;
   bool _hasChanges = false;
+  String? _avatarUrl;
+  bool _isUploadingAvatar = false;
+  bool _isSaving = false;
+  bool _isPickerActive = false;
+  List<Map<String, dynamic>> _categories = [];
+  final Set<int> _selectedCategoryIds = {};
+  bool _isLoadingCategories = true;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.userData['name'] ?? '');
-    _emailController = TextEditingController(text: widget.userData['email'] ?? '');
-    _phoneController = TextEditingController(text: widget.userData['phone'] ?? '');
+    _loadPreferences();
+    _nameController = TextEditingController(
+      text: widget.userData['name'] ?? '',
+    );
+    _emailController = TextEditingController(
+      text: widget.userData['email'] ?? '',
+    );
+    _phoneController = TextEditingController(
+      text: widget.userData['phone'] ?? '',
+    );
     _bioController = TextEditingController(text: widget.userData['bio'] ?? '');
+    _avatarUrl = widget.userData['avatar'];
 
     // Listen for changes
-    for (var c in [_nameController, _emailController, _phoneController, _bioController]) {
+    for (var c in [
+      _nameController,
+      _emailController,
+      _phoneController,
+      _bioController,
+    ]) {
       c.addListener(() => setState(() => _hasChanges = true));
     }
   }
@@ -159,6 +184,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildAvatarSection() {
+    Widget avatarWidget;
+    if (_isUploadingAvatar) {
+      avatarWidget = const Center(
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: CircularProgressIndicator(
+            color: AppColors.primary,
+            strokeWidth: 2.5,
+          ),
+        ),
+      );
+    } else if (_avatarUrl != null && _avatarUrl!.startsWith('http')) {
+      avatarWidget = Image.network(
+        _avatarUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => SvgPicture.asset(
+          'assets/images/default-avatar.svg',
+          fit: BoxFit.cover,
+        ),
+      );
+    } else if (_avatarUrl != null && File(_avatarUrl!).existsSync()) {
+      avatarWidget = Image.file(File(_avatarUrl!), fit: BoxFit.cover);
+    } else {
+      avatarWidget = SvgPicture.asset(
+        'assets/images/default-avatar.svg',
+        fit: BoxFit.cover,
+      );
+    }
+
     return Center(
       child: Stack(
         children: [
@@ -167,15 +222,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             height: 110,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.1),
-                  AppColors.primaryLight,
-                ],
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                width: 3,
               ),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 3),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.primary.withValues(alpha: 0.15),
@@ -184,13 +234,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ],
             ),
-            child: const Icon(Icons.person_rounded, size: 55, color: AppColors.primary),
+            child: ClipOval(child: avatarWidget),
           ),
           Positioned(
             bottom: 4,
             right: 4,
             child: GestureDetector(
-              onTap: () => _showAvatarOptions(),
+              onTap: _showAvatarOptions,
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -205,7 +255,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                child: const Icon(
+                  Icons.camera_alt_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -268,10 +322,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             fontWeight: FontWeight.w500,
           ),
           hintText: hint,
-          hintStyle: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textHint,
-          ),
+          hintStyle: const TextStyle(fontSize: 14, color: AppColors.textHint),
           prefixIcon: Container(
             margin: const EdgeInsets.all(12),
             padding: const EdgeInsets.all(8),
@@ -295,7 +346,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           filled: true,
           fillColor: Theme.of(context).cardColor,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
         ),
       ),
     );
@@ -328,7 +382,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.wc_rounded, size: 18, color: AppColors.primary),
+                child: const Icon(
+                  Icons.wc_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -353,12 +411,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   }),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    margin: EdgeInsets.only(right: gender != genders.last ? 10 : 0),
+                    margin: EdgeInsets.only(
+                      right: gender != genders.last ? 10 : 0,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary
-                          : (isDark ? const Color(0xFF0F172A) : AppColors.bgPrimary),
+                          : (isDark
+                                ? const Color(0xFF0F172A)
+                                : AppColors.bgPrimary),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
@@ -371,10 +433,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         color: isSelected
                             ? Colors.white
-                            : (isDark ? Colors.grey.shade300 : AppColors.textSecondary),
+                            : (isDark
+                                  ? Colors.grey.shade300
+                                  : AppColors.textSecondary),
                       ),
                     ),
                   ),
@@ -444,7 +510,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.cake_outlined, size: 18, color: AppColors.primary),
+              child: const Icon(
+                Icons.cake_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -482,28 +552,85 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Future<void> _loadPreferences() async {
+    try {
+      final results = await Future.wait([
+        DestinationService.instance.getCategories(),
+        AuthService.instance.getPreferences(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _categories = results[0] as List<Map<String, dynamic>>;
+          _selectedCategoryIds.addAll(results[1] as List<int>);
+          _isLoadingCategories = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingCategories = false);
+    }
+  }
+
+  IconData _getIconForCategory(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('biển') || lower.contains('bãi')) {
+      return Icons.beach_access_rounded;
+    }
+    if (lower.contains('ẩm thực') || lower.contains('ăn') || lower.contains('món')) {
+      return Icons.restaurant_rounded;
+    }
+    if (lower.contains('di tích') || lower.contains('lịch sử') || lower.contains('bảo tàng') || lower.contains('văn hóa')) {
+      return Icons.account_balance_rounded;
+    }
+    if (lower.contains('giải trí') || lower.contains('đêm') || lower.contains('bar') || lower.contains('pub')) {
+      return Icons.nightlife_rounded;
+    }
+    if (lower.contains('núi') || lower.contains('rừng') || lower.contains('leo núi') || lower.contains('trekking')) {
+      return Icons.hiking_rounded;
+    }
+    if (lower.contains('cafe') || lower.contains('cà phê')) {
+      return Icons.local_cafe_rounded;
+    }
+    if (lower.contains('mua sắm') || lower.contains('chợ')) {
+      return Icons.shopping_bag_rounded;
+    }
+    if (lower.contains('sinh thái') || lower.contains('thiên nhiên') || lower.contains('công viên')) {
+      return Icons.park_rounded;
+    }
+    return Icons.explore_rounded;
+  }
+
   Widget _buildTravelPreferences() {
-    final preferences = [
-      {'label': 'Biển', 'icon': Icons.beach_access_rounded, 'selected': true},
-      {'label': 'Núi & Rừng', 'icon': Icons.landscape_rounded, 'selected': false},
-      {'label': 'Ẩm thực', 'icon': Icons.restaurant_rounded, 'selected': true},
-      {'label': 'Văn hóa', 'icon': Icons.account_balance_rounded, 'selected': true},
-      {'label': 'Mua sắm', 'icon': Icons.shopping_bag_rounded, 'selected': false},
-      {'label': 'Trekking', 'icon': Icons.hiking_rounded, 'selected': false},
-      {'label': 'Cafe', 'icon': Icons.coffee_rounded, 'selected': true},
-      {'label': 'Nightlife', 'icon': Icons.nightlife_rounded, 'selected': false},
-    ];
+    if (_isLoadingCategories) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+        ),
+      );
+    }
+    if (_categories.isEmpty) {
+      return const Text(
+        'Chưa có danh mục sở thích',
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+      );
+    }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Wrap(
       spacing: 10,
       runSpacing: 10,
-      children: preferences.map((pref) {
-        final isSelected = pref['selected'] as bool;
+      children: _categories.map((cat) {
+        final id = (cat['id'] as num?)?.toInt() ?? 0;
+        final name = cat['name'] as String? ?? '';
+        final isSelected = _selectedCategoryIds.contains(id);
         return GestureDetector(
           onTap: () {
             setState(() {
-              pref['selected'] = !(pref['selected'] as bool);
+              if (isSelected) {
+                _selectedCategoryIds.remove(id);
+              } else {
+                _selectedCategoryIds.add(id);
+              }
               _hasChanges = true;
             });
           },
@@ -535,24 +662,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  pref['icon'] as IconData,
+                  _getIconForCategory(name),
                   size: 18,
-                  color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isDark ? Colors.white70 : AppColors.textSecondary),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Text(
-                  pref['label'] as String,
+                  name,
                   style: TextStyle(
+                    fontFamily: 'Be Vietnam Pro',
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     color: isSelected
                         ? AppColors.primary
-                        : (isDark ? Colors.grey.shade300 : AppColors.textSecondary),
+                        : (isDark ? Colors.white : AppColors.textPrimary),
                   ),
                 ),
                 if (isSelected) ...[
-                  const SizedBox(width: 4),
-                  const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.check_rounded, size: 16, color: AppColors.primary),
                 ],
               ],
             ),
@@ -593,7 +723,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                  Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   SizedBox(width: 8),
                   Text(
                     'Lưu thay đổi',
@@ -612,31 +746,72 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  void _saveProfile() {
-    final result = {
-      'name': _nameController.text,
-      'email': _emailController.text,
-      'phone': _phoneController.text,
-      'bio': _bioController.text,
-    };
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Text('Đã lưu thay đổi thành công!'),
-          ],
+  Future<void> _saveProfile() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Họ và tên không được để trống!'),
+          backgroundColor: AppColors.error,
         ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+      );
+      return;
+    }
+    final phone = _phoneController.text.trim();
+    if (phone.isNotEmpty && !RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Số điện thoại phải gồm đúng 10 chữ số!'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
-    Navigator.pop(context, result);
+    setState(() => _isSaving = true);
+    final updated = await AuthService.instance.updateProfile(
+      fullName: name,
+      phoneNumber: phone,
+      bio: _bioController.text.trim(),
+      categoryIds: _selectedCategoryIds.toList(),
+    );
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    if (updated != null) {
+      final result = {
+        'name': name,
+        'email': _emailController.text,
+        'phone': phone,
+        'bio': _bioController.text.trim(),
+        'avatar': _avatarUrl,
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Text('Đã lưu thay đổi thành công!'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      Navigator.pop(context, result);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể cập nhật hồ sơ, vui lòng thử lại!'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   void _onBackPressed() {
@@ -644,13 +819,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Text('Hủy thay đổi?'),
-          content: const Text('Bạn có thay đổi chưa lưu. Bạn có chắc muốn hủy không?'),
+          content: const Text(
+            'Bạn có thay đổi chưa lưu. Bạn có chắc muốn hủy không?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tiếp tục chỉnh sửa', style: TextStyle(color: AppColors.primary)),
+              child: const Text(
+                'Tiếp tục chỉnh sửa',
+                style: TextStyle(color: AppColors.primary),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -660,7 +842,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Hủy'),
             ),
@@ -669,6 +853,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
     } else {
       Navigator.pop(context);
+    }
+  }
+
+  Future<void> _pickAndUploadAvatar(ImageSource source) async {
+    if (_isPickerActive) return;
+    _isPickerActive = true;
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+      if (image != null && mounted) {
+        setState(() => _isUploadingAvatar = true);
+        final newUrl = await AuthService.instance.updateAvatar(image.path);
+        if (mounted) {
+          if (newUrl != null) {
+            setState(() {
+              _avatarUrl = newUrl;
+              _hasChanges = true;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Cập nhật ảnh đại diện thành công!'),
+                backgroundColor: AppColors.primary,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tải ảnh thất bại, vui lòng thử lại!'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+      _isPickerActive = false;
     }
   }
 
@@ -707,12 +934,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _buildAvatarOption(
               icon: Icons.camera_alt_rounded,
               label: 'Chụp ảnh mới',
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndUploadAvatar(ImageSource.camera);
+              },
             ),
             _buildAvatarOption(
               icon: Icons.photo_library_rounded,
               label: 'Chọn từ thư viện',
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndUploadAvatar(ImageSource.gallery);
+              },
             ),
             _buildAvatarOption(
               icon: Icons.delete_outline_rounded,
@@ -752,7 +985,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           color: color ?? (isDark ? Colors.white : AppColors.textPrimary),
         ),
       ),
-      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.textHint,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }

@@ -15,6 +15,7 @@ class SearchResultItem {
   final String? tagLabel;
   final Color? tagColor;
   final bool isFavorite;
+  final double? matchScore;
   final DestinationItem? originalDestination;
 
   const SearchResultItem({
@@ -30,8 +31,28 @@ class SearchResultItem {
     this.tagLabel,
     this.tagColor,
     this.isFavorite = false,
+    this.matchScore,
     this.originalDestination,
   });
+
+  SearchResultItem copyWith({double? matchScore, bool? isFavorite}) {
+    return SearchResultItem(
+      id: id,
+      title: title,
+      imageUrl: imageUrl,
+      badge: badge,
+      badgeColor: badgeColor,
+      address: address,
+      rating: rating,
+      reviewCount: reviewCount,
+      distance: distance,
+      tagLabel: tagLabel,
+      tagColor: tagColor,
+      isFavorite: isFavorite ?? this.isFavorite,
+      matchScore: matchScore ?? this.matchScore,
+      originalDestination: originalDestination,
+    );
+  }
   DestinationItem toDestinationItem() {
     if (originalDestination != null) return originalDestination!;
     return DestinationItem(

@@ -38,6 +38,18 @@ class FeedService {
     }
   }
 
+  Future<FeedPostModel?> getPostById(int postId) async {
+    try {
+      final res = await ApiClient.instance.get('/feed/posts/$postId');
+      if (res is Map<String, dynamic>) {
+        return FeedPostModel.fromJson(res);
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<bool?> toggleLike(String postId) async {
     try {
       final res = await ApiClient.instance.post('/feed/posts/$postId/like');

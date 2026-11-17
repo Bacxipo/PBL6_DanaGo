@@ -164,19 +164,24 @@ class GoogleAuthService extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    if (_busy) throw StateError('Đang xử lý đăng nhập. Vui lòng thử lại.');
+    _busy = false;
     await _storage.delete(key: 'accessToken');
     await _storage.delete(key: 'has_chosen_preferences');
     hasPreferences = false;
     errorMessage = null;
     status = GoogleLoginStatus.idle;
     notifyListeners();
-    if (_initialization != null) {
-      try {
-        await _google.signOut();
-      } catch (_) {
-        // Local DanaGo logout is already complete.
+
+    // Ngắt phiên Google kể cả khi app vừa khởi động lại và chưa gọi initialize() trong phiên hiện tại
+    try {
+      if (_initialization == null && AuthConfig.isConfigured) {
+        await initialize().timeout(const Duration(seconds: 3));
       }
+      if (_initialization != null) {
+        await _google.signOut().timeout(const Duration(seconds: 3));
+      }
+    } catch (_) {
+      // Local DanaGo logout is already complete.
     }
   }
 

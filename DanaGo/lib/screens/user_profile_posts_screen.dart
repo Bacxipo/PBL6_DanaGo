@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/services/auth_service.dart';
+import 'package:smarttrip/screens/edit_profile_screen.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
 import 'package:smarttrip/screens/create_post_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
@@ -8,6 +10,7 @@ import 'package:smarttrip/widgets/user_profile/user_profile_header.dart';
 import 'package:smarttrip/services/feed_service.dart';
 
 class UserProfilePostsScreen extends StatefulWidget {
+  final int? authorId;
   final String authorName;
   final String authorAvatar;
   final bool isVerified;
@@ -16,6 +19,7 @@ class UserProfilePostsScreen extends StatefulWidget {
 
   const UserProfilePostsScreen({
     super.key,
+    this.authorId,
     required this.authorName,
     required this.authorAvatar,
     this.isVerified = false,
@@ -31,15 +35,63 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<FeedPostModel> _userPosts = [];
+  String? _authorAvatar;
+  String _authorName = '';
+  String _authorEmail = '';
+  String _authorPhone = '';
+  String _authorBio = 'Yêu du lịch, thích khám phá văn hóa & ẩm thực Đà Nẵng';
+  String _joinDate = 'Tham gia từ 2026';
+  int _followersCount = 0;
+  int _followingCount = 0;
+  bool _isFollowing = false;
+  int get _totalLikes => _userPosts.fold(0, (sum, p) => sum + p.likes);
 
   @override
   void initState() {
     super.initState();
+    _authorName = widget.authorName;
+    _authorAvatar = widget.authorAvatar;
     _tabController = TabController(length: 3, vsync: this);
     _loadUserPosts();
   }
 
   Future<void> _loadUserPosts() async {
+    if (widget.isCurrentUser) {
+      final profile = await AuthService.instance.getProfile();
+      if (profile != null && mounted) {
+        setState(() {
+          _authorName = profile['fullName'] ?? widget.authorName;
+          _authorAvatar = profile['avatarUrl'] ?? widget.authorAvatar;
+          _authorEmail = profile['email'] as String? ?? '';
+          _authorPhone = profile['phoneNumber'] as String? ?? '';
+          _followersCount = (profile['followersCount'] as num?)?.toInt() ?? 0;
+          _followingCount = (profile['followingCount'] as num?)?.toInt() ?? 0;
+          if (profile['bio'] != null && (profile['bio'] as String).isNotEmpty) {
+            _authorBio = profile['bio'];
+          }
+          if (profile['createdAt'] != null) {
+            try {
+              final dt = DateTime.parse(profile['createdAt']);
+              _joinDate = 'Tham gia từ tháng ${dt.month}, ${dt.year}';
+            } catch (_) {}
+          }
+        });
+      }
+    } else {
+      _authorName = widget.authorName;
+      _authorAvatar = widget.authorAvatar;
+      if (widget.authorId != null) {
+        final stats = await AuthService.instance.getFollowStats(widget.authorId!);
+        if (stats != null && mounted) {
+          setState(() {
+            _followersCount = (stats['followersCount'] as num?)?.toInt() ?? 0;
+            _followingCount = (stats['followingCount'] as num?)?.toInt() ?? 0;
+            _isFollowing = stats['isFollowing'] as bool? ?? false;
+          });
+        }
+      }
+    }
+
     final posts = widget.isCurrentUser
         ? await FeedService.instance.getMyPosts()
         : (await FeedService.instance.getPosts())
@@ -50,6 +102,17 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
               )
               .toList();
     if (mounted) setState(() => _userPosts = posts);
+  }
+
+  void _toggleFollow() async {
+    if (widget.authorId == null) return;
+    final res = await AuthService.instance.toggleFollow(widget.authorId!);
+    if (res != null && mounted) {
+      setState(() {
+        _isFollowing = res['isFollowing'] as bool? ?? !_isFollowing;
+        _followersCount = (res['followersCount'] as num?)?.toInt() ?? _followersCount;
+      });
+    }
   }
 
   @override
@@ -67,6 +130,26 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
       setState(() {
         _userPosts.insert(0, result);
       });
+    }
+  }
+
+  void _navigateToEditProfile() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileScreen(
+          userData: {
+            'name': _authorName.isNotEmpty ? _authorName : widget.authorName,
+            'email': _authorEmail,
+            'phone': _authorPhone,
+            'avatar': _authorAvatar ?? widget.authorAvatar,
+            'bio': _authorBio,
+          },
+        ),
+      ),
+    );
+    if (result != null) {
+      _loadUserPosts();
     }
   }
 
@@ -88,7 +171,7 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.authorName,
+          _authorName.isNotEmpty ? _authorName : widget.authorName,
           style: TextStyle(
             fontFamily: 'Be Vietnam Pro',
             fontSize: 18,
@@ -121,11 +204,21 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
           return [
             SliverToBoxAdapter(
               child: UserProfileHeader(
-                authorName: widget.authorName,
-                authorAvatar: widget.authorAvatar,
+                authorName: _authorName.isEmpty
+                    ? widget.authorName
+                    : _authorName,
+                authorAvatar: _authorAvatar ?? widget.authorAvatar,
+                bio: _authorBio,
+                joinDate: _joinDate,
                 isVerified: widget.isVerified,
                 postsCount: _userPosts.length,
+                likesCount: _totalLikes,
+                followersCount: _followersCount,
+                followingCount: _followingCount,
                 isCurrentUser: widget.isCurrentUser,
+                isFollowing: _isFollowing,
+                onFollowToggle: _toggleFollow,
+                onEditProfile: _navigateToEditProfile,
               ),
             ),
             SliverPersistentHeader(
@@ -135,7 +228,7 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
                   controller: _tabController,
                   indicatorColor: AppColors.primary,
                   indicatorWeight: 3,
-                  labelColor: AppColors.primary,
+                  labelColor: isDark ? Colors.white : AppColors.primary,
                   unselectedLabelColor: AppColors.neutral,
                   labelStyle: const TextStyle(
                     fontFamily: 'Be Vietnam Pro',

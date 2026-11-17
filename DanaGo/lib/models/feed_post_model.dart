@@ -58,6 +58,7 @@ class CommentItem {
 class FeedPostModel {
   final String id;
   final PostType type;
+  final int? authorId;
   final String authorName;
   final String authorAvatar;
   final String timeAgo;
@@ -84,6 +85,7 @@ class FeedPostModel {
   FeedPostModel({
     required this.id,
     this.type = PostType.experience,
+    this.authorId,
     required this.authorName,
     required this.authorAvatar,
     required this.timeAgo,
@@ -124,9 +126,13 @@ class FeedPostModel {
         : 'Vừa xong';
     return FeedPostModel(
       id: json['id'].toString(),
+      authorId: (user?['id'] as num?)?.toInt() ?? (json['userId'] as num?)?.toInt(),
       type: json['postType'] == 'NEW_DESTINATION'
           ? PostType.newPlace
-          : PostType.experience,
+          : (json['postType'] == 'QUESTION' ||
+                  (json['content'] as String? ?? '').startsWith('❓'))
+              ? PostType.question
+              : PostType.experience,
       authorName: user?['fullName'] as String? ?? 'Người dùng DanaGo',
       authorAvatar: rawAvatar.isNotEmpty
           ? rawAvatar

@@ -107,12 +107,25 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
       if (!mounted) return;
-      UiHelpers.showSuccess(context, 'Đăng nhập thành công! Chào mừng bạn');
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-        (route) => false,
-      );
+      final prefs = await AuthService.instance.getPreferences();
+      if (!mounted) return;
+      if (prefs.isEmpty) {
+        UiHelpers.showSuccess(
+          context,
+          'Chào mừng bạn đến với DanaGo! Hãy chọn sở thích của bạn',
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const InterestScreen()),
+        );
+      } else {
+        UiHelpers.showSuccess(context, 'Đăng nhập thành công! Chào mừng bạn');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+          (route) => false,
+        );
+      }
     } on ApiException catch (e) {
       if (mounted) {
         UiHelpers.showError(context, e.message);

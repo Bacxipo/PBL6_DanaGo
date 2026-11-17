@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/destination_item.dart';
-import 'package:smarttrip/screens/Detail_place_screen.dart';
+import 'package:smarttrip/models/event_item.dart';
+import 'package:smarttrip/screens/detail_place_screen.dart';
+import 'package:smarttrip/screens/event_detail_screen.dart';
+import 'package:smarttrip/screens/events_screen.dart';
 import 'package:smarttrip/screens/lodging_screen.dart';
 import 'package:smarttrip/screens/user_profile_posts_screen.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/destination_service.dart';
+import 'package:smarttrip/services/event_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/home/category_selector.dart';
 import 'package:smarttrip/widgets/home/destination_tile.dart';
+import 'package:smarttrip/widgets/home/event_card.dart';
 import 'package:smarttrip/widgets/home/featured_card.dart';
 import 'package:smarttrip/widgets/home/home_search_bar.dart';
 import 'package:geolocator/geolocator.dart';
@@ -24,6 +29,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectCategoryIndex = 0;
   String? _avatarUrl;
+  String _userName = 'Bạn';
   String? _customFilterTitle;
   List<Map<String, dynamic>> _categories = [
     {'id': 0, 'name': 'Tất cả'},
@@ -37,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Cafe': 5,
   };
   List<DestinationItem> _featuredPlaces = [];
-  List<DestinationItem> _allPlaces = [];
+  List<EventItem> _upcomingEvents = [];
   List<DestinationItem> _recommendedPlaces = [];
   List<DestinationItem> _nearbyPlaces = [];
   List<DestinationItem> _categoryFilteredPlaces = [];
@@ -48,6 +54,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    AuthService.instance.addListener(_onAuthChanged);
+    _loadAvatar();
+    _loadHomeData();
+  }
+
+  @override
+  void dispose() {
+    AuthService.instance.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+
+  void _onAuthChanged() {
     _loadAvatar();
     _loadHomeData();
   }
@@ -55,11 +73,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadHomeData() async {
     setState(() => _isLoading = true);
     try {
+      int? currentUserId;
+      final profile = await AuthService.instance.getProfile();
+      if (profile != null && profile['id'] != null) {
+        currentUserId = (profile['id'] as num).toInt();
+      }
       final categoriesFromDb = await DestinationService.instance
           .getCategories();
       final featured = await DestinationService.instance.getFeature(limit: 6);
+      final allEvents = await EventService.instance.getEvents();
+      final upcomingEvents = allEvents
+          .where((e) => e.timelineStatus != EventTimelineStatus.ended)
+          .toList()
+        ..sort((a, b) => a.startDate.compareTo(b.startDate));
       final recommended = await DestinationService.instance.getRecommended(
         limit: 6,
+        userId: currentUserId,
       );
       double? lat;
       double? lng;
@@ -84,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ];
           }
           _featuredPlaces = featured;
+          _upcomingEvents = upcomingEvents.take(10).toList();
           _recommendedPlaces = recommended;
           _nearbyPlaces = nearby;
           _isLoading = false;
@@ -146,6 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final url = profile['avatarUrl'] as String?;
       setState(() {
         _avatarUrl = (url != null && url.isNotEmpty) ? url : null;
+        _userName = profile['fullName'] as String? ?? 'Bạn';
       });
     }
   }
@@ -161,9 +192,9 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const UserProfilePostsScreen(
-          authorName: 'Nguyễn Văn A',
-          authorAvatar: 'https://i.postimg.cc/tC24nW4N/avt1.jpg',
+        builder: (context) => UserProfilePostsScreen(
+          authorName: _userName,
+          authorAvatar: _avatarUrl ?? 'assets/images/default-avatar.svg',
           isVerified: true,
           isCurrentUser: true,
         ),
@@ -216,7 +247,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -250,10 +284,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Column(
+        child: RefreshIndicator(
+          onRefresh: _loadHomeData,
+          color: AppColors.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Search bar with Avatar shortcut
@@ -319,6 +358,76 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // Section: Upcoming Events (Đồng bộ với Web User)
+                if (_upcomingEvents.isNotEmpty) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Sự kiện sắp diễn ra',
+                        style: TextStyle(
+                          fontFamily: 'Be Vietnam Pro',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EventsScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Xem tất cả',
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 266,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _upcomingEvents.length,
+                      itemBuilder: (context, index) {
+                        final ev = _upcomingEvents[index];
+                        return EventCard(
+                          event: ev,
+                          width: 248,
+                          onTap: () async {
+                            final updated = await Navigator.push<EventItem>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EventDetailScreen(event: ev),
+                              ),
+                            );
+                            if (updated != null && mounted) {
+                              setState(() {
+                                final idx = _upcomingEvents.indexWhere(
+                                  (e) => e.id == updated.id,
+                                );
+                                if (idx != -1) _upcomingEvents[idx] = updated;
+                              });
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
                 // Section 2: Recommended
                 Row(
@@ -525,6 +634,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 30),
             ],
           ),
+        ),
         ),
       ),
     );
