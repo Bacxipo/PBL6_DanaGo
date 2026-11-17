@@ -88,6 +88,30 @@ class FeedService {
     }
   }
 
+  Future<FeedPostModel?> updatePost(String postId, String content) async {
+    try {
+      final res = await ApiClient.instance.patch(
+        '/feed/posts/$postId',
+        body: {'content': content.trim()},
+      );
+      if (res is Map<String, dynamic>) {
+        return FeedPostModel.fromJson(res);
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> deletePost(String postId) async {
+    try {
+      final res = await ApiClient.instance.delete('/feed/posts/$postId');
+      return res != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<FeedPostModel?> createPost({
     required String content,
     int? destinationId,

@@ -8,6 +8,7 @@ import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/app_styles.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/widgets/common/custom_text_field.dart';
+import 'package:smarttrip/widgets/common/danago_logo.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/api_client.dart';
 
@@ -156,25 +157,9 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 20),
               // 1. logo
-              Container(
-                width: 120,
-                height: 120,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Image.asset(
-                  'assets/images/Logo.png',
-                  fit: BoxFit.contain,
-                ),
+              const DanaGoLogo.vertical(
+                markSize: 68,
+                fontSize: 26,
               ),
               const SizedBox(height: 24),
               const Text('Xin chào!', style: AppTextStyles.titleBold),

@@ -298,6 +298,11 @@ class _FeedScreenState extends State<FeedScreen> {
                     key: ValueKey(post.id),
                     post: post,
                     onPostUpdated: () => setState(() {}),
+                    onPostDeleted: () {
+                      setState(() {
+                        _posts.removeWhere((p) => p.id == post.id);
+                      });
+                    },
                   );
                 }, childCount: _posts.length),
               ),

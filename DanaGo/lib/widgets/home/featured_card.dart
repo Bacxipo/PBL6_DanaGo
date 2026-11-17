@@ -35,6 +35,7 @@ class FeaturedCard extends StatelessWidget {
                 child: item.imageUrl.isNotEmpty
                     ? Image.network(
                         item.imageUrl,
+                        cacheWidth: 500,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           color: AppColors.bgSecondary,

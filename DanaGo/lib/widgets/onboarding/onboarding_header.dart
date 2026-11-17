@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smarttrip/widgets/common/danago_logo.dart';
 
 class OnboardingHeader extends StatelessWidget {
   final VoidCallback onSkip;
@@ -18,15 +19,19 @@ class OnboardingHeader extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
+                  horizontal: 12,
+                  vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color.fromRGBO(255, 255, 255, 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white38, width: 0.8),
+                  color: const Color.fromRGBO(0, 59, 66, 0.55),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: Colors.white38, width: 0.9),
                 ),
-                child: Image.asset('assets/images/Logo.png', height: 24),
+                child: const DanaGoLogo.horizontal(
+                  markSize: 22,
+                  fontSize: 16,
+                  onDark: true,
+                ),
               ),
               GestureDetector(
                 onTap: onSkip,

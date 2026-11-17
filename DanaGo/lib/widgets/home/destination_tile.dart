@@ -38,6 +38,7 @@ class DestinationTile extends StatelessWidget {
                       item.imageUrl,
                       width: 72,
                       height: 72,
+                      cacheWidth: 200,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         width: 72,

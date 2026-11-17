@@ -65,13 +65,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    final profile = await AuthService.instance.getProfile();
+    final results = await Future.wait<dynamic>([
+      AuthService.instance.getProfile(),
+      FavoriteService.instance.getFavorites(),
+      ReviewService.instance.getMyReviews(),
+    ]);
+    final profile = results[0] as Map<String, dynamic>?;
     final userId = (profile?['id'] as num?)?.toInt();
-    await FavoriteService.instance.getFavorites();
-    await ReviewService.instance.getMyReviews();
     if (userId != null) {
-      await ItineraryService.instance.getUserItineraries(userId);
-      NotificationService.instance.refreshUnreadCount(userId: userId);
+      await Future.wait([
+        ItineraryService.instance.getUserItineraries(userId),
+        NotificationService.instance.refreshUnreadCount(userId: userId),
+      ]);
     }
     if (mounted) {
       setState(() {

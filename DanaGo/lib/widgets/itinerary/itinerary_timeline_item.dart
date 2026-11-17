@@ -159,6 +159,7 @@ class ItineraryTimelineItem extends StatelessWidget {
                                   place.imageUrl,
                                   width: 76,
                                   height: 76,
+                                  cacheWidth: 200,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, _, _) => Container(
                                     width: 76,

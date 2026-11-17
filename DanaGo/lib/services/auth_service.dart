@@ -14,6 +14,15 @@ class AuthService extends ChangeNotifier {
   static final AuthService instance = AuthService._();
 
   static const _storage = FlutterSecureStorage();
+  Map<String, dynamic>? _cachedProfile;
+  Future<Map<String, dynamic>?>? _inflightProfile;
+
+  int? get cachedUserId => (_cachedProfile?['id'] as num?)?.toInt();
+
+  void invalidateProfileCache() {
+    _cachedProfile = null;
+  }
+
   //Đăng nhập
   Future<Map<String, dynamic>> login({
     required String emailOrUsername,
@@ -27,6 +36,7 @@ class AuthService extends ChangeNotifier {
     if (response is Map<String, dynamic> && response['accessToken'] != null) {
       final token = response['accessToken'] as String;
       await _storage.write(key: 'accessToken', value: token);
+      _cachedProfile = null;
       notifyListeners();
     }
     return response as Map<String, dynamic>;
@@ -52,20 +62,44 @@ class AuthService extends ChangeNotifier {
     if (response is Map<String, dynamic> && response['accessToken'] != null) {
       final token = response['accessToken'] as String;
       await _storage.write(key: 'accessToken', value: token);
+      _cachedProfile = null;
       notifyListeners();
     }
 
     return response as Map<String, dynamic>;
   }
 
-  // Lấy tt người dùng
-  Future<Map<String, dynamic>?> getProfile() async {
-    try {
-      final response = await ApiClient.instance.get('/identity/users/me');
-      return response as Map<String, dynamic>?;
-    } catch (_) {
-      return null;
+  // Lấy tt người dùng (có cache trong RAM + gộp các request trùng thời điểm)
+  Future<Map<String, dynamic>?> getProfile({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedProfile != null) {
+      return _cachedProfile;
     }
+    if (!forceRefresh && _inflightProfile != null) {
+      return _inflightProfile;
+    }
+
+    final future = () async {
+      try {
+        final token = await _storage.read(key: 'accessToken');
+        if (token == null || token.isEmpty) {
+          _cachedProfile = null;
+          return null;
+        }
+        final response = await ApiClient.instance.get('/identity/users/me');
+        if (response is Map<String, dynamic>) {
+          _cachedProfile = response;
+          return response;
+        }
+        return null;
+      } catch (_) {
+        return null;
+      } finally {
+        _inflightProfile = null;
+      }
+    }();
+
+    _inflightProfile = future;
+    return future;
   }
 
   // cập nhật thông tin
@@ -85,6 +119,11 @@ class AuthService extends ChangeNotifier {
           if (categoryIds != null) 'categoryIds': categoryIds,
         },
       );
+      if (reponse is Map<String, dynamic>) {
+        _cachedProfile = reponse;
+      } else {
+        _cachedProfile = null;
+      }
       notifyListeners();
       return reponse as Map<String, dynamic>?;
     } catch (_) {
@@ -115,8 +154,14 @@ class AuthService extends ChangeNotifier {
       final res = await http.Response.fromStream(streameRes);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         final data = jsonDecode(res.body);
+        final newAvatarUrl = data['avatarUrl'] as String?;
+        if (_cachedProfile != null && newAvatarUrl != null) {
+          _cachedProfile = {..._cachedProfile!, 'avatarUrl': newAvatarUrl};
+        } else {
+          _cachedProfile = null;
+        }
         notifyListeners();
-        return data['avatarUrl'] as String?;
+        return newAvatarUrl;
       }
       return null;
     } catch (_) {
@@ -126,6 +171,8 @@ class AuthService extends ChangeNotifier {
 
   // Đăng xuất
   Future<void> logout() async {
+    _cachedProfile = null;
+    _inflightProfile = null;
     await _storage.delete(key: 'accessToken');
     await _storage.delete(key: 'has_chosen_preferences');
     FavoriteService.instance.clear();

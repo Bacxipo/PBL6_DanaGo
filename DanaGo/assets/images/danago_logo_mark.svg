@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="pinGrad" x1="20" y1="12" x2="100" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#008994"/>
+      <stop offset="55%" stop-color="#006971"/>
+      <stop offset="100%" stop-color="#004D54"/>
+    </linearGradient>
+    <linearGradient id="sunGrad" x1="42" y1="26" x2="78" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFB347"/>
+      <stop offset="100%" stop-color="#FF6B3D"/>
+    </linearGradient>
+    <clipPath id="pinClip">
+      <path d="M60 8C37.909 8 20 25.909 20 48C20 75.5 52.6 105.6 57.6 110.2C58.95 111.45 61.05 111.45 62.4 110.2C67.4 105.6 100 75.5 100 48C100 25.909 82.091 8 60 8Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Main location pin silhouette -->
+  <path d="M60 8C37.909 8 20 25.909 20 48C20 75.5 52.6 105.6 57.6 110.2C58.95 111.45 61.05 111.45 62.4 110.2C67.4 105.6 100 75.5 100 48C100 25.909 82.091 8 60 8Z" fill="url(#pinGrad)"/>
+
+  <!-- Inner circular sky window -->
+  <circle cx="60" cy="46" r="24" fill="#FFFFFF"/>
+
+  <!-- Sunset coral compass star inside the sky -->
+  <g transform="translate(60, 44)">
+    <!-- 4-point compass rays -->
+    <path d="M0 -15L3.4 -4.6L14 0L3.4 4.6L0 15L-3.4 4.6L-14 0L-3.4 -4.6Z" fill="url(#sunGrad)"/>
+    <!-- Diagonal micro rays -->
+    <path d="M-8.5 -8.5L-2.5 -4.2L-4.2 -2.5Z" fill="#FF8A5B"/>
+    <path d="M8.5 -8.5L4.2 -2.5L2.5 -4.2Z" fill="#FF8A5B"/>
+    <path d="M8.5 8.5L2.5 4.2L4.2 2.5Z" fill="#FF8A5B"/>
+    <path d="M-8.5 8.5L-4.2 2.5L-2.5 4.2Z" fill="#FF8A5B"/>
+    <!-- Center compass hub -->
+    <circle cx="0" cy="0" r="3.4" fill="#FFFFFF"/>
+    <circle cx="0" cy="0" r="1.5" fill="#006971"/>
+  </g>
+
+  <!-- Stylized Da Nang ocean waves sweeping across lower pin -->
+  <g clip-path="url(#pinClip)">
+    <!-- White wave crest 1 -->
+    <path d="M16 64C28 54 44 55 58 63C69 69.5 82 69 91 60C87 69 78 75 66 75C52 75 41 64 28 65C22 65.5 18 68 16 70Z" fill="#FFFFFF"/>
+    <!-- White wave ribbon 2 -->
+    <path d="M22 76C34 69 47 72 59 79C70 85.5 81 84.5 92 77L90 83C79 90 67 91 55 84C44 77.5 33 76 24 81Z" fill="#FFFFFF" opacity="0.92"/>
+    <!-- Subtle lower foam curve -->
+    <path d="M35 91C45 87 55 89 65 94C72 97.5 78 96.5 84 93L80 99C73 102 65 101.5 57 97.5C49 93.5 42 92.5 37 95Z" fill="#FFFFFF" opacity="0.72"/>
+  </g>
+</svg>

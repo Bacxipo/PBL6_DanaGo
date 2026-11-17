@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -28,6 +29,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _aiCtrl = TextEditingController();
   final MapController _mapController = MapController();
+  Timer? _searchDebounce;
   SearchFilterModel _currentFilter = const SearchFilterModel();
   final Set<String> _activeChips = {'Gần tôi', 'Đang mở cửa'};
   SearchResultItem? _selectedPlace;
@@ -133,10 +135,18 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     _aiCtrl.dispose();
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _onSearchQueryChanged(String _) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _handleAiSearch(String queryText) async {
@@ -524,7 +534,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
               },
               onFilterTap: _openFilterBottomSheet,
               activeChips: _activeChips,
-              onSearchChanged: (_) => setState(() {}),
+              onSearchChanged: _onSearchQueryChanged,
               onChipToggle: (label) {
                 setState(() {
                   _activeChips.contains(label)

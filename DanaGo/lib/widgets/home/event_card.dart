@@ -57,6 +57,7 @@ class EventCard extends StatelessWidget {
                     if (event.coverImage.isNotEmpty)
                       Image.network(
                         event.coverImage,
+                        cacheWidth: 500,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => _placeholderCover(),
                       )

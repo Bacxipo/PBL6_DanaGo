@@ -44,6 +44,7 @@ class SearchResultCard extends StatelessWidget {
                 item.imageUrl,
                 width: 95,
                 height: 95,
+                cacheWidth: 240,
                 fit: BoxFit.cover,
                 errorBuilder: (ctx, err, _) => Container(
                   width: 95,

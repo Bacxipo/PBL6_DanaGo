@@ -267,7 +267,17 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
                     physics: const AlwaysScrollableScrollPhysics(),
                     itemCount: _userPosts.length,
                     itemBuilder: (context, index) {
-                      return FeedPostCard(post: _userPosts[index]);
+                      final post = _userPosts[index];
+                      return FeedPostCard(
+                        key: ValueKey(post.id),
+                        post: post,
+                        onPostUpdated: () => setState(() {}),
+                        onPostDeleted: () {
+                          setState(() {
+                            _userPosts.removeWhere((p) => p.id == post.id);
+                          });
+                        },
+                      );
                     },
                   ),
 
@@ -359,7 +369,17 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: questions.length,
       itemBuilder: (context, index) {
-        return FeedPostCard(post: questions[index]);
+        final post = questions[index];
+        return FeedPostCard(
+          key: ValueKey(post.id),
+          post: post,
+          onPostUpdated: () => setState(() {}),
+          onPostDeleted: () {
+            setState(() {
+              _userPosts.removeWhere((p) => p.id == post.id);
+            });
+          },
+        );
       },
     );
   }

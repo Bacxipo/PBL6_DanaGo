@@ -39,6 +39,7 @@ class ItineraryCard extends StatelessWidget {
               // Cover image
               Image.network(
                 itinerary.coverImage,
+                cacheWidth: 700,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => Container(
                   color: AppColors.primary,

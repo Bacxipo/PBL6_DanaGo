@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="sunGradW" x1="42" y1="26" x2="78" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFD166"/>
+      <stop offset="100%" stop-color="#FF7F50"/>
+    </linearGradient>
+    <clipPath id="pinClipW">
+      <path d="M60 8C37.909 8 20 25.909 20 48C20 75.5 52.6 105.6 57.6 110.2C58.95 111.45 61.05 111.45 62.4 110.2C67.4 105.6 100 75.5 100 48C100 25.909 82.091 8 60 8Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Crisp white location pin silhouette -->
+  <path d="M60 8C37.909 8 20 25.909 20 48C20 75.5 52.6 105.6 57.6 110.2C58.95 111.45 61.05 111.45 62.4 110.2C67.4 105.6 100 75.5 100 48C100 25.909 82.091 8 60 8Z" fill="#FFFFFF"/>
+
+  <!-- Inner deep teal sky window -->
+  <circle cx="60" cy="46" r="24" fill="#00555D"/>
+
+  <!-- Radiant sunset compass star -->
+  <g transform="translate(60, 44)">
+    <path d="M0 -15L3.4 -4.6L14 0L3.4 4.6L0 15L-3.4 4.6L-14 0L-3.4 -4.6Z" fill="url(#sunGradW)"/>
+    <path d="M-8.5 -8.5L-2.5 -4.2L-4.2 -2.5Z" fill="#FFB347"/>
+    <path d="M8.5 -8.5L4.2 -2.5L2.5 -4.2Z" fill="#FFB347"/>
+    <path d="M8.5 8.5L2.5 4.2L4.2 2.5Z" fill="#FFB347"/>
+    <path d="M-8.5 8.5L-4.2 2.5L-2.5 4.2Z" fill="#FFB347"/>
+    <circle cx="0" cy="0" r="3.4" fill="#00555D"/>
+    <circle cx="0" cy="0" r="1.5" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Deep teal wave ribbons cut across lower white pin -->
+  <g clip-path="url(#pinClipW)">
+    <path d="M16 64C28 54 44 55 58 63C69 69.5 82 69 91 60C87 69 78 75 66 75C52 75 41 64 28 65C22 65.5 18 68 16 70Z" fill="#00555D"/>
+    <path d="M22 76C34 69 47 72 59 79C70 85.5 81 84.5 92 77L90 83C79 90 67 91 55 84C44 77.5 33 76 24 81Z" fill="#00555D" opacity="0.9"/>
+    <path d="M35 91C45 87 55 89 65 94C72 97.5 78 96.5 84 93L80 99C73 102 65 101.5 57 97.5C49 93.5 42 92.5 37 95Z" fill="#00555D" opacity="0.72"/>
+  </g>
+</svg>

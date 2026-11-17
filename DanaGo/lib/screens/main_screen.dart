@@ -25,31 +25,56 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   late int _currentIndex;
-  late final List<Widget> _pages;
+  final List<Widget?> _pages = List<Widget?>.filled(6, null);
   Timer? _notifTimer;
+
+  Widget _buildPage(int index) {
+    switch (index) {
+      case 0:
+        return HomeScreen(
+          onSearchTap: () => _switchTab(1),
+        );
+      case 1:
+        return ExploreMapScreen(initialAiMode: widget.initialExploreAiMode);
+      case 2:
+        return const ItineraryScreen();
+      case 3:
+        return const FeedScreen();
+      case 4:
+        return const SuggestItineraryScreen();
+      case 5:
+        return const ProfileScreen();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  void _ensureTabBuilt(int index) {
+    if (index >= 0 && index < _pages.length && _pages[index] == null) {
+      _pages[index] = _buildPage(index);
+    }
+  }
+
+  void _switchTab(int index) {
+    setState(() {
+      _ensureTabBuilt(index);
+      _currentIndex = index;
+    });
+    if (index == 3 || index == 5) {
+      NotificationService.instance.refreshUnreadCount();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _currentIndex = widget.initialIndex;
-    _pages = [
-      HomeScreen(
-        onSearchTap: () {
-          setState(() {
-            _currentIndex = 1; // Chuyển sang Tab Khám phá (ExploreMapScreen)
-          });
-        },
-      ),
-      ExploreMapScreen(initialAiMode: widget.initialExploreAiMode),
-      const ItineraryScreen(),
-      const FeedScreen(),
-      const SuggestItineraryScreen(),
-      const ProfileScreen(),
-    ];
+    _currentIndex = widget.initialIndex.clamp(0, _pages.length - 1);
+    // Chỉ khởi tạo duy nhất tab đang mở ban đầu (lazy-load các tab khác khi bấm)
+    _ensureTabBuilt(_currentIndex);
 
     NotificationService.instance.refreshUnreadCount();
-    _notifTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       NotificationService.instance.refreshUnreadCount();
     });
   }
@@ -73,17 +98,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages.map((p) => p ?? const SizedBox.shrink()).toList(),
+      ),
       bottomNavigationBar: Container(
         color: theme.scaffoldBackgroundColor,
         child: CustomBottomNavBar(
           currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-            NotificationService.instance.refreshUnreadCount();
-          },
+          onTap: _switchTab,
         ),
       ),
     );

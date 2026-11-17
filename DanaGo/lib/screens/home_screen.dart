@@ -10,6 +10,7 @@ import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/destination_service.dart';
 import 'package:smarttrip/services/event_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
+import 'package:smarttrip/widgets/common/danago_logo.dart';
 import 'package:smarttrip/widgets/home/category_selector.dart';
 import 'package:smarttrip/widgets/home/destination_tile.dart';
 import 'package:smarttrip/widgets/home/event_card.dart';
@@ -73,37 +74,49 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadHomeData() async {
     setState(() => _isLoading = true);
     try {
-      int? currentUserId;
-      final profile = await AuthService.instance.getProfile();
-      if (profile != null && profile['id'] != null) {
-        currentUserId = (profile['id'] as num).toInt();
-      }
-      final categoriesFromDb = await DestinationService.instance
-          .getCategories();
-      final featured = await DestinationService.instance.getFeature(limit: 6);
-      final allEvents = await EventService.instance.getEvents();
+      // Đợt 1: Gọi song song Profile, Categories, Featured, Events và GPS cache
+      final batch1 = await Future.wait<dynamic>([
+        AuthService.instance.getProfile(),
+        DestinationService.instance.getCategories(),
+        DestinationService.instance.getFeature(limit: 6),
+        EventService.instance.getEvents(),
+        () async {
+          try {
+            return await Geolocator.getLastKnownPosition();
+          } catch (_) {
+            return null;
+          }
+        }(),
+      ]);
+
+      final profile = batch1[0] as Map<String, dynamic>?;
+      final categoriesFromDb = batch1[1] as List<Map<String, dynamic>>;
+      final featured = batch1[2] as List<DestinationItem>;
+      final allEvents = batch1[3] as List<EventItem>;
+      final pos = batch1[4] as Position?;
+
+      final int? currentUserId = (profile?['id'] as num?)?.toInt();
       final upcomingEvents = allEvents
           .where((e) => e.timelineStatus != EventTimelineStatus.ended)
           .toList()
         ..sort((a, b) => a.startDate.compareTo(b.startDate));
-      final recommended = await DestinationService.instance.getRecommended(
-        limit: 6,
-        userId: currentUserId,
-      );
-      double? lat;
-      double? lng;
-      try {
-        final pos = await Geolocator.getLastKnownPosition();
-        if (pos != null) {
-          lat = pos.latitude;
-          lng = pos.longitude;
-        }
-      } catch (_) {}
-      final nearby = await DestinationService.instance.getNearby(
-        lat: lat,
-        lng: lng,
-        limit: 6,
-      );
+
+      // Đợt 2: Gọi song song Recommended & Nearby
+      final batch2 = await Future.wait<List<DestinationItem>>([
+        DestinationService.instance.getRecommended(
+          limit: 6,
+          userId: currentUserId,
+        ),
+        DestinationService.instance.getNearby(
+          lat: pos?.latitude,
+          lng: pos?.longitude,
+          limit: 6,
+        ),
+      ]);
+
+      final recommended = batch2[0];
+      final nearby = batch2[1];
+
       if (mounted) {
         setState(() {
           if (categoriesFromDb.isNotEmpty) {
@@ -223,14 +236,9 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'DanaGo',
-          style: TextStyle(
-            fontFamily: 'Be Vietnam Pro',
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: AppColors.primary,
-          ),
+        title: const DanaGoLogo.horizontal(
+          markSize: 26,
+          fontSize: 20,
         ),
         centerTitle: false,
         actions: [

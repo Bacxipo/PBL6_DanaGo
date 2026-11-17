@@ -1,23 +1,19 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:smarttrip/config/auth_config.dart';
-import 'package:smarttrip/screens/onboarding_screen.dart';
+import 'package:smarttrip/screens/splash_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/theme_controller.dart';
-import 'package:smarttrip/screens/main_screen.dart';
-import 'package:smarttrip/services/api_client.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AuthConfig.load();
   await ThemeController.loadTheme();
-  final token = await ApiClient.instance.token;
-  runApp(MyApp(isLoggedIn: token != null && token.isNotEmpty));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final bool isLoggedIn;
-  const MyApp({super.key, this.isLoggedIn = false});
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -62,7 +58,7 @@ class MyApp extends StatelessWidget {
               child: ExcludeSemantics(child: child!),
             );
           },
-          home: isLoggedIn ? const MainScreen() : const OnboardingScreen(),
+          home: const SplashScreen(),
         );
       },
     );

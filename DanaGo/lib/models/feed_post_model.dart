@@ -65,7 +65,7 @@ class FeedPostModel {
   final bool isVerified;
   final String? locationName;
   final String? title;
-  final String content;
+  String content;
   final List<PostImageItem> images;
   final bool isCollageBanner;
   final String? bannerHighlightTitle;

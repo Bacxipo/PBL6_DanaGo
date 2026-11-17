@@ -128,6 +128,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       onPostUpdated: () {
                         if (mounted) setState(() {});
                       },
+                      onPostDeleted: () {
+                        if (mounted) Navigator.pop(context, true);
+                      },
                     ),
                   ),
                 ),

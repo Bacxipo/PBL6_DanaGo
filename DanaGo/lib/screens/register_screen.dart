@@ -4,6 +4,7 @@ import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/utils/validators.dart';
 import 'package:smarttrip/widgets/common/custom_text_field.dart';
+import 'package:smarttrip/widgets/common/danago_logo.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/api_client.dart';
 
@@ -117,25 +118,9 @@ class _SignupScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 12),
-              Container(
-                width: 80,
-                height: 80,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Image.asset(
-                  'assets/images/Logo.png',
-                  fit: BoxFit.contain,
-                ),
+              const DanaGoLogo.vertical(
+                markSize: 56,
+                fontSize: 22,
               ),
               const SizedBox(height: 8),
               const Text(
