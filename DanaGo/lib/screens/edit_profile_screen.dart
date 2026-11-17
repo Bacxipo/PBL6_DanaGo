@@ -45,6 +45,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
     _bioController = TextEditingController(text: widget.userData['bio'] ?? '');
     _avatarUrl = widget.userData['avatar'];
+    if (widget.userData['gender'] is String &&
+        (widget.userData['gender'] as String).isNotEmpty) {
+      _selectedGender = widget.userData['gender'] as String;
+    }
+    if (widget.userData['birthDate'] is String) {
+      _birthDate = DateTime.tryParse(widget.userData['birthDate'] as String);
+    } else if (widget.userData['birthDate'] is DateTime) {
+      _birthDate = widget.userData['birthDate'] as DateTime;
+    }
 
     // Listen for changes
     for (var c in [
@@ -557,11 +566,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final results = await Future.wait([
         DestinationService.instance.getCategories(),
         AuthService.instance.getPreferences(),
+        AuthService.instance.getProfile(),
       ]);
+      final profile = results[2] as Map<String, dynamic>?;
+      final userId = (profile?['id'] as num?)?.toInt();
+      Map<String, dynamic> extras = {};
+      if (userId != null) {
+        extras = await AuthService.instance.getLocalProfileExtras(userId);
+      }
       if (mounted) {
+        final dbPhone = (profile?['phoneNumber'] as String?) ?? '';
+        final hadChangesBefore = _hasChanges;
+        if (_phoneController.text.trim().isEmpty && dbPhone.isNotEmpty) {
+          _phoneController.text = dbPhone;
+        }
         setState(() {
           _categories = results[0] as List<Map<String, dynamic>>;
           _selectedCategoryIds.addAll(results[1] as List<int>);
+          if (extras['gender'] is String &&
+              (extras['gender'] as String).isNotEmpty) {
+            _selectedGender = extras['gender'] as String;
+          }
+          if (extras['birthDate'] is String && _birthDate == null) {
+            _birthDate = DateTime.tryParse(extras['birthDate'] as String);
+          }
+          _hasChanges = hadChangesBefore;
           _isLoadingCategories = false;
         });
       }
@@ -757,7 +786,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
       return;
     }
-    final phone = _phoneController.text.trim();
+    final phone = _phoneController.text.replaceAll(RegExp(r'[\s().-]'), '').trim();
     if (phone.isNotEmpty && !RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -779,12 +808,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isSaving = false);
 
     if (updated != null) {
+      final userId = (updated['id'] as num?)?.toInt() ??
+          AuthService.instance.cachedUserId;
+      if (userId != null) {
+        await AuthService.instance.saveLocalProfileExtras(
+          userId,
+          gender: _selectedGender,
+          birthDate: _birthDate,
+        );
+      }
+      if (!mounted) return;
       final result = {
         'name': name,
         'email': _emailController.text,
         'phone': phone,
         'bio': _bioController.text.trim(),
         'avatar': _avatarUrl,
+        'gender': _selectedGender,
+        if (_birthDate != null) 'birthDate': _birthDate!.toIso8601String(),
       };
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

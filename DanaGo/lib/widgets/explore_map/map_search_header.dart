@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/search_filter_model.dart';
 import 'package:smarttrip/theme/app_colors.dart';
+import 'package:smarttrip/widgets/common/liquid_glass_surface.dart';
 import 'package:smarttrip/widgets/search/search_filter_chip.dart';
 
 class MapSearchHeader extends StatelessWidget {
@@ -56,19 +57,9 @@ class MapSearchHeader extends StatelessWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Container(
+            child: LiquidGlassSurface(
+              borderRadius: BorderRadius.circular(22),
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.1),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

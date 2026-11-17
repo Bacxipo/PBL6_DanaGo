@@ -105,13 +105,14 @@ class _FeedScreenState extends State<FeedScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'Bảng tin',
                             style: TextStyle(
                               fontFamily: 'Be Vietnam Pro',
-                              fontSize: 26,
+                              fontSize: 30,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
+                              letterSpacing: -0.6,
+                              color: AppColors.labelPrimary(context),
                             ),
                           ),
                           ListenableBuilder(
@@ -132,22 +133,30 @@ class _FeedScreenState extends State<FeedScreen> {
                                   NotificationService.instance
                                       .refreshUnreadCount();
                                 },
-                                child: SizedBox(
+                                child: Container(
                                   width: 44,
                                   height: 44,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceGrouped(context),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.hairlineBorder(context),
+                                      width: 0.9,
+                                    ),
+                                  ),
                                   child: Stack(
                                     clipBehavior: Clip.none,
                                     alignment: Alignment.center,
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.notifications_none_rounded,
-                                        color: AppColors.primary,
-                                        size: 27,
+                                        color: AppColors.accentOf(context),
+                                        size: 24,
                                       ),
                                       if (unread > 0)
                                         Positioned(
-                                          right: 3,
-                                          top: 3,
+                                          right: 2,
+                                          top: 2,
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 5,
@@ -162,9 +171,9 @@ class _FeedScreenState extends State<FeedScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(10),
                                               border: Border.all(
-                                                color: Theme.of(
+                                                color: AppColors.surfaceGrouped(
                                                   context,
-                                                ).scaffoldBackgroundColor,
+                                                ),
                                                 width: 1.5,
                                               ),
                                             ),
@@ -307,26 +316,29 @@ class _FeedScreenState extends State<FeedScreen> {
                 }, childCount: _posts.length),
               ),
 
-              // Bottom padding for scroll clearance above bottom nav bar
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              // Bottom padding for scroll clearance above floating Liquid Glass tab bar
+              const SliverToBoxAdapter(child: SizedBox(height: 150)),
             ],
           ),
         ),
       ),
-      // Floating Action Button "Viết bài"
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'feed_fab',
-        onPressed: _openCreatePost,
-        backgroundColor: AppColors.primary,
-        elevation: 3,
-        icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
-        label: const Text(
-          'Viết bài',
-          style: TextStyle(
-            fontFamily: 'Be Vietnam Pro',
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+      // Floating Action Button "Viết bài" lifted above floating Liquid Glass tab bar
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 78),
+        child: FloatingActionButton.extended(
+          heroTag: 'feed_fab',
+          onPressed: _openCreatePost,
+          backgroundColor: AppColors.primary,
+          elevation: 3,
+          icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+          label: const Text(
+            'Viết bài',
+            style: TextStyle(
+              fontFamily: 'Be Vietnam Pro',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
         ),
       ),

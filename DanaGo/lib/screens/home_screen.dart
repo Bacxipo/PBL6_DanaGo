@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:smarttrip/models/destination_item.dart';
 import 'package:smarttrip/models/event_item.dart';
 import 'package:smarttrip/screens/detail_place_screen.dart';
@@ -215,6 +217,316 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  int _todaySpotlightIndex(int length) {
+    if (length <= 1) return 0;
+    final now = DateTime.now();
+    final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+    return dayOfYear % length;
+  }
+
+  Widget _buildHeroSpotlightCard(DestinationItem item) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        _navigateToDetail(item);
+      },
+      child: Container(
+        height: 296,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.38 : 0.14),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(26),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              item.imageUrl.isNotEmpty
+                  ? Image.network(
+                      item.imageUrl,
+                      cacheWidth: 900,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          Container(color: AppColors.primaryDark),
+                    )
+                  : Container(color: AppColors.primaryDark),
+              // Subtle top vignette
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.28),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.40),
+                      ],
+                      stops: const [0.0, 0.35, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              // Top-left Apple "Today" eyebrow glass pill
+              Positioned(
+                top: 16,
+                left: 16,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.36),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.26),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 13,
+                            color: Color(0xFFFFB347),
+                          ),
+                          SizedBox(width: 5),
+                          Text(
+                            'NỔI BẬT HÔM NAY',
+                            style: TextStyle(
+                              fontFamily: 'Be Vietnam Pro',
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.9,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Bottom Apple App Store frosted glass caption bar
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(18, 14, 16, 16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.28),
+                            Colors.black.withValues(alpha: 0.68),
+                          ],
+                        ),
+                        border: Border(
+                          top: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.22),
+                            width: 0.8,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  item.category.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'Be Vietnam Pro',
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white.withValues(alpha: 0.82),
+                                    letterSpacing: 0.9,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  item.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontFamily: 'Be Vietnam Pro',
+                                    fontSize: 21,
+                                    height: 1.18,
+                                    letterSpacing: -0.4,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      size: 15,
+                                      color: Color(0xFFFFB347),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      item.rating.toStringAsFixed(1),
+                                      style: const TextStyle(
+                                        fontFamily: 'Be Vietnam Pro',
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    if (item.tag.isNotEmpty) ...[
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          '• ${item.tag}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontFamily: 'Be Vietnam Pro',
+                                            fontSize: 12,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.85,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Khám phá',
+                              style: TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupedDestinationList(List<DestinationItem> items) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceGrouped(context),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: AppColors.hairlineBorder(context),
+          width: 0.85,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Column(
+          children: List.generate(items.length, (i) {
+            final item = items[i];
+            return DestinationTile(
+              item: item,
+              grouped: true,
+              showDivider: i < items.length - 1,
+              onTap: () => _navigateToDetail(item),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, VoidCallback onSeeAll) {
+    final accent = AppColors.accentOf(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'Be Vietnam Pro',
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+              color: AppColors.labelPrimary(context),
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: onSeeAll,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Xem tất cả',
+                  style: TextStyle(
+                    fontFamily: 'Be Vietnam Pro',
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: accent,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Icon(Icons.chevron_right_rounded, size: 18, color: accent),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -323,88 +635,65 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 24),
               if (isAll) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Nổi bật tại Đà Nẵng',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showAllFeatured(),
-                      child: const Text(
-                        'Xem tất cả',
-                        style: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  height: 180,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _featuredPlaces.length,
-                    itemBuilder: (context, index) {
-                      final item = _featuredPlaces[index];
-                      return FeaturedCard(
-                        item: item,
-                        onTap: () => _navigateToDetail(item),
+                // 1. Apple App Store "Today" Hero Spotlight Card (tự xoay theo ngày)
+                if (_featuredPlaces.isNotEmpty) ...[
+                  Builder(
+                    builder: (context) {
+                      final spotlightIdx = _todaySpotlightIndex(
+                        _featuredPlaces.length,
+                      );
+                      final spotlightItem = _featuredPlaces[spotlightIdx];
+                      final otherFeatured = <DestinationItem>[
+                        for (int i = 0; i < _featuredPlaces.length; i++)
+                          if (i != spotlightIdx) _featuredPlaces[i],
+                      ];
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeroSpotlightCard(spotlightItem),
+                          const SizedBox(height: 28),
+                          if (otherFeatured.isNotEmpty) ...[
+                            _buildSectionHeader(
+                              'Nổi bật tại Đà Nẵng',
+                              _showAllFeatured,
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              height: 262,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: otherFeatured.length,
+                                itemBuilder: (context, index) {
+                                  final item = otherFeatured[index];
+                                  return FeaturedCard(
+                                    item: item,
+                                    onTap: () => _navigateToDetail(item),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                          ],
+                        ],
                       );
                     },
                   ),
-                ),
-                const SizedBox(height: 24),
+                ],
 
-                // Section: Upcoming Events (Đồng bộ với Web User)
+                // 3. Upcoming Events (Đồng bộ với Web User)
                 if (_upcomingEvents.isNotEmpty) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Sự kiện sắp diễn ra',
-                        style: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : AppColors.textPrimary,
-                        ),
+                  _buildSectionHeader('Sự kiện sắp diễn ra', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EventsScreen(),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const EventsScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Xem tất cả',
-                          style: TextStyle(
-                            fontFamily: 'Be Vietnam Pro',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
+                    );
+                  }),
+                  const SizedBox(height: 12),
                   SizedBox(
-                    height: 266,
+                    height: 268,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
@@ -434,83 +723,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                 ],
 
-                // Section 2: Recommended
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Gợi ý cho bạn',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showAllRecommended(),
-                      child: const Text(
-                        'Xem tất cả',
-                        style: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
+                // 4. Recommended — True Apple Inset-Grouped Table Container
+                _buildSectionHeader('Gợi ý cho bạn', _showAllRecommended),
+                const SizedBox(height: 12),
+                _buildGroupedDestinationList(
+                  _recommendedPlaces.take(4).toList(),
                 ),
-                const SizedBox(height: 14),
-                Column(
-                  children: _recommendedPlaces.take(3).map((item) {
-                    return DestinationTile(
-                      item: item,
-                      onTap: () => _navigateToDetail(item),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 28),
 
-                // Section 3: Nearby
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Gần bạn',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showAllNearby(),
-                      child: const Text(
-                        'Xem tất cả',
-                        style: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Column(
-                  children: _nearbyPlaces.take(3).map((item) {
-                    return DestinationTile(
-                      item: item,
-                      onTap: () => _navigateToDetail(item),
-                    );
-                  }).toList(),
-                ),
+                // 5. Nearby — True Apple Inset-Grouped Table Container
+                _buildSectionHeader('Gần bạn', _showAllNearby),
+                const SizedBox(height: 12),
+                _buildGroupedDestinationList(_nearbyPlaces.take(4).toList()),
               ] else ...[
                 const SizedBox(height: 16),
                 Row(
@@ -639,7 +866,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     }).toList(),
                   ),
               ],
-              const SizedBox(height: 30),
+              const SizedBox(height: 110),
             ],
           ),
         ),

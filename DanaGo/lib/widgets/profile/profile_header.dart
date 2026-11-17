@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
+/// Authentic Apple Account / iOS Settings Profile Header:
+/// Clean grouped canvas, centered elevated avatar with camera badge,
+/// crisp Apple display typography, zero boxy full-bleed color banner.
 class ProfileHeader extends StatelessWidget {
   final Map<String, dynamic> user;
   final VoidCallback? onEditAvatar;
@@ -16,148 +19,192 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = AppColors.accentOf(context);
+
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 16,
+        top: MediaQuery.of(context).padding.top + 12,
         left: 20,
         right: 20,
-        bottom: 20,
-      ),
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withValues(alpha: 0.85),
-          ],
-        ),
+        bottom: 12,
       ),
       child: Column(
         children: [
-          // App bar row
+          // Apple Large Title top bar
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Hồ sơ',
+              Text(
+                'Tài khoản',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  fontFamily: 'Be Vietnam Pro',
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                  color: AppColors.labelPrimary(context),
                 ),
               ),
-              IconButton(
-                onPressed: onSettingsTap ?? () {},
-                icon: const Icon(Icons.settings_outlined, color: Colors.white),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Avatar
-          Stack(
-            children: [
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primaryLight,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+              InkWell(
+                onTap: onSettingsTap ?? () {},
+                borderRadius: BorderRadius.circular(22),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceGrouped(context),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.hairlineBorder(context),
+                      width: 0.9,
                     ),
-                  ],
-                ),
-                child: ClipOval(child: _buildAvatar(user['avatar'])),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: onEditAvatar,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      size: 14,
-                      color: Colors.white,
-                    ),
+                  ),
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 19,
+                    color: accent,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
 
-          // Name
-          Text(
-            user['name'] ?? 'Chưa cập nhật',
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Email
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.email_outlined,
-                size: 14,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                user['email'] ?? '',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-
-          // Bio
-          if (user['bio'] != null)
-            Text(
-              user['bio'],
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.7),
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          const SizedBox(height: 6),
-
-          // Join date
+          // Centered Apple Account Avatar Card
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              'Tham gia từ ${user['joinDate'] ?? ''}',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.8),
+              color: AppColors.surfaceGrouped(context),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: AppColors.hairlineBorder(context),
+                width: 0.85,
               ),
+            ),
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      width: 92,
+                      height: 92,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            accent.withValues(alpha: 0.7),
+                            AppColors.secondary.withValues(alpha: 0.7),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.3 : 0.08,
+                            ),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.surfaceGrouped(context),
+                        ),
+                        padding: const EdgeInsets.all(2),
+                        child: ClipOval(child: _buildAvatar(user['avatar'])),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: onEditAvatar,
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.surfaceGrouped(context),
+                              width: 2.2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                Text(
+                  user['name'] ?? 'Chưa cập nhật',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Be Vietnam Pro',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                    color: AppColors.labelPrimary(context),
+                  ),
+                ),
+                const SizedBox(height: 3),
+
+                Text(
+                  user['email'] ?? '',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Be Vietnam Pro',
+                    fontSize: 13.5,
+                    color: AppColors.labelSecondary(context),
+                  ),
+                ),
+                if (user['bio'] != null &&
+                    user['bio'].toString().trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    user['bio'].toString(),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Be Vietnam Pro',
+                      fontSize: 13,
+                      height: 1.4,
+                      color: AppColors.labelSecondary(context),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceTertiary(context),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    'Thành viên từ ${user['joinDate'] ?? ''}',
+                    style: TextStyle(
+                      fontFamily: 'Be Vietnam Pro',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.labelSecondary(context),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -166,21 +213,23 @@ class ProfileHeader extends StatelessWidget {
   }
 
   Widget _buildAvatar(dynamic avatar) {
-    if (avatar is String && avatar.isNotEmpty) {
-      if (avatar.startsWith('http')) {
+    final avatarStr = avatar?.toString() ?? '';
+    if (avatarStr.isNotEmpty) {
+      if (avatarStr.startsWith('http')) {
         return Image.network(
-          avatar,
+          avatarStr,
+          cacheWidth: 200,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => SvgPicture.asset(
+          errorBuilder: (_, _, _) => SvgPicture.asset(
             'assets/images/default-avatar.svg',
             fit: BoxFit.cover,
           ),
         );
       }
-      if (avatar.endsWith('.svg')) {
-        return SvgPicture.asset(avatar, fit: BoxFit.cover);
+      if (avatarStr.endsWith('.svg')) {
+        return SvgPicture.asset(avatarStr, fit: BoxFit.cover);
       }
-      return Image.asset(avatar, fit: BoxFit.cover);
+      return Image.asset(avatarStr, fit: BoxFit.cover);
     }
     return SvgPicture.asset(
       'assets/images/default-avatar.svg',

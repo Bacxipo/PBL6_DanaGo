@@ -117,19 +117,25 @@ class MapDraggableSheet extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            color: AppColors.surfaceGrouped(context),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            border: Border(
+              top: BorderSide(
+                color: AppColors.hairlineBorder(context),
+                width: 0.9,
+              ),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
-                blurRadius: 12,
-                spreadRadius: 2,
+                color: Colors.black.withValues(alpha: isDark ? 0.34 : 0.10),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
               ),
             ],
           ),
           child: ListView.builder(
             controller: scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 112),
             itemCount: itemCount,
             itemBuilder: (context, index) {
               if (index == 0) {

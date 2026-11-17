@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:smarttrip/models/itinerary_model.dart';
 import 'package:smarttrip/screens/login_screen.dart';
 import 'package:smarttrip/services/auth_service.dart';
@@ -248,7 +249,7 @@ class _ItineraryScreenState extends State<ItineraryScreen>
                                     16,
                                     8,
                                     16,
-                                    100,
+                                    150,
                                   ),
                                   itemCount: _filteredList.length,
                                   itemBuilder: (context, index) {
@@ -275,14 +276,17 @@ class _ItineraryScreenState extends State<ItineraryScreen>
           ],
         ),
       ),
-      floatingActionButton: ScaleTransition(
-        scale: _fabAnimation,
-        child: FloatingActionButton(
-          heroTag: 'itinerary_fab',
-          onPressed: _openCreateSheet,
-          backgroundColor: AppColors.primary,
-          elevation: 6,
-          child: const Icon(Icons.add, color: Colors.white, size: 28),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 78),
+        child: ScaleTransition(
+          scale: _fabAnimation,
+          child: FloatingActionButton(
+            heroTag: 'itinerary_fab',
+            onPressed: _openCreateSheet,
+            backgroundColor: AppColors.primary,
+            elevation: 4,
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
+          ),
         ),
       ),
     );
@@ -290,26 +294,32 @@ class _ItineraryScreenState extends State<ItineraryScreen>
 
   Widget _buildHeader(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Lịch trình của tôi',
+                'Lịch trình',
                 style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : AppColors.textPrimary,
+                  fontFamily: 'Be Vietnam Pro',
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                  color: AppColors.labelPrimary(context),
                 ),
               ),
+              const SizedBox(height: 2),
               Text(
-                '${_myItineraries.length} lịch trình',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textTertiary,
+                '${_myItineraries.length} chuyến đi đã lưu',
+                style: TextStyle(
+                  fontFamily: 'Be Vietnam Pro',
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.labelSecondary(context),
                 ),
               ),
             ],
@@ -319,51 +329,66 @@ class _ItineraryScreenState extends State<ItineraryScreen>
     );
   }
 
+  /// Authentic Apple iOS Segmented Control track with elevated sliding thumb
   Widget _buildFilterTabs(bool isDark) {
     return Container(
-      height: 44,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _filters.length,
-        itemBuilder: (context, index) {
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.all(3.5),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTertiary(context),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: List.generate(_filters.length, (index) {
           final isSelected = _selectedFilter == index;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedFilter = index),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary
-                    : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  if (isSelected)
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                ],
-              ),
-              child: Text(
-                _filters[index],
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                if (!isSelected) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedFilter = index);
+                }
+              },
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.white
-                      : (isDark
-                          ? Colors.grey.shade400
-                          : AppColors.textTertiary),
+                      ? AppColors.surfaceGrouped(context)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(11),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.30 : 0.08,
+                            ),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  _filters[index],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Be Vietnam Pro',
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.labelPrimary(context)
+                        : AppColors.labelSecondary(context),
+                  ),
                 ),
               ),
             ),
           );
-        },
+        }),
       ),
     );
   }

@@ -21,18 +21,15 @@ class SearchResultCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: AppColors.surfaceGrouped(context),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: AppColors.hairlineBorder(context),
+            width: 0.85,
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,10 +126,10 @@ class SearchResultCard extends StatelessWidget {
                       const SizedBox(width: 3),
                       Text(
                         '${item.rating}',
-                        style: const TextStyle(
-                          fontSize: 12,
+                        style: TextStyle(
+                          fontSize: 12.5,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: AppColors.labelPrimary(context),
                         ),
                       ),
                       const SizedBox(width: 8),

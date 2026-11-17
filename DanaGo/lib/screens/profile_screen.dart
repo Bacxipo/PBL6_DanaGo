@@ -72,11 +72,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ]);
     final profile = results[0] as Map<String, dynamic>?;
     final userId = (profile?['id'] as num?)?.toInt();
+    Map<String, dynamic> localExtras = {};
     if (userId != null) {
-      await Future.wait([
+      final extraResults = await Future.wait<dynamic>([
         ItineraryService.instance.getUserItineraries(userId),
         NotificationService.instance.refreshUnreadCount(userId: userId),
+        AuthService.instance.getLocalProfileExtras(userId),
       ]);
+      localExtras = extraResults[2] as Map<String, dynamic>;
     }
     if (mounted) {
       setState(() {
@@ -86,6 +89,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
           if (profile['email'] != null) {
             _user['email'] = profile['email'];
+          }
+          _user['phone'] = (profile['phoneNumber'] as String?) ?? '';
+          if (localExtras['gender'] != null) {
+            _user['gender'] = localExtras['gender'];
+          }
+          if (localExtras['birthDate'] != null) {
+            _user['birthDate'] = localExtras['birthDate'];
           }
           if (profile['avatarUrl'] != null &&
               (profile['avatarUrl'] as String).isNotEmpty) {

@@ -98,16 +98,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: _pages.map((p) => p ?? const SizedBox.shrink()).toList(),
       ),
-      bottomNavigationBar: Container(
-        color: theme.scaffoldBackgroundColor,
-        child: CustomBottomNavBar(
-          currentIndex: _currentIndex,
-          onTap: _switchTab,
-        ),
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _switchTab,
       ),
     );
   }

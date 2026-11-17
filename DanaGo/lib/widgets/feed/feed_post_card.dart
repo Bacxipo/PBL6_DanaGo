@@ -421,18 +421,15 @@ class _FeedPostCardState extends State<FeedPostCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.surfaceGrouped(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.hairlineBorder(context),
+          width: 0.85,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

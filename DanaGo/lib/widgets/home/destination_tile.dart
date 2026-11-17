@@ -1,49 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/destination_item.dart';
 import 'package:smarttrip/theme/app_colors.dart';
-// Gợi ý cho bạn
 
+/// Apple App Store / iOS Inset-Grouped List Row.
+/// Pass `grouped: true` inside an Apple grouped card container for seamless
+/// indented hairline dividers; `grouped: false` renders as a standalone card.
 class DestinationTile extends StatelessWidget {
   final DestinationItem item;
   final VoidCallback? onTap;
-  const DestinationTile({super.key, required this.item, this.onTap});
+  final bool grouped;
+  final bool showDivider;
+
+  const DestinationTile({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.grouped = false,
+    this.showDivider = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = AppColors.accentOf(context);
+    final metaTag = item.distance ?? item.tag;
 
-    return GestureDetector(
+    final rowContent = InkWell(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+      borderRadius: grouped ? BorderRadius.zero : BorderRadius.circular(20),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: grouped ? 14 : 12,
+          vertical: grouped ? 12 : 11,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               child: item.imageUrl.isNotEmpty
                   ? Image.network(
                       item.imageUrl,
-                      width: 72,
-                      height: 72,
-                      cacheWidth: 200,
+                      width: 66,
+                      height: 66,
+                      cacheWidth: 180,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 72,
-                        height: 72,
-                        color: AppColors.bgSecondary,
+                      errorBuilder: (_, _, _) => Container(
+                        width: 66,
+                        height: 66,
+                        color: AppColors.surfaceTertiary(context),
                         child: const Icon(
                           Icons.image_not_supported_outlined,
                           color: AppColors.textHint,
@@ -51,9 +56,9 @@ class DestinationTile extends StatelessWidget {
                       ),
                     )
                   : Container(
-                      width: 72,
-                      height: 72,
-                      color: AppColors.bgSecondary,
+                      width: 66,
+                      height: 66,
+                      color: AppColors.surfaceTertiary(context),
                       child: const Icon(
                         Icons.image_outlined,
                         color: AppColors.textHint,
@@ -66,70 +71,125 @@ class DestinationTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.category,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textHint,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
                     item.title,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13,
-                      height: 1.25,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      fontFamily: 'Be Vietnam Pro',
+                      fontSize: 15.5,
+                      height: 1.22,
+                      letterSpacing: -0.25,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.labelPrimary(context),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      item.distance ?? item.tag,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                  const SizedBox(height: 3),
+                  Text(
+                    item.category,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Be Vietnam Pro',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.labelSecondary(context),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
                   Row(
                     children: [
                       const Icon(
                         Icons.star_rounded,
-                        color: Colors.amber,
-                        size: 16,
+                        color: AppColors.starActive,
+                        size: 14,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       Text(
-                        item.rating.toString(),
+                        item.rating.toStringAsFixed(1),
                         style: TextStyle(
+                          fontFamily: 'Be Vietnam Pro',
                           fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.labelPrimary(context),
                         ),
                       ),
+                      if (metaTag.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '• $metaTag',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Be Vietnam Pro',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: accent,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+            // Apple App Store pill CTA button ("Xem")
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : AppColors.primary.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'Xem',
+                style: TextStyle(
+                  fontFamily: 'Be Vietnam Pro',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: accent,
+                ),
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+
+    if (grouped) {
+      return Column(
+        children: [
+          rowContent,
+          if (showDivider)
+            Padding(
+              padding: const EdgeInsets.only(left: 94),
+              child: Divider(
+                height: 0.6,
+                thickness: 0.6,
+                color: AppColors.hairlineBorder(context),
+              ),
+            ),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: AppColors.surfaceGrouped(context),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.hairlineBorder(context),
+              width: 0.85,
+            ),
+          ),
+          child: rowContent,
         ),
       ),
     );

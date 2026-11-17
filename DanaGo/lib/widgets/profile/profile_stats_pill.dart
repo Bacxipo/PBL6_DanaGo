@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
+/// Apple Health / Account 3-column grouped metrics bar
 class ProfileStatsPill extends StatelessWidget {
   final int tripsCount;
   final int reviewsCount;
@@ -21,22 +23,16 @@ class ProfileStatsPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      margin: const EdgeInsets.fromLTRB(20, 6, 20, 10),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(30), // Bo tròn dạng viên thuốc
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-            blurRadius: 16,
-            spreadRadius: 1,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.surfaceGrouped(context),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: AppColors.hairlineBorder(context),
+          width: 0.85,
+        ),
       ),
       child: Row(
         children: [
@@ -44,25 +40,22 @@ class ProfileStatsPill extends StatelessWidget {
             context: context,
             count: '$tripsCount',
             label: 'Lịch trình',
-            icon: Icons.map_rounded,
-            color: AppColors.primary,
+            color: AppColors.accentOf(context),
             onTap: onTripsTap,
           ),
-          _buildDividerVertical(isDark),
+          _buildDividerVertical(context),
           _buildStatItem(
             context: context,
             count: '$reviewsCount',
             label: 'Đánh giá',
-            icon: Icons.star_rounded,
-            color: AppColors.accentLight,
+            color: AppColors.starActive,
             onTap: onReviewsTap,
           ),
-          _buildDividerVertical(isDark),
+          _buildDividerVertical(context),
           _buildStatItem(
             context: context,
             count: '$favoritesCount',
             label: 'Yêu thích',
-            icon: Icons.favorite_rounded,
             color: AppColors.error,
             onTap: onFavoritesTap,
           ),
@@ -75,55 +68,52 @@ class ProfileStatsPill extends StatelessWidget {
     required BuildContext context,
     required String count,
     required String label,
-    required IconData icon,
     required Color color,
     VoidCallback? onTap,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Expanded(
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap?.call();
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            children: [
+              Text(
+                count,
+                style: TextStyle(
+                  fontFamily: 'Be Vietnam Pro',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                  color: color,
+                ),
               ),
-              child: Icon(icon, size: 20, color: color),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              count,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : AppColors.textPrimary,
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Be Vietnam Pro',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.labelSecondary(context),
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? const Color(0xFF94A3B8) : AppColors.textTertiary,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDividerVertical(bool isDark) {
+  Widget _buildDividerVertical(BuildContext context) {
     return Container(
-      width: 1,
-      height: 42,
-      color: isDark ? const Color(0xFF334155) : AppColors.divider,
+      width: 0.7,
+      height: 34,
+      color: AppColors.hairlineBorder(context),
     );
   }
 }
-

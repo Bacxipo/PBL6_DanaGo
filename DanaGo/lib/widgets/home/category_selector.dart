@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 
-// Thanh chọn danh mục cuộn ngang với icon trực quan
+// Thanh chọn danh mục cuộn ngang phong cách Apple HIG (clean pill + hairline border + haptic)
 class CategorySelector extends StatelessWidget {
   final List<String> categories;
   final int selectedIndex;
@@ -16,12 +17,8 @@ class CategorySelector extends StatelessWidget {
 
   IconData _getCategoryIcon(String category) {
     final lower = category.toLowerCase();
-    if (lower.contains('tất cả')) {
-      return Icons.explore_rounded;
-    }
-    if (lower.contains('biển')) {
-      return Icons.beach_access_rounded;
-    }
+    if (lower.contains('tất cả')) return Icons.explore_rounded;
+    if (lower.contains('biển')) return Icons.beach_access_rounded;
     if (lower.contains('ẩm thực') ||
         lower.contains('quán ăn') ||
         lower.contains('nhà hàng')) {
@@ -68,9 +65,10 @@ class CategorySelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = AppColors.primary;
 
     return SizedBox(
-      height: 42,
+      height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -81,47 +79,35 @@ class CategorySelector extends StatelessWidget {
           final icon = _getCategoryIcon(catName);
 
           return Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Material(
-              color: Colors.transparent,
+            padding: const EdgeInsets.only(right: 8),
+            child: Semantics(
+              button: true,
+              selected: isSelected,
+              label: catName,
               child: InkWell(
-                onTap: () => onSelect(index),
-                borderRadius: BorderRadius.circular(22),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onSelect(index);
+                },
+                borderRadius: BorderRadius.circular(20),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
+                  duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOutCubic,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: 14,
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primary
-                        : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                    borderRadius: BorderRadius.circular(22),
+                        ? activeColor
+                        : AppColors.surfaceGrouped(context),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? AppColors.primary
-                          : (isDark ? Colors.white12 : AppColors.border),
-                      width: 1,
+                          ? activeColor
+                          : AppColors.hairlineBorder(context),
+                      width: 0.9,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                        : [
-                            BoxShadow(
-                              color: Colors.black.withValues(
-                                alpha: isDark ? 0.2 : 0.02,
-                              ),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -129,22 +115,24 @@ class CategorySelector extends StatelessWidget {
                       Icon(
                         icon,
                         size: 16,
-                        color: isSelected ? Colors.white : AppColors.primary,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.accentOf(context),
                       ),
                       const SizedBox(width: 6),
                       Text(
                         catName,
                         style: TextStyle(
                           fontFamily: 'Be Vietnam Pro',
-                          color: isSelected
-                              ? Colors.white
-                              : (isDark
-                                    ? Colors.grey.shade200
-                                    : AppColors.textPrimary),
+                          fontSize: 13,
                           fontWeight: isSelected
                               ? FontWeight.w700
                               : FontWeight.w500,
-                          fontSize: 13,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark
+                                  ? Colors.white.withValues(alpha: 0.9)
+                                  : AppColors.textPrimary),
                         ),
                       ),
                     ],

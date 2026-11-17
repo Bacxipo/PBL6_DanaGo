@@ -26,23 +26,22 @@ class EventCard extends StatelessWidget {
             ? const EdgeInsets.only(right: 14)
             : const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(18),
+          color: AppColors.surfaceGrouped(context),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.grey.shade200,
+            color: AppColors.hairlineBorder(context),
+            width: 0.85,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.04),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,

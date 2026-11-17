@@ -20,19 +20,19 @@ class ItineraryCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        height: 220,
+        height: 236,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           child: Stack(
             fit: StackFit.expand,
             children: [

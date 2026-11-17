@@ -7,6 +7,7 @@ import 'package:smarttrip/models/search_filter_model.dart';
 import 'package:smarttrip/models/search_result_item.dart';
 import 'package:smarttrip/screens/detail_place_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
+import 'package:smarttrip/widgets/common/liquid_glass_surface.dart';
 import 'package:smarttrip/widgets/search/search_filter_bottom_sheet.dart';
 import 'package:smarttrip/widgets/explore_map/map_pin_marker.dart';
 import 'package:smarttrip/widgets/explore_map/map_search_header.dart';
@@ -478,35 +479,31 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
           Positioned(
             right: 16,
             bottom: 220, // Nằm ngay trên mép bảng danh sách kéo
-            child: GestureDetector(
-              onTap:
-                  _getCurrentLocation, // Bấm vào để dò lại vị trí và kéo camera về
-              child: Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: isDark ? 0.3 : 0.12,
-                      ),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+            child: Semantics(
+              button: true,
+              label: 'Định vị vị trí hiện tại của bạn',
+              child: GestureDetector(
+                onTap: _getCurrentLocation,
+                child: LiquidGlassSurface(
+                  borderRadius: BorderRadius.circular(24),
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: _isLoadingLocation
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2.2),
+                            )
+                          : Icon(
+                              Icons.my_location_rounded,
+                              color: AppColors.accentOf(context),
+                              size: 22,
+                            ),
                     ),
-                  ],
+                  ),
                 ),
-                child: _isLoadingLocation
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      )
-                    : const Icon(
-                        Icons.my_location_rounded,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
               ),
             ),
           ),
