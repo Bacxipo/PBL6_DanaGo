@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/notification_item.dart';
-import 'package:smarttrip/screens/event_detail_screen.dart';
-import 'package:smarttrip/screens/events_screen.dart';
-import 'package:smarttrip/screens/itinerary_detail_screen.dart';
-import 'package:smarttrip/screens/main_screen.dart';
-import 'package:smarttrip/screens/post_detail_screen.dart';
-import 'package:smarttrip/screens/user_profile_posts_screen.dart';
+import 'package:smarttrip/screens/HOME/event_detail_screen.dart';
+import 'package:smarttrip/screens/HOME/events_screen.dart';
+import 'package:smarttrip/screens/Itinerary/itinerary_detail_screen.dart';
+import 'package:smarttrip/screens/HOME/main_screen.dart';
+import 'package:smarttrip/screens/FEED/post_detail_screen.dart';
+import 'package:smarttrip/screens/PROFILE/user_profile_posts_screen.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/event_service.dart';
 import 'package:smarttrip/services/itinerary_service.dart';
@@ -47,7 +47,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (profile != null && profile['id'] != null) {
         _userId = (profile['id'] as num).toInt();
       }
-      final items = await NotificationService.instance.getNotifications(userId: _userId);
+      final items = await NotificationService.instance.getNotifications(
+        userId: _userId,
+      );
       if (mounted) {
         setState(() {
           _notifications = items;
@@ -120,7 +122,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         // Fallback cho thông báo sự kiện cũ chưa có referenceId: thử khớp theo tên sự kiện
         final prefix = 'Sự kiện mới:';
         if (item.title.startsWith(prefix)) {
-          final targetName = item.title.substring(prefix.length).trim().toLowerCase();
+          final targetName = item.title
+              .substring(prefix.length)
+              .trim()
+              .toLowerCase();
           final allEvents = await EventService.instance.getEvents();
           if (!mounted) return;
           for (final ev in allEvents) {
@@ -281,9 +286,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 fontFamily: 'Be Vietnam Pro',
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: _notifications.isEmpty
-                    ? Colors.grey
-                    : AppColors.primary,
+                color: _notifications.isEmpty ? Colors.grey : AppColors.primary,
               ),
             ),
           ),
@@ -329,8 +332,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         color: isSelected
                             ? Colors.white
                             : (isDark
-                                ? Colors.grey.shade300
-                                : AppColors.textSecondary),
+                                  ? Colors.grey.shade300
+                                  : AppColors.textSecondary),
                       ),
                       selectedColor: AppColors.primary,
                       backgroundColor: isDark
@@ -359,9 +362,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   )
                 : RefreshIndicator(
                     onRefresh: _loadNotifications,
@@ -373,7 +374,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                             children: [
                               SizedBox(
-                                height: MediaQuery.of(context).size.height * 0.25,
+                                height:
+                                    MediaQuery.of(context).size.height * 0.25,
                               ),
                               Center(
                                 child: Padding(
@@ -428,7 +430,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                             itemCount: groups.keys.length,
                             itemBuilder: (context, groupIndex) {
-                              final groupTitle = groups.keys.elementAt(groupIndex);
+                              final groupTitle = groups.keys.elementAt(
+                                groupIndex,
+                              );
                               final itemsInGroup = groups[groupTitle]!;
 
                               return Column(
@@ -438,7 +442,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     width: double.infinity,
                                     color: isDark
                                         ? const Color(0xFF0F172A)
-                                        : AppColors.bgSecondary.withValues(alpha: 0.5),
+                                        : AppColors.bgSecondary.withValues(
+                                            alpha: 0.5,
+                                          ),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 8,
@@ -466,9 +472,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         });
                                         NotificationService.instance
                                             .deleteNotification(
-                                          item.id,
-                                          wasUnread: wasUnread,
-                                        );
+                                              item.id,
+                                              wasUnread: wasUnread,
+                                            );
                                       },
                                     );
                                   }),

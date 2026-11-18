@@ -75,11 +75,18 @@ class FeedService {
     }
   }
 
-  Future<CommentItem?> addComment(String postId, String content) async {
+  Future<CommentItem?> addComment(
+    String postId,
+    String content, {
+    int? replyToUserId,
+  }) async {
     try {
       final res = await ApiClient.instance.post(
         '/feed/posts/$postId/comments',
-        body: {'content': content},
+        body: {
+          'content': content,
+          if (replyToUserId != null) 'replyToUserId': replyToUserId,
+        },
       );
       if (res is Map<String, dynamic>) return CommentItem.fromJson(res);
       return null;

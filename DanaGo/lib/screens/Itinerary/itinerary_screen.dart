@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:smarttrip/models/itinerary_model.dart';
-import 'package:smarttrip/screens/login_screen.dart';
+import 'package:smarttrip/screens/HOME/login_screen.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/itinerary_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
@@ -224,60 +224,57 @@ class _ItineraryScreenState extends State<ItineraryScreen>
                       ),
                     )
                   : !_isLoggedIn
-                      ? _buildLoginRequired(isDark)
-                      : RefreshIndicator(
-                          onRefresh: _loadItineraries,
-                          color: AppColors.primary,
-                          child: _filteredList.isEmpty
-                              ? ListView(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    SizedBox(
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.55,
-                                      child: _buildEmptyState(),
-                                    ),
-                                  ],
-                                )
-                              : ListView.builder(
-                                  physics: const AlwaysScrollableScrollPhysics(
-                                    parent: BouncingScrollPhysics(),
-                                  ),
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    8,
-                                    16,
-                                    150,
-                                  ),
-                                  itemCount: _filteredList.length,
-                                  itemBuilder: (context, index) {
-                                    final item = _filteredList[index];
-                                    return ItineraryCard(
-                                      itinerary: item,
-                                      onDelete: () => _confirmDelete(item),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                ItineraryDetailScreen(
-                                              itinerary: item,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                  ? _buildLoginRequired(isDark)
+                  : RefreshIndicator(
+                      onRefresh: _loadItineraries,
+                      color: AppColors.primary,
+                      child: _filteredList.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.55,
+                                  child: _buildEmptyState(),
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                8,
+                                16,
+                                150,
+                              ),
+                              itemCount: _filteredList.length,
+                              itemBuilder: (context, index) {
+                                final item = _filteredList[index];
+                                return ItineraryCard(
+                                  itinerary: item,
+                                  onDelete: () => _confirmDelete(item),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ItineraryDetailScreen(
+                                          itinerary: item,
+                                        ),
+                                      ),
                                     );
                                   },
-                                ),
-                        ),
+                                );
+                              },
+                            ),
+                    ),
             ),
           ],
         ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 78),
+        padding: const EdgeInsets.only(bottom: 92),
         child: ScaleTransition(
           scale: _fabAnimation,
           child: FloatingActionButton(

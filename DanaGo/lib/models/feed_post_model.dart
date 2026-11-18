@@ -15,6 +15,7 @@ class PostImageItem {
 
 class CommentItem {
   final String id;
+  final int? authorId;
   final String authorName;
   final String authorAvatar;
   final String content;
@@ -24,6 +25,7 @@ class CommentItem {
 
   CommentItem({
     required this.id,
+    this.authorId,
     required this.authorName,
     required this.authorAvatar,
     required this.content,
@@ -45,6 +47,8 @@ class CommentItem {
         : 'Vừa xong';
     return CommentItem(
       id: json['id'].toString(),
+      authorId:
+          (user?['id'] as num?)?.toInt() ?? (json['userId'] as num?)?.toInt(),
       authorName: user?['fullName'] as String? ?? 'Người dùng DanaGo',
       authorAvatar: rawAvatar.isNotEmpty
           ? rawAvatar

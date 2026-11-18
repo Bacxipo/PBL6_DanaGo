@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smarttrip/screens/interest_screen.dart';
+import 'package:smarttrip/screens/HOME/interest_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
 import 'package:smarttrip/utils/validators.dart';
@@ -118,10 +118,7 @@ class _SignupScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 12),
-              const DanaGoLogo.vertical(
-                markSize: 56,
-                fontSize: 22,
-              ),
+              const DanaGoLogo.vertical(markSize: 56, fontSize: 22),
               const SizedBox(height: 8),
               const Text(
                 'Đăng ký tài khoản',

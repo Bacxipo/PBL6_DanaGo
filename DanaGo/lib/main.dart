@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:smarttrip/config/auth_config.dart';
-import 'package:smarttrip/screens/splash_screen.dart';
+import 'package:smarttrip/screens/HOME/splash_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/app_styles.dart';
 import 'package:smarttrip/theme/theme_controller.dart';

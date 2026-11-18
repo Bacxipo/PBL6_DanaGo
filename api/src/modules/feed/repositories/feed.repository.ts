@@ -250,9 +250,36 @@ export class FeedRepository {
       where: { id: postId },
       select: { userId: true },
     });
-    if (post && post.userId !== userId) {
-      const commenterName = comment.user.fullName || comment.user.username || 'Một người dùng';
-      const truncated = dto.content.length > 50 ? `${dto.content.slice(0, 50)}...` : dto.content;
+
+    const commenterName = comment.user.fullName || comment.user.username || 'Một người dùng';
+    const truncated = dto.content.length > 50 ? `${dto.content.slice(0, 50)}...` : dto.content;
+    const notifiedUserIds = new Set<number>([userId]);
+
+    if (
+      typeof dto.replyToUserId === 'number' &&
+      Number.isInteger(dto.replyToUserId) &&
+      !notifiedUserIds.has(dto.replyToUserId)
+    ) {
+      const targetUser = await this.prisma.user.findUnique({
+        where: { id: dto.replyToUserId },
+        select: { id: true },
+      });
+      if (targetUser) {
+        await this.prisma.notification.create({
+          data: {
+            userId: targetUser.id,
+            type: NotificationType.COMMUNITY,
+            title: 'Phản hồi bình luận',
+            content: `${commenterName} đã trả lời bình luận của bạn: "${truncated}"`,
+            referenceType: 'POST',
+            referenceId: postId,
+          },
+        });
+        notifiedUserIds.add(targetUser.id);
+      }
+    }
+
+    if (post && !notifiedUserIds.has(post.userId)) {
       await this.prisma.notification.create({
         data: {
           userId: post.userId,

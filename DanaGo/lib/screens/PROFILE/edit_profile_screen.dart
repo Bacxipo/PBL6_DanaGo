@@ -19,8 +19,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _bioController;
-  String _selectedGender = 'Nam';
-  DateTime? _birthDate;
   bool _hasChanges = false;
   String? _avatarUrl;
   bool _isUploadingAvatar = false;
@@ -45,16 +43,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
     _bioController = TextEditingController(text: widget.userData['bio'] ?? '');
     _avatarUrl = widget.userData['avatar'];
-    if (widget.userData['gender'] is String &&
-        (widget.userData['gender'] as String).isNotEmpty) {
-      _selectedGender = widget.userData['gender'] as String;
-    }
-    if (widget.userData['birthDate'] is String) {
-      _birthDate = DateTime.tryParse(widget.userData['birthDate'] as String);
-    } else if (widget.userData['birthDate'] is DateTime) {
-      _birthDate = widget.userData['birthDate'] as DateTime;
-    }
-
     // Listen for changes
     for (var c in [
       _nameController,
@@ -109,15 +97,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-
-            // Gender selector
-            _buildGenderSelector(),
-            const SizedBox(height: 16),
-
-            // Birth date
-            _buildDatePicker(),
-            const SizedBox(height: 28),
-
             // ─── Contact Info ─────────────────────────────────────
             _buildSectionTitle('Thông tin liên hệ'),
             const SizedBox(height: 12),
@@ -364,203 +343,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildGenderSelector() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final genders = ['Nam', 'Nữ', 'Khác'];
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.wc_rounded,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Giới tính',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textTertiary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: genders.map((gender) {
-              final isSelected = _selectedGender == gender;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() {
-                    _selectedGender = gender;
-                    _hasChanges = true;
-                  }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: EdgeInsets.only(
-                      right: gender != genders.last ? 10 : 0,
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary
-                          : (isDark
-                                ? const Color(0xFF0F172A)
-                                : AppColors.bgPrimary),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : (isDark ? Colors.white12 : AppColors.border),
-                      ),
-                    ),
-                    child: Text(
-                      gender,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                        color: isSelected
-                            ? Colors.white
-                            : (isDark
-                                  ? Colors.grey.shade300
-                                  : AppColors.textSecondary),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDatePicker() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: _birthDate ?? DateTime(2000, 1, 1),
-          firstDate: DateTime(1950),
-          lastDate: DateTime.now(),
-          builder: (context, child) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                colorScheme: isDark
-                    ? const ColorScheme.dark(
-                        primary: AppColors.primary,
-                        onPrimary: Colors.white,
-                        surface: Color(0xFF1E293B),
-                        onSurface: Colors.white,
-                      )
-                    : const ColorScheme.light(
-                        primary: AppColors.primary,
-                        onPrimary: Colors.white,
-                        surface: Colors.white,
-                      ),
-              ),
-              child: child!,
-            );
-          },
-        );
-        if (picked != null) {
-          setState(() {
-            _birthDate = picked;
-            _hasChanges = true;
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.cake_outlined,
-                size: 18,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Ngày sinh',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textTertiary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _birthDate != null
-                        ? '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}'
-                        : 'Chọn ngày sinh',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: _birthDate != null
-                          ? (isDark ? Colors.white : AppColors.textPrimary)
-                          : AppColors.textHint,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _loadPreferences() async {
     try {
       final results = await Future.wait([
@@ -569,11 +351,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         AuthService.instance.getProfile(),
       ]);
       final profile = results[2] as Map<String, dynamic>?;
-      final userId = (profile?['id'] as num?)?.toInt();
-      Map<String, dynamic> extras = {};
-      if (userId != null) {
-        extras = await AuthService.instance.getLocalProfileExtras(userId);
-      }
       if (mounted) {
         final dbPhone = (profile?['phoneNumber'] as String?) ?? '';
         final hadChangesBefore = _hasChanges;
@@ -583,13 +360,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         setState(() {
           _categories = results[0] as List<Map<String, dynamic>>;
           _selectedCategoryIds.addAll(results[1] as List<int>);
-          if (extras['gender'] is String &&
-              (extras['gender'] as String).isNotEmpty) {
-            _selectedGender = extras['gender'] as String;
-          }
-          if (extras['birthDate'] is String && _birthDate == null) {
-            _birthDate = DateTime.tryParse(extras['birthDate'] as String);
-          }
           _hasChanges = hadChangesBefore;
           _isLoadingCategories = false;
         });
@@ -604,16 +374,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (lower.contains('biển') || lower.contains('bãi')) {
       return Icons.beach_access_rounded;
     }
-    if (lower.contains('ẩm thực') || lower.contains('ăn') || lower.contains('món')) {
+    if (lower.contains('ẩm thực') ||
+        lower.contains('ăn') ||
+        lower.contains('món')) {
       return Icons.restaurant_rounded;
     }
-    if (lower.contains('di tích') || lower.contains('lịch sử') || lower.contains('bảo tàng') || lower.contains('văn hóa')) {
+    if (lower.contains('di tích') ||
+        lower.contains('lịch sử') ||
+        lower.contains('bảo tàng') ||
+        lower.contains('văn hóa')) {
       return Icons.account_balance_rounded;
     }
-    if (lower.contains('giải trí') || lower.contains('đêm') || lower.contains('bar') || lower.contains('pub')) {
+    if (lower.contains('giải trí') ||
+        lower.contains('đêm') ||
+        lower.contains('bar') ||
+        lower.contains('pub')) {
       return Icons.nightlife_rounded;
     }
-    if (lower.contains('núi') || lower.contains('rừng') || lower.contains('leo núi') || lower.contains('trekking')) {
+    if (lower.contains('núi') ||
+        lower.contains('rừng') ||
+        lower.contains('leo núi') ||
+        lower.contains('trekking')) {
       return Icons.hiking_rounded;
     }
     if (lower.contains('cafe') || lower.contains('cà phê')) {
@@ -622,7 +403,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (lower.contains('mua sắm') || lower.contains('chợ')) {
       return Icons.shopping_bag_rounded;
     }
-    if (lower.contains('sinh thái') || lower.contains('thiên nhiên') || lower.contains('công viên')) {
+    if (lower.contains('sinh thái') ||
+        lower.contains('thiên nhiên') ||
+        lower.contains('công viên')) {
       return Icons.park_rounded;
     }
     return Icons.explore_rounded;
@@ -633,7 +416,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16),
-          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primary,
+          ),
         ),
       );
     }
@@ -711,7 +497,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 if (isSelected) ...[
                   const SizedBox(width: 6),
-                  const Icon(Icons.check_rounded, size: 16, color: AppColors.primary),
+                  const Icon(
+                    Icons.check_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
                 ],
               ],
             ),
@@ -786,7 +576,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
       return;
     }
-    final phone = _phoneController.text.replaceAll(RegExp(r'[\s().-]'), '').trim();
+    final phone = _phoneController.text
+        .replaceAll(RegExp(r'[\s().-]'), '')
+        .trim();
     if (phone.isNotEmpty && !RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -808,24 +600,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isSaving = false);
 
     if (updated != null) {
-      final userId = (updated['id'] as num?)?.toInt() ??
-          AuthService.instance.cachedUserId;
-      if (userId != null) {
-        await AuthService.instance.saveLocalProfileExtras(
-          userId,
-          gender: _selectedGender,
-          birthDate: _birthDate,
-        );
-      }
-      if (!mounted) return;
       final result = {
         'name': name,
         'email': _emailController.text,
         'phone': phone,
         'bio': _bioController.text.trim(),
         'avatar': _avatarUrl,
-        'gender': _selectedGender,
-        if (_birthDate != null) 'birthDate': _birthDate!.toIso8601String(),
       };
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

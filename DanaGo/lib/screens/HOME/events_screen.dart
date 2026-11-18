@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/event_item.dart';
-import 'package:smarttrip/screens/event_detail_screen.dart';
+import 'package:smarttrip/screens/HOME/event_detail_screen.dart';
 import 'package:smarttrip/services/event_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/home/event_card.dart';
@@ -195,7 +195,8 @@ class _EventsScreenState extends State<EventsScreen> {
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: [
                               SizedBox(
-                                height: MediaQuery.of(context).size.height * 0.45,
+                                height:
+                                    MediaQuery.of(context).size.height * 0.45,
                                 child: Center(
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
@@ -203,8 +204,9 @@ class _EventsScreenState extends State<EventsScreen> {
                                       Icon(
                                         Icons.event_busy_rounded,
                                         size: 56,
-                                        color: AppColors.primary
-                                            .withValues(alpha: 0.35),
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.35,
+                                        ),
                                       ),
                                       const SizedBox(height: 12),
                                       Text(

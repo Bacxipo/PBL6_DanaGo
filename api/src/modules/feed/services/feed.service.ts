@@ -178,7 +178,10 @@ export class FeedService {
         'Bình luận không được để trống.',
       );
     }
-    return this.feedRepository.addComment(postId, userId, { content });
+    return this.feedRepository.addComment(postId, userId, {
+      content,
+      replyToUserId: dto.replyToUserId,
+    });
   }
 
   async getComments(postId: number) {

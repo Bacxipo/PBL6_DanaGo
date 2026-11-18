@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/services/google_auth_service.dart';
-import 'package:smarttrip/screens/edit_profile_screen.dart';
-import 'package:smarttrip/screens/favorites_screen.dart';
-import 'package:smarttrip/screens/login_screen.dart';
-import 'package:smarttrip/screens/main_screen.dart';
-import 'package:smarttrip/screens/my_reviews_screen.dart';
-import 'package:smarttrip/screens/notifications_screen.dart';
-import 'package:smarttrip/screens/user_profile_posts_screen.dart';
+import 'package:smarttrip/screens/PROFILE/edit_profile_screen.dart';
+import 'package:smarttrip/screens/PROFILE/favorites_screen.dart';
+import 'package:smarttrip/screens/HOME/login_screen.dart';
+import 'package:smarttrip/screens/HOME/main_screen.dart';
+import 'package:smarttrip/screens/PROFILE/my_reviews_screen.dart';
+import 'package:smarttrip/screens/FEED/notifications_screen.dart';
+import 'package:smarttrip/screens/PROFILE/user_profile_posts_screen.dart';
 import 'package:smarttrip/services/review_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/profile/profile_header.dart';
@@ -72,14 +72,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ]);
     final profile = results[0] as Map<String, dynamic>?;
     final userId = (profile?['id'] as num?)?.toInt();
-    Map<String, dynamic> localExtras = {};
     if (userId != null) {
-      final extraResults = await Future.wait<dynamic>([
+      await Future.wait([
         ItineraryService.instance.getUserItineraries(userId),
         NotificationService.instance.refreshUnreadCount(userId: userId),
-        AuthService.instance.getLocalProfileExtras(userId),
       ]);
-      localExtras = extraResults[2] as Map<String, dynamic>;
     }
     if (mounted) {
       setState(() {
@@ -91,12 +88,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _user['email'] = profile['email'];
           }
           _user['phone'] = (profile['phoneNumber'] as String?) ?? '';
-          if (localExtras['gender'] != null) {
-            _user['gender'] = localExtras['gender'];
-          }
-          if (localExtras['birthDate'] != null) {
-            _user['birthDate'] = localExtras['birthDate'];
-          }
           if (profile['avatarUrl'] != null &&
               (profile['avatarUrl'] as String).isNotEmpty) {
             _user['avatar'] = profile['avatarUrl'];

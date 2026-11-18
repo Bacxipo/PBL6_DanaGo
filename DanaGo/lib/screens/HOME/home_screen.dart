@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:smarttrip/models/destination_item.dart';
 import 'package:smarttrip/models/event_item.dart';
 import 'package:smarttrip/screens/detail_place_screen.dart';
-import 'package:smarttrip/screens/event_detail_screen.dart';
-import 'package:smarttrip/screens/events_screen.dart';
+import 'package:smarttrip/screens/HOME/event_detail_screen.dart';
+import 'package:smarttrip/screens/HOME/events_screen.dart';
 import 'package:smarttrip/screens/lodging_screen.dart';
-import 'package:smarttrip/screens/user_profile_posts_screen.dart';
+import 'package:smarttrip/screens/PROFILE/user_profile_posts_screen.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/destination_service.dart';
 import 'package:smarttrip/services/event_service.dart';
@@ -98,10 +98,11 @@ class _HomeScreenState extends State<HomeScreen> {
       final pos = batch1[4] as Position?;
 
       final int? currentUserId = (profile?['id'] as num?)?.toInt();
-      final upcomingEvents = allEvents
-          .where((e) => e.timelineStatus != EventTimelineStatus.ended)
-          .toList()
-        ..sort((a, b) => a.startDate.compareTo(b.startDate));
+      final upcomingEvents =
+          allEvents
+              .where((e) => e.timelineStatus != EventTimelineStatus.ended)
+              .toList()
+            ..sort((a, b) => a.startDate.compareTo(b.startDate));
 
       // Đợt 2: Gọi song song Recommended & Nearby
       final batch2 = await Future.wait<List<DestinationItem>>([
@@ -548,10 +549,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const DanaGoLogo.horizontal(
-          markSize: 26,
-          fontSize: 20,
-        ),
+        title: const DanaGoLogo.horizontal(markSize: 26, fontSize: 20),
         centerTitle: false,
         actions: [
           Padding(
@@ -613,263 +611,261 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search bar with Avatar shortcut
-              HomeSearchBar(
-                onTap: () {
-                  if (widget.onSearchTap != null) {
-                    widget.onSearchTap!();
-                  }
-                },
-                onAvatarTap: _navigateToUserProfile,
-                avatarUrl: _avatarUrl,
-              ),
-              const SizedBox(height: 20),
-              CategorySelector(
-                categories: _categories
-                    .map((c) => c['name'] as String)
-                    .toList(),
-                selectedIndex: _selectCategoryIndex,
-                onSelect: _onCategorySelected,
-              ),
-              const SizedBox(height: 24),
-              if (isAll) ...[
-                // 1. Apple App Store "Today" Hero Spotlight Card (tự xoay theo ngày)
-                if (_featuredPlaces.isNotEmpty) ...[
-                  Builder(
-                    builder: (context) {
-                      final spotlightIdx = _todaySpotlightIndex(
-                        _featuredPlaces.length,
-                      );
-                      final spotlightItem = _featuredPlaces[spotlightIdx];
-                      final otherFeatured = <DestinationItem>[
-                        for (int i = 0; i < _featuredPlaces.length; i++)
-                          if (i != spotlightIdx) _featuredPlaces[i],
-                      ];
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeroSpotlightCard(spotlightItem),
-                          const SizedBox(height: 28),
-                          if (otherFeatured.isNotEmpty) ...[
-                            _buildSectionHeader(
-                              'Nổi bật tại Đà Nẵng',
-                              _showAllFeatured,
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              height: 262,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                physics: const BouncingScrollPhysics(),
-                                itemCount: otherFeatured.length,
-                                itemBuilder: (context, index) {
-                                  final item = otherFeatured[index];
-                                  return FeaturedCard(
-                                    item: item,
-                                    onTap: () => _navigateToDetail(item),
-                                  );
-                                },
-                              ),
-                            ),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Search bar with Avatar shortcut
+                HomeSearchBar(
+                  onTap: () {
+                    if (widget.onSearchTap != null) {
+                      widget.onSearchTap!();
+                    }
+                  },
+                  onAvatarTap: _navigateToUserProfile,
+                  avatarUrl: _avatarUrl,
+                ),
+                const SizedBox(height: 20),
+                CategorySelector(
+                  categories: _categories
+                      .map((c) => c['name'] as String)
+                      .toList(),
+                  selectedIndex: _selectCategoryIndex,
+                  onSelect: _onCategorySelected,
+                ),
+                const SizedBox(height: 24),
+                if (isAll) ...[
+                  // 1. Apple App Store "Today" Hero Spotlight Card (tự xoay theo ngày)
+                  if (_featuredPlaces.isNotEmpty) ...[
+                    Builder(
+                      builder: (context) {
+                        final spotlightIdx = _todaySpotlightIndex(
+                          _featuredPlaces.length,
+                        );
+                        final spotlightItem = _featuredPlaces[spotlightIdx];
+                        final otherFeatured = <DestinationItem>[
+                          for (int i = 0; i < _featuredPlaces.length; i++)
+                            if (i != spotlightIdx) _featuredPlaces[i],
+                        ];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildHeroSpotlightCard(spotlightItem),
                             const SizedBox(height: 28),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
-                ],
-
-                // 3. Upcoming Events (Đồng bộ với Web User)
-                if (_upcomingEvents.isNotEmpty) ...[
-                  _buildSectionHeader('Sự kiện sắp diễn ra', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const EventsScreen(),
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 268,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: _upcomingEvents.length,
-                      itemBuilder: (context, index) {
-                        final ev = _upcomingEvents[index];
-                        return EventCard(
-                          event: ev,
-                          width: 248,
-                          onTap: () async {
-                            final updated = await Navigator.push<EventItem>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EventDetailScreen(event: ev),
+                            if (otherFeatured.isNotEmpty) ...[
+                              _buildSectionHeader(
+                                'Nổi bật tại Đà Nẵng',
+                                _showAllFeatured,
                               ),
-                            );
-                            if (updated != null && mounted) {
-                              setState(() {
-                                final idx = _upcomingEvents.indexWhere(
-                                  (e) => e.id == updated.id,
-                                );
-                                if (idx != -1) _upcomingEvents[idx] = updated;
-                              });
-                            }
-                          },
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                height: 262,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  physics: const BouncingScrollPhysics(),
+                                  itemCount: otherFeatured.length,
+                                  itemBuilder: (context, index) {
+                                    final item = otherFeatured[index];
+                                    return FeaturedCard(
+                                      item: item,
+                                      onTap: () => _navigateToDetail(item),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 28),
+                            ],
+                          ],
                         );
                       },
                     ),
+                  ],
+
+                  // 3. Upcoming Events (Đồng bộ với Web User)
+                  if (_upcomingEvents.isNotEmpty) ...[
+                    _buildSectionHeader('Sự kiện sắp diễn ra', () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const EventsScreen()),
+                      );
+                    }),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 268,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _upcomingEvents.length,
+                        itemBuilder: (context, index) {
+                          final ev = _upcomingEvents[index];
+                          return EventCard(
+                            event: ev,
+                            width: 248,
+                            onTap: () async {
+                              final updated = await Navigator.push<EventItem>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EventDetailScreen(event: ev),
+                                ),
+                              );
+                              if (updated != null && mounted) {
+                                setState(() {
+                                  final idx = _upcomingEvents.indexWhere(
+                                    (e) => e.id == updated.id,
+                                  );
+                                  if (idx != -1) _upcomingEvents[idx] = updated;
+                                });
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                  ],
+
+                  // 4. Recommended — True Apple Inset-Grouped Table Container
+                  _buildSectionHeader('Gợi ý cho bạn', _showAllRecommended),
+                  const SizedBox(height: 12),
+                  _buildGroupedDestinationList(
+                    _recommendedPlaces.take(4).toList(),
                   ),
                   const SizedBox(height: 28),
-                ],
 
-                // 4. Recommended — True Apple Inset-Grouped Table Container
-                _buildSectionHeader('Gợi ý cho bạn', _showAllRecommended),
-                const SizedBox(height: 12),
-                _buildGroupedDestinationList(
-                  _recommendedPlaces.take(4).toList(),
-                ),
-                const SizedBox(height: 28),
-
-                // 5. Nearby — True Apple Inset-Grouped Table Container
-                _buildSectionHeader('Gần bạn', _showAllNearby),
-                const SizedBox(height: 12),
-                _buildGroupedDestinationList(_nearbyPlaces.take(4).toList()),
-              ] else ...[
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Bọc Expanded để chữ dài tự động co gọn, không đè nút bên phải
-                    Expanded(
+                  // 5. Nearby — True Apple Inset-Grouped Table Container
+                  _buildSectionHeader('Gần bạn', _showAllNearby),
+                  const SizedBox(height: 12),
+                  _buildGroupedDestinationList(_nearbyPlaces.take(4).toList()),
+                ] else ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Bọc Expanded để chữ dài tự động co gọn, không đè nút bên phải
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${headerLabel}',
+                              style: TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? Colors.white60
+                                    : AppColors.textTertiary,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              selectedCategoryName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontSize: 20, // Tên danh mục to và đậm rõ ràng
+                                fontWeight: FontWeight.bold,
+                                height: 1.25,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${filteredPlaces.length} địa điểm hấp dẫn tại Đà Nẵng',
+                              style: TextStyle(
+                                fontFamily: 'Be Vietnam Pro',
+                                fontSize: 13,
+                                color: isDark
+                                    ? Colors.white70
+                                    : AppColors.textTertiary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Nút "Tất cả"
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _selectCategoryIndex = 0;
+                            _customFilterTitle = null;
+                          });
+                        },
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: isDark ? Colors.white70 : AppColors.neutral,
+                        ),
+                        label: Text(
+                          'Tất cả',
+                          style: TextStyle(
+                            fontFamily: 'Be Vietnam Pro',
+                            fontSize: 12,
+                            color: isDark ? Colors.white70 : AppColors.neutral,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          backgroundColor: isDark
+                              ? const Color(0xFF1E293B)
+                              : AppColors.bgSecondary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // List of filtered places
+                  if (filteredPlaces.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      alignment: Alignment.center,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${headerLabel}',
-                            style: TextStyle(
-                              fontFamily: 'Be Vietnam Pro',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? Colors.white60
-                                  : AppColors.textTertiary,
-                              letterSpacing: 0.5,
-                            ),
+                          const Icon(
+                            Icons.explore_off_outlined,
+                            size: 48,
+                            color: AppColors.textHint,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 12),
                           Text(
-                            selectedCategoryName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            'Chưa có địa điểm nào trong mục $selectedCategoryName',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: 'Be Vietnam Pro',
-                              fontSize: 20, // Tên danh mục to và đậm rõ ràng
-                              fontWeight: FontWeight.bold,
-                              height: 1.25,
-                              color: isDark
-                                  ? Colors.white
-                                  : AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${filteredPlaces.length} địa điểm hấp dẫn tại Đà Nẵng',
-                            style: TextStyle(
-                              fontFamily: 'Be Vietnam Pro',
-                              fontSize: 13,
+                              fontSize: 14,
                               color: isDark
                                   ? Colors.white70
                                   : AppColors.textTertiary,
                             ),
                           ),
-                          const SizedBox(height: 4),
                         ],
                       ),
+                    )
+                  else
+                    Column(
+                      children: filteredPlaces.map((item) {
+                        return DestinationTile(
+                          item: item,
+                          onTap: () => _navigateToDetail(item),
+                        );
+                      }).toList(),
                     ),
-                    const SizedBox(width: 12),
-                    // Nút "Tất cả"
-                    TextButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _selectCategoryIndex = 0;
-                          _customFilterTitle = null;
-                        });
-                      },
-                      icon: Icon(
-                        Icons.close_rounded,
-                        size: 16,
-                        color: isDark ? Colors.white70 : AppColors.neutral,
-                      ),
-                      label: Text(
-                        'Tất cả',
-                        style: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 12,
-                          color: isDark ? Colors.white70 : AppColors.neutral,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        backgroundColor: isDark
-                            ? const Color(0xFF1E293B)
-                            : AppColors.bgSecondary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                // List of filtered places
-                if (filteredPlaces.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    alignment: Alignment.center,
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.explore_off_outlined,
-                          size: 48,
-                          color: AppColors.textHint,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Chưa có địa điểm nào trong mục $selectedCategoryName',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Be Vietnam Pro',
-                            fontSize: 14,
-                            color: isDark
-                                ? Colors.white70
-                                : AppColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Column(
-                    children: filteredPlaces.map((item) {
-                      return DestinationTile(
-                        item: item,
-                        onTap: () => _navigateToDetail(item),
-                      );
-                    }).toList(),
-                  ),
+                ],
+                const SizedBox(height: 110),
               ],
-              const SizedBox(height: 110),
-            ],
+            ),
           ),
-        ),
         ),
       ),
     );

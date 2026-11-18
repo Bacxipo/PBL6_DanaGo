@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
-import 'package:smarttrip/screens/user_profile_posts_screen.dart';
+import 'package:smarttrip/screens/PROFILE/user_profile_posts_screen.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -17,8 +17,8 @@ class FeedAuthorHeader extends StatelessWidget {
     final isMe = myId != null && post.authorId != null
         ? myId == post.authorId
         : (profile?['fullName'] != null &&
-            profile!['fullName'].toString().toLowerCase() ==
-                post.authorName.toLowerCase());
+              profile!['fullName'].toString().toLowerCase() ==
+                  post.authorName.toLowerCase());
     if (!context.mounted) return;
     Navigator.push(
       context,
