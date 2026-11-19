@@ -30,7 +30,11 @@ class FeedCommentSheet extends StatefulWidget {
 
 class _FeedCommentSheetState extends State<FeedCommentSheet> {
   final TextEditingController _commentController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   List<CommentItem> _comments = [];
+  int? _replyToUserId;
+  String? _replyToUserName;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -41,6 +45,7 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
   @override
   void dispose() {
     _commentController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -49,13 +54,51 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
     if (mounted) setState(() => _comments = data);
   }
 
+  void _startReply(CommentItem cmt) {
+    setState(() {
+      _replyToUserId = cmt.authorId;
+      _replyToUserName = cmt.authorName;
+    });
+    final prefix = '@${cmt.authorName} ';
+    final current = _commentController.text;
+    if (!current.startsWith(prefix)) {
+      _commentController.text = prefix;
+      _commentController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _commentController.text.length),
+      );
+    }
+    _focusNode.requestFocus();
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyToUserId = null;
+      _replyToUserName = null;
+    });
+  }
+
   void _submitComment() async {
+    if (_isSubmitting) return;
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
+
+    final replyTargetId = _replyToUserId;
+    setState(() {
+      _isSubmitting = true;
+      _replyToUserId = null;
+      _replyToUserName = null;
+    });
     _commentController.clear();
     FocusScope.of(context).unfocus();
-    final created = await FeedService.instance.addComment(widget.post.id, text);
-    if (created != null && mounted) {
+
+    final created = await FeedService.instance.addComment(
+      widget.post.id,
+      text,
+      replyToUserId: replyTargetId,
+    );
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    if (created != null) {
       setState(() {
         _comments.add(created);
         widget.post.commentsCount = _comments.length;
@@ -67,11 +110,12 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
+        maxHeight: MediaQuery.of(context).size.height * 0.82,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -153,13 +197,13 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                     },
                   ),
           ),
-          // Input field row at bottom with keyboard safe insets
+          // Input field area with reply indicator & keyboard/nav-bar safe insets
           Container(
             padding: EdgeInsets.only(
               left: 16,
               right: 16,
-              top: 10,
-              bottom: bottomInset + 12,
+              top: _replyToUserName != null ? 8 : 10,
+              bottom: (bottomInset > 0 ? bottomInset : safeBottom) + 12,
             ),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
@@ -171,56 +215,117 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                ClipOval(
-                  child: SvgPicture.asset(
-                    'assets/images/default-avatar.svg',
-                    width: 32,
-                    height: 32,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF0F172A)
-                          : const Color(0xFFEFF5F5),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: TextField(
-                      controller: _commentController,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : AppColors.textPrimary,
-                        fontSize: 13,
-                      ),
-                      decoration: const InputDecoration(
-                        hintText: 'Thêm bình luận...',
-                        hintStyle: TextStyle(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontSize: 13,
-                          color: AppColors.textHint,
+                if (_replyToUserName != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.reply_rounded,
+                          size: 15,
+                          color: AppColors.primary,
                         ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _submitComment(),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Đang trả lời $_replyToUserName',
+                            style: TextStyle(
+                              fontFamily: 'Be Vietnam Pro',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _cancelReply,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 16,
+                              color: isDark
+                                  ? Colors.white60
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _submitComment,
-                  icon: const Icon(
-                    Icons.send_rounded,
-                    color: AppColors.primary,
-                  ),
-                  visualDensity: VisualDensity.compact,
+                Row(
+                  children: [
+                    ClipOval(
+                      child: SvgPicture.asset(
+                        'assets/images/default-avatar.svg',
+                        width: 32,
+                        height: 32,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFEFF5F5),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: TextField(
+                          controller: _commentController,
+                          focusNode: _focusNode,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppColors.textPrimary,
+                            fontSize: 13,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: _replyToUserName != null
+                                ? 'Trả lời $_replyToUserName...'
+                                : 'Thêm bình luận...',
+                            hintStyle: const TextStyle(
+                              fontFamily: 'Be Vietnam Pro',
+                              fontSize: 13,
+                              color: AppColors.textHint,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _submitComment(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: _isSubmitting ? null : _submitComment,
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send_rounded,
+                              color: AppColors.primary,
+                            ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -246,7 +351,14 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                   cmt.authorAvatar,
                   width: 40,
                   height: 40,
+                  cacheWidth: 96,
                   fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => SvgPicture.asset(
+                    'assets/images/default-avatar.svg',
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                  ),
                 ),
         ),
         const SizedBox(width: 10),
@@ -304,52 +416,25 @@ class _FeedCommentSheetState extends State<FeedCommentSheet> {
                       color: AppColors.neutral,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   InkWell(
-                    onTap: () {
-                      setState(() {
-                        cmt.isLiked = !cmt.isLiked;
-                        cmt.likes += cmt.isLiked ? 1 : -1;
-                      });
-                    },
-                    child: Text(
-                      cmt.isLiked ? 'Đã thích' : 'Thích',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: cmt.isLiked
-                            ? const Color(0xFFEF4444)
-                            : AppColors.textSecondary,
+                    onTap: () => _startReply(cmt),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
                       ),
-                    ),
-                  ),
-                  if (cmt.likes > 0) ...[
-                    const SizedBox(width: 4),
-                    Text(
-                      '• ${cmt.likes}',
-                      style: const TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 11,
-                        color: AppColors.neutral,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(width: 12),
-                  InkWell(
-                    onTap: () {
-                      _commentController.text = '@${cmt.authorName} ';
-                      _commentController.selection = TextSelection.fromPosition(
-                        TextPosition(offset: _commentController.text.length),
-                      );
-                    },
-                    child: const Text(
-                      'Trả lời',
-                      style: TextStyle(
-                        fontFamily: 'Be Vietnam Pro',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                      child: Text(
+                        'Trả lời',
+                        style: TextStyle(
+                          fontFamily: 'Be Vietnam Pro',
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? Colors.white70
+                              : AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ),

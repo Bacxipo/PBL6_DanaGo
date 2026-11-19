@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/services/auth_service.dart';
-import 'package:smarttrip/screens/edit_profile_screen.dart';
+import 'package:smarttrip/screens/PROFILE/edit_profile_screen.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
-import 'package:smarttrip/screens/create_post_screen.dart';
+import 'package:smarttrip/screens/FEED/create_post_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/feed/feed_post_card.dart';
 import 'package:smarttrip/widgets/user_profile/user_profile_empty_posts.dart';
@@ -81,7 +81,9 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
       _authorName = widget.authorName;
       _authorAvatar = widget.authorAvatar;
       if (widget.authorId != null) {
-        final stats = await AuthService.instance.getFollowStats(widget.authorId!);
+        final stats = await AuthService.instance.getFollowStats(
+          widget.authorId!,
+        );
         if (stats != null && mounted) {
           setState(() {
             _followersCount = (stats['followersCount'] as num?)?.toInt() ?? 0;
@@ -110,7 +112,8 @@ class _UserProfilePostsScreenState extends State<UserProfilePostsScreen>
     if (res != null && mounted) {
       setState(() {
         _isFollowing = res['isFollowing'] as bool? ?? !_isFollowing;
-        _followersCount = (res['followersCount'] as num?)?.toInt() ?? _followersCount;
+        _followersCount =
+            (res['followersCount'] as num?)?.toInt() ?? _followersCount;
       });
     }
   }

@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:smarttrip/screens/home_screen.dart';
-import 'package:smarttrip/screens/explore_map_screen.dart';
-import 'package:smarttrip/screens/itinerary_screen.dart';
-import 'package:smarttrip/screens/feed_screen.dart';
-import 'package:smarttrip/screens/profile_screen.dart';
+import 'package:smarttrip/screens/HOME/home_screen.dart';
+import 'package:smarttrip/screens/Itinerary/explore_map_screen.dart';
+import 'package:smarttrip/screens/Itinerary/itinerary_screen.dart';
+import 'package:smarttrip/screens/FEED/feed_screen.dart';
+import 'package:smarttrip/screens/PROFILE/profile_screen.dart';
 import 'package:smarttrip/screens/suggest_itinerary_screen.dart';
 import 'package:smarttrip/services/notification_service.dart';
 import 'package:smarttrip/widgets/home/custom_bottom_nav_bar.dart';
@@ -31,9 +31,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Widget _buildPage(int index) {
     switch (index) {
       case 0:
-        return HomeScreen(
-          onSearchTap: () => _switchTab(1),
-        );
+        return HomeScreen(onSearchTap: () => _switchTab(1));
       case 1:
         return ExploreMapScreen(initialAiMode: widget.initialExploreAiMode);
       case 2:

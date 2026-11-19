@@ -11,7 +11,7 @@ import 'package:smarttrip/widgets/itinerary/checklist_bottom_sheet.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_bottom_bar.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_day_tab_bar.dart';
 import 'package:smarttrip/widgets/itinerary/itinerary_timeline_item.dart';
-import 'main_screen.dart';
+import '../HOME/main_screen.dart';
 
 class ItineraryDetailScreen extends StatefulWidget {
   final Itinerary itinerary;
@@ -258,10 +258,8 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen>
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (_) => const MainScreen(
-                initialIndex: 1,
-                initialExploreAiMode: true,
-              ),
+              builder: (_) =>
+                  const MainScreen(initialIndex: 1, initialExploreAiMode: true),
             ),
             (route) => false,
           );

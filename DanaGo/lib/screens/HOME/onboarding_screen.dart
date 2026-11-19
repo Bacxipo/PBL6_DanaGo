@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/onboarding_item.dart';
-import 'package:smarttrip/screens/login_screen.dart';
+import 'package:smarttrip/screens/HOME/login_screen.dart';
 import 'package:smarttrip/widgets/onboarding/onboarding_card.dart';
 import 'package:smarttrip/widgets/onboarding/onboarding_header.dart';
 

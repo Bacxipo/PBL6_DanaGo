@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:smarttrip/screens/interest_screen.dart';
+import 'package:smarttrip/screens/HOME/interest_screen.dart';
 import 'package:smarttrip/services/google_auth_service.dart';
-import 'package:smarttrip/screens/register_screen.dart';
-import 'package:smarttrip/screens/forgot_password_screen.dart';
-import 'package:smarttrip/screens/main_screen.dart';
+import 'package:smarttrip/screens/HOME/register_screen.dart';
+import 'package:smarttrip/screens/HOME/forgot_password_screen.dart';
+import 'package:smarttrip/screens/HOME/main_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/theme/app_styles.dart';
 import 'package:smarttrip/utils/ui_helpers.dart';
@@ -157,10 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 20),
               // 1. logo
-              const DanaGoLogo.vertical(
-                markSize: 68,
-                fontSize: 26,
-              ),
+              const DanaGoLogo.vertical(markSize: 68, fontSize: 26),
               const SizedBox(height: 24),
               const Text('Xin chào!', style: AppTextStyles.titleBold),
               const SizedBox(height: 8),

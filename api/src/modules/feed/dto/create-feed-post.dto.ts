@@ -36,4 +36,9 @@ export class CreateFeedCommentDto {
   @IsString({ message: 'Nội dung bình luận phải là chuỗi ký tự.' })
   @IsNotEmpty({ message: 'Nội dung bình luận không được để trống.' })
   content: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Mã người được trả lời (replyToUserId) phải là số.' })
+  replyToUserId?: number;
 }

@@ -2,11 +2,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:smarttrip/models/feed_post_model.dart';
-import 'package:smarttrip/screens/create_post_screen.dart';
-import 'package:smarttrip/screens/notifications_screen.dart';
-import 'package:smarttrip/screens/user_profile_posts_screen.dart';
+import 'package:smarttrip/screens/FEED/create_post_screen.dart';
+import 'package:smarttrip/screens/FEED/notifications_screen.dart';
+import 'package:smarttrip/screens/PROFILE/user_profile_posts_screen.dart';
 import 'package:smarttrip/theme/app_colors.dart';
 import 'package:smarttrip/widgets/feed/feed_post_card.dart';
+import 'package:smarttrip/services/favorite_service.dart';
 import 'package:smarttrip/services/feed_service.dart';
 import 'package:smarttrip/services/notification_service.dart';
 
@@ -51,8 +52,13 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _handleRefresh() async {
-    final data = await FeedService.instance.getPosts();
-    final profile = await AuthService.instance.getProfile();
+    final results = await Future.wait<dynamic>([
+      FeedService.instance.getPosts(),
+      AuthService.instance.getProfile(),
+      FavoriteService.instance.getFavorites(),
+    ]);
+    final data = results[0] as List<FeedPostModel>;
+    final profile = results[1] as Map<String, dynamic>?;
     final userId = (profile?['id'] as num?)?.toInt();
     if (userId != null) {
       NotificationService.instance.refreshUnreadCount(userId: userId);
@@ -324,7 +330,7 @@ class _FeedScreenState extends State<FeedScreen> {
       ),
       // Floating Action Button "Viết bài" lifted above floating Liquid Glass tab bar
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 78),
+        padding: const EdgeInsets.only(bottom: 92),
         child: FloatingActionButton.extended(
           heroTag: 'feed_fab',
           onPressed: _openCreatePost,

@@ -222,33 +222,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Lưu cục bộ các trường hồ sơ mở rộng (Giới tính, Ngày sinh) theo userId trên thiết bị
-  Future<void> saveLocalProfileExtras(
-    int userId, {
-    String? gender,
-    DateTime? birthDate,
-  }) async {
-    try {
-      final payload = jsonEncode({
-        if (gender != null && gender.isNotEmpty) 'gender': gender,
-        if (birthDate != null) 'birthDate': birthDate.toIso8601String(),
-      });
-      await _storage.write(key: 'profile_extras_$userId', value: payload);
-    } catch (_) {}
-  }
-
-  // Đọc cục bộ Giới tính & Ngày sinh đã lưu theo userId
-  Future<Map<String, dynamic>> getLocalProfileExtras(int userId) async {
-    try {
-      final raw = await _storage.read(key: 'profile_extras_$userId');
-      if (raw != null && raw.isNotEmpty) {
-        final decoded = jsonDecode(raw);
-        if (decoded is Map<String, dynamic>) return decoded;
-      }
-    } catch (_) {}
-    return {};
-  }
-
   // Lấy danh sách sở thích (categoryIds)
   Future<List<int>> getPreferences() async {
     try {

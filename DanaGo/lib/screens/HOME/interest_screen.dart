@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smarttrip/screens/main_screen.dart';
+import 'package:smarttrip/screens/HOME/main_screen.dart';
 import 'package:smarttrip/services/auth_service.dart';
 import 'package:smarttrip/services/destination_service.dart';
 import 'package:smarttrip/theme/app_colors.dart';
@@ -29,16 +29,27 @@ class _InterestScreenState extends State<InterestScreen> {
     if (lower.contains('biển') || lower.contains('bãi')) {
       return Icons.beach_access_rounded;
     }
-    if (lower.contains('ẩm thực') || lower.contains('ăn') || lower.contains('món')) {
+    if (lower.contains('ẩm thực') ||
+        lower.contains('ăn') ||
+        lower.contains('món')) {
       return Icons.restaurant_rounded;
     }
-    if (lower.contains('di tích') || lower.contains('lịch sử') || lower.contains('bảo tàng') || lower.contains('văn hóa')) {
+    if (lower.contains('di tích') ||
+        lower.contains('lịch sử') ||
+        lower.contains('bảo tàng') ||
+        lower.contains('văn hóa')) {
       return Icons.account_balance_rounded;
     }
-    if (lower.contains('giải trí') || lower.contains('đêm') || lower.contains('bar') || lower.contains('pub')) {
+    if (lower.contains('giải trí') ||
+        lower.contains('đêm') ||
+        lower.contains('bar') ||
+        lower.contains('pub')) {
       return Icons.nightlife_rounded;
     }
-    if (lower.contains('núi') || lower.contains('rừng') || lower.contains('leo núi') || lower.contains('trekking')) {
+    if (lower.contains('núi') ||
+        lower.contains('rừng') ||
+        lower.contains('leo núi') ||
+        lower.contains('trekking')) {
       return Icons.hiking_rounded;
     }
     if (lower.contains('cafe') || lower.contains('cà phê')) {
@@ -47,7 +58,9 @@ class _InterestScreenState extends State<InterestScreen> {
     if (lower.contains('mua sắm') || lower.contains('chợ')) {
       return Icons.shopping_bag_rounded;
     }
-    if (lower.contains('sinh thái') || lower.contains('thiên nhiên') || lower.contains('công viên')) {
+    if (lower.contains('sinh thái') ||
+        lower.contains('thiên nhiên') ||
+        lower.contains('công viên')) {
       return Icons.park_rounded;
     }
     return Icons.explore_rounded;
@@ -96,7 +109,9 @@ class _InterestScreenState extends State<InterestScreen> {
 
     setState(() => _isSaving = true);
 
-    final success = await AuthService.instance.savePreferences(_selectedCategoryIds.toList());
+    final success = await AuthService.instance.savePreferences(
+      _selectedCategoryIds.toList(),
+    );
 
     if (!mounted) return;
     setState(() => _isSaving = false);
@@ -123,7 +138,10 @@ class _InterestScreenState extends State<InterestScreen> {
                 child: CircularProgressIndicator(color: AppColors.primary),
               )
             : SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -156,7 +174,9 @@ class _InterestScreenState extends State<InterestScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? Colors.white70 : AppColors.textSecondary,
+                        color: isDark
+                            ? Colors.white70
+                            : AppColors.textSecondary,
                         height: 1.4,
                       ),
                     ),
