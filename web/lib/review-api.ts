@@ -16,7 +16,7 @@ export interface Review{
     status: 'PENDING' | 'APPROVE' | 'REJECTED';
     createdAt: string;
     user: ReviewUser;
-    images: ReviewImage;
+    images: ReviewImage[];
     destination?:  {
         id: number;
         name: string;

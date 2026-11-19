@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Calendar, Map, Settings, LogOut } from 'lucide-react';
+import { User, Calendar, Map, Settings, LogOut, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import SettingInfo from '../components/comon/account/SettingInfo';
 import FavoritePlace from '../components/comon/place/FavoritePlace';
 import PersonalPage from '../components/comon/account/PersonalPage';
 import ItineraryDetail from '../components/comon/itinerary/ItineraryDetail';
+import MyReviews from '../components/comon/review/MyReviews';
 
 export default function Personal() {
     const router = useRouter();
@@ -54,6 +55,14 @@ export default function Personal() {
                 </button>
 
                 <button
+                    className={getButtonClass('myReviews')}
+                    onClick={() => setActiveButton('myReviews')}
+                >
+                    <Star className='w-5 h-5' />
+                    <span>Đánh giá của tôi</span>
+                </button>
+
+                <button
                     className={getButtonClass('accountSettings')}
                     onClick={() => setActiveButton('accountSettings')}
                 >
@@ -75,6 +84,7 @@ export default function Personal() {
                 {activeButton === 'personalpage' && <PersonalPage />}
                 {activeButton === 'itinerary' && <ItineraryDetail />}
                 {activeButton === 'favoritePlaces' && <FavoritePlace />}
+                {activeButton === 'myReviews' && <MyReviews />}
                 {activeButton === 'accountSettings' && <SettingInfo />}
             </div>
         </section>

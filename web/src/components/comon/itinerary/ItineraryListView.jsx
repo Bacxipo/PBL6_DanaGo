@@ -12,7 +12,7 @@ export default function ItineraryListView({
     calculateDaysList
 }) {
     return (
-        <div className="w-full bg-slate-50/50 p-4 sm:p-6 rounded-2xl min-h-[500px]">
+        <div className="w-full bg-white p-0 sm:p-1 rounded-2xl min-h-[500px]">
             {/* Header list */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200/60">
                 <div>

@@ -233,7 +233,7 @@ export default function AiPlanPage() {
             {/* GIAO DIỆN CHÍNH: 2 CỘT FULL SCREEN VIEW NHƯ ẢNH MẪU */}
             <div className="flex-1 w-full max-w-[1700px] mx-auto p-3 sm:p-5 flex flex-col lg:flex-row gap-5 items-stretch">
                 {/* ================= CỘT TRÁI: PANEL ĐIỀU KHIỂN AI PLAN (SCROLLABLE) ================= */}
-                <aside className="w-full lg:w-[440px] xl:w-[470px] shrink-0 bg-white rounded-3xl shadow-sm border border-gray-200/80 p-5 sm:p-6 flex flex-col justify-between space-y-5 overflow-y-auto max-h-[calc(100vh-100px)] lg:sticky lg:top-20">
+                <aside className="w-full lg:w-[440px] xl:w-[470px] shrink-0 bg-white rounded-2xl shadow-sm border border-teal-100/70 p-6 flex flex-col justify-between space-y-6 overflow-y-auto max-h-[calc(100vh-100px)] lg:sticky lg:top-20">
                     <div className="space-y-5">
                         {/* 1. SLOGAN BANNER DU LỊCH ĐÀ NẴNG */}
                         <div className="px-4 py-3.5 rounded-2xl bg-gradient-to-br from-[#004e54] via-[#006971] to-[#00897b] text-white shadow-sm relative overflow-hidden flex items-center justify-center text-center">
@@ -245,7 +245,7 @@ export default function AiPlanPage() {
                         {/* 2. THỜI GIAN CHUYẾN ĐI */}
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
-                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                <label className="block text-sm font-semibold text-slate-700">
                                     Thời Gian Chuyến Đi
                                 </label>
                             </div>
@@ -257,7 +257,7 @@ export default function AiPlanPage() {
                                         value={startDate}
                                         min={todayStr}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="w-full px-3 py-2 bg-gray-50/60 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#006971]/30"
+                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/15"
                                     />
                                 </div>
                                 <span className="text-gray-400 font-bold text-xs">-</span>
@@ -267,7 +267,7 @@ export default function AiPlanPage() {
                                         value={endDate}
                                         min={startDate || todayStr}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="w-full px-3 py-2 bg-gray-50/60 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#006971]/30"
+                                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/15"
                                     />
                                 </div>
 
@@ -320,7 +320,7 @@ export default function AiPlanPage() {
                         {/* 3. NGÂN SÁCH (BUDGET) */}
                         <div>
                             <div className="flex items-center justify-between mb-2">
-                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                <label className="block text-sm font-semibold text-slate-700">
                                     Ngân Sách (Budget)
                                 </label>
                                 <span className="text-xs font-extrabold text-[#006971]">
@@ -380,7 +380,7 @@ export default function AiPlanPage() {
                         {/* 4. CẢM XÚC & PHONG CÁCH / SỞ THÍCH (DROPDOWN XỔ XUỐNG) */}
                         <div className="relative">
                             <div className="flex items-center justify-between mb-1.5">
-                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                <label className="block text-sm font-semibold text-slate-700">
                                     Cảm Xúc & Phong Cách
                                 </label>
                                 <span className="text-2xs font-bold text-[#006971]">
@@ -392,9 +392,9 @@ export default function AiPlanPage() {
                             <button
                                 type="button"
                                 onClick={() => setIsStyleDropdownOpen((prev) => !prev)}
-                                className={`w-full p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer bg-gray-50/60 ${isStyleDropdownOpen
+                                className={`w-full p-2.5 rounded-xl border text-sm font-semibold flex items-center justify-between transition-all cursor-pointer bg-white ${isStyleDropdownOpen
                                     ? 'border-[#006971] ring-2 ring-[#006971]/20 bg-white'
-                                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                    : 'border-slate-200 hover:border-[#006971]/50 text-slate-700'
                                     }`}
                             >
                                 <div className="flex items-center gap-1.5 overflow-hidden pr-2">
@@ -447,7 +447,7 @@ export default function AiPlanPage() {
                         {/* 5. KHU VỰC TRỌNG TÂM (DROPDOWN XỔ XUỐNG) */}
                         <div className="relative">
                             <div className="flex items-center justify-between mb-1.5">
-                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                <label className="block text-sm font-semibold text-slate-700">
                                     Khu Vực Trọng Tâm
                                 </label>
                                 {selectedRegions.length > 0 ? (
@@ -467,9 +467,9 @@ export default function AiPlanPage() {
                             <button
                                 type="button"
                                 onClick={() => setIsRegionDropdownOpen((prev) => !prev)}
-                                className={`w-full p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer bg-gray-50/60 ${isRegionDropdownOpen
+                                className={`w-full p-2.5 rounded-xl border text-sm font-semibold flex items-center justify-between transition-all cursor-pointer bg-white ${isRegionDropdownOpen
                                     ? 'border-[#006971] ring-2 ring-[#006971]/20 bg-white'
-                                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                    : 'border-slate-200 hover:border-[#006971]/50 text-slate-700'
                                     }`}
                             >
                                 <div className="flex items-center gap-1.5 overflow-hidden pr-2">
@@ -524,7 +524,7 @@ export default function AiPlanPage() {
                         {/* 6. ĐỊA ĐIỂM NGƯỜI DÙNG CHỌN THÊM */}
                         <div className="pt-2 border-t border-gray-100">
                             <div className="flex items-center justify-between mb-2">
-                                <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                <label className="text-sm font-semibold text-slate-700">
                                     Điểm Tham Quan Mong Muốn ({selectedPlaces.length})
                                 </label>
                                 <button
@@ -567,7 +567,7 @@ export default function AiPlanPage() {
                         {/* 7. NƠI Ở / KHÁCH SẠN */}
                         <div className="pt-2 border-t border-gray-100 space-y-2">
                             <div className="flex items-center justify-between">
-                                <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                <label className="text-sm font-semibold text-slate-700">
                                     Nơi Lưu Trú Mong Muốn
                                 </label>
                                 {includeLodging && (
@@ -692,7 +692,7 @@ export default function AiPlanPage() {
 
                         {/* 8. DỊCH VỤ ĂN UỐNG (BỮA SÁNG, TRƯA, TỐI) */}
                         <div className="pt-2 border-t border-gray-100 space-y-2">
-                            <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400 block">
+                            <label className="text-sm font-semibold text-slate-700 block">
                                 Dịch Vụ Ăn Uống (Sáng, Trưa, Tối)
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 select-none">
@@ -730,7 +730,7 @@ export default function AiPlanPage() {
                                 type="button"
                                 onClick={handleGeneratePlan}
                                 disabled={loadingPlan}
-                                className="w-full py-3.5 px-6 rounded-2xl bg-[#004e54] hover:bg-[#003c40] active:scale-[0.98] text-white font-extrabold text-sm tracking-wide shadow-md transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="w-full py-3 px-6 rounded-xl bg-[#006971] hover:bg-[#005259] active:scale-[0.98] text-white font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 {loadingPlan ? (
                                     <>
@@ -811,7 +811,7 @@ export default function AiPlanPage() {
                                 selectedLodgings={selectedLodgings}
                             />
                         ) : (
-                            <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-sm max-h-[calc(100vh-140px)] overflow-y-auto">
+                            <div className="bg-white rounded-2xl p-5 border border-teal-100/70 shadow-sm max-h-[calc(100vh-140px)] overflow-y-auto">
                                 <PlanResultView
                                     plan={plan}
                                     startDateStr={startDate}

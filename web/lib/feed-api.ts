@@ -173,7 +173,30 @@ export function getUserFeedPosts(userId: number, token?: string | null): Promise
 }
 
 export function getPublicProfile(userId: number) {
-    return apiRequest<{ id: number; username: string; fullName: string | null; avatarUrl?: string | null; authProvider: 'google' | 'password'; bio?: string | null }>(`/identity/users/${userId}/public`);
+    return apiRequest<{
+        id: number;
+        username: string;
+        fullName: string | null;
+        avatarUrl?: string | null;
+        authProvider: 'google' | 'password';
+        bio?: string | null;
+        followersCount?: number;
+        followingCount?: number;
+    }>(`/identity/users/${userId}/public`);
+}
+
+export function getFollowStats(userId: number, token: string) {
+    return apiRequest<{ followersCount: number; followingCount: number; isFollowing: boolean }>(
+        `/identity/users/${userId}/follow-stats`,
+        { token },
+    );
+}
+
+export function toggleFollow(userId: number, token: string) {
+    return apiRequest<{ isFollowing: boolean; followersCount: number }>(
+        `/identity/users/${userId}/follow`,
+        { method: 'POST', token },
+    );
 }
 
 export interface UserProfile {
@@ -185,6 +208,8 @@ export interface UserProfile {
     bio?: string | null;
     avatarUrl?: string | null;
     authProvider: 'google' | 'password';
+    followersCount?: number;
+    followingCount?: number;
 }
 
 export function updateMyAvatar(file: File, token: string) {

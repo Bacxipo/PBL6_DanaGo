@@ -1,7 +1,8 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Grid3X3, Plus } from 'lucide-react';
 import UserAvatar from '@/components/comon/ui/UserAvatar';
 import { getMyFeedPosts, getMyProfile } from '@/lib/feed-api';
@@ -15,6 +16,11 @@ export default function PersonalPage() {
     const [error, setError] = useState('');
     const [loggedIn, setLoggedIn] = useState(false);
     const [reloadKey, setReloadKey] = useState(0);
+    const [highlightedPostId, setHighlightedPostId] = useState(null);
+    const postRefs = useRef({});
+    const searchParams = useSearchParams();
+    const requestedPostId = searchParams.get('postId');
+    const totalLikes = posts.reduce((total, post) => total + Number(post.likes || 0), 0);
 
     useEffect(() => {
         let active = true;
@@ -52,6 +58,16 @@ export default function PersonalPage() {
         };
     }, [reloadKey]);
 
+    useEffect(() => {
+        if (!requestedPostId || loading || !posts.length) return;
+        const postId = Number(requestedPostId);
+        if (!posts.some((post) => Number(post.id) === postId)) return;
+        setHighlightedPostId(postId);
+        postRefs.current[postId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const timer = window.setTimeout(() => setHighlightedPostId(null), 3500);
+        return () => window.clearTimeout(timer);
+    }, [requestedPostId, loading, posts]);
+
     return (
         <div className="flex flex-col">
             <div className="flex items-center justify-between px-4 pb-4 border-b border-gray-100">
@@ -70,7 +86,12 @@ export default function PersonalPage() {
                         <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{profile.bio}</p>
                     )}
                     {!loading && !error && loggedIn && (
-                        <span className="text-sm text-gray-500">{posts.length} bài viết</span>
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                            <span>{posts.length} bài viết</span>
+                            <span>{profile?.followersCount ?? 0} người theo dõi</span>
+                            <span>{profile?.followingCount ?? 0} đang theo dõi</span>
+                            <span>{totalLikes} lượt thích</span>
+                        </div>
                     )}
                 </div>
             </div>
@@ -92,9 +113,13 @@ export default function PersonalPage() {
                     </div>
                 ) : (
                     posts.map((post) => (
-                        <StandardPostCard
+                        <div
                             key={post.id}
-                            post={post}
+                            ref={(element) => { postRefs.current[post.id] = element; }}
+                            className={`rounded-2xl transition-shadow duration-500 ${highlightedPostId === Number(post.id) ? 'ring-4 ring-teal-300 ring-offset-2' : ''}`}
+                        >
+                            <StandardPostCard
+                                post={post}
                             currentUserId={profile?.id}
                             onDeleted={(postId) => {
                                 setPosts((previous) =>
@@ -106,7 +131,8 @@ export default function PersonalPage() {
                                     updatePostInList(previous, updatedPost)
                                 );
                             }}
-                        />
+                            />
+                        </div>
                     ))
                 )}
             </div>

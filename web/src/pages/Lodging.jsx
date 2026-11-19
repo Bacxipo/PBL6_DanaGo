@@ -250,16 +250,16 @@ export default function LodgingPage() {
             {/* Nội dung chính: Cột trái Bộ lọc - Cột phải Danh sách nơi ở */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 flex flex-col lg:flex-row gap-6 items-start">
                 {/* ================= CỘT TRÁI: BỘ LỌC CHI TIẾT ================= */}
-                <aside className="w-full lg:w-[320px] shrink-0 bg-white rounded-3xl border border-gray-200/80 shadow-xs p-5 space-y-5 lg:sticky lg:top-24">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                        <h2 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+                <aside className="w-full lg:w-[320px] shrink-0 bg-white rounded-2xl border border-teal-100/70 shadow-sm p-6 space-y-6 lg:sticky lg:top-24">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                        <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
                             <SlidersHorizontal size={16} className="text-[#006971]" />
                             Bộ Lọc Tìm Kiếm
                         </h2>
                         <button
                             type="button"
                             onClick={handleResetFilters}
-                            className="text-xs font-bold text-[#006971] hover:underline flex items-center gap-1 cursor-pointer"
+                            className="text-xs font-semibold text-[#006971] hover:underline flex items-center gap-1 cursor-pointer"
                         >
                             <RotateCcw size={12} /> Đặt lại
                         </button>
@@ -267,7 +267,7 @@ export default function LodgingPage() {
 
                     {/* 1. Tìm kiếm theo tên */}
                     <div>
-                        <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
                             Tên nơi lưu trú / Мо tả
                         </label>
                         <div className="relative">
@@ -280,14 +280,14 @@ export default function LodgingPage() {
                                     setCurrentPage(1);
                                 }}
                                 placeholder="VD: Mỹ Khê, Boutique, Villa..."
-                                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#006971]/30"
+                                className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/15"
                             />
                         </div>
                     </div>
 
                     {/* 2. Loại nơi ở */}
                     <div>
-                        <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
                             Loại Nơi Ở
                         </label>
                         <div className="grid grid-cols-2 gap-1.5">
@@ -302,8 +302,8 @@ export default function LodgingPage() {
                                             setCurrentPage(1);
                                         }}
                                         className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${active
-                                                ? 'bg-[#006971] border-[#006971] text-white shadow-2xs'
-                                                : 'bg-white border-gray-200 text-gray-700 hover:border-[#006971]/50'
+                                                ? 'bg-[#006971] border-[#006971] text-white shadow-sm'
+                                                : 'bg-white border-slate-200 text-slate-700 hover:border-[#006971]/50 hover:bg-teal-50/50'
                                             }`}
                                     >
                                         {type === 'ALL' ? 'Tất cả loại' : type}
@@ -316,10 +316,10 @@ export default function LodgingPage() {
                     {/* 3. Số người (Sức chứa từ 1 đến 15 người - kéo hoặc chọn) */}
                     <div>
                             <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                <label className="text-sm font-semibold text-slate-700">
                                     Sức Chứa (1 - 15 Người)
                                 </label>
-                                <span className="text-xs font-extrabold text-[#006971] tabular-nums whitespace-nowrap">
+                                <span className="text-sm font-semibold text-[#006971] tabular-nums whitespace-nowrap">
                                     {draftMinGuests === 0 ? 'Tất cả sức chứa' : `Từ ${draftMinGuests} người`}
                                 </span>
                             </div>
@@ -341,7 +341,7 @@ export default function LodgingPage() {
                                         setMinGuests(val);
                                         setCurrentPage(1);
                                     }}
-                                    className="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#006971]/30 cursor-pointer shrink-0"
+                                    className="w-24 px-2 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/15 cursor-pointer shrink-0"
                                 >
                                     <option value={0}>Tất cả</option>
                                     {Array.from({ length: 15 }, (_, idx) => idx + 1).map((n) => (
@@ -362,7 +362,7 @@ export default function LodgingPage() {
                         {/* 4. Khu vực & Quận huyện */}
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">
                                     Khu Vực Trọng Tâm
                                 </label>
                                 <select
@@ -371,7 +371,7 @@ export default function LodgingPage() {
                                         setSelectedRegion(e.target.value);
                                         setCurrentPage(1);
                                     }}
-                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#006971]/30 cursor-pointer"
+                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#006971] focus:ring-2 focus:ring-[#006971]/15 cursor-pointer"
                                 >
                                     {REGIONS.map((r) => (
                                         <option key={r.value} value={r.value}>
@@ -382,7 +382,7 @@ export default function LodgingPage() {
                             </div>
 
                             <div>
-                                <label className="block text-2xs font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">
                                     Quận / Huyện Cụ Thể
                                 </label>
                                 <select
@@ -406,7 +406,7 @@ export default function LodgingPage() {
                         {/* 5. Giá phòng tối đa / đêm */}
                         <div>
                                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                                        <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400 shrink-0">
+                                        <label className="text-sm font-semibold text-slate-700 shrink-0">
                                             Giá Phòng Tối Đa / Đêm
                                         </label>
                                             <span className="text-xs font-extrabold text-[#006971] tabular-nums whitespace-nowrap text-right min-w-[115px]">
@@ -435,7 +435,7 @@ export default function LodgingPage() {
                             {/* 6. Tiện ích đi kèm (Xổ xuống để chọn) */}
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-2xs font-extrabold uppercase tracking-wider text-gray-400">
+                                    <label className="text-sm font-semibold text-slate-700">
                                         Tiện Ích Đi Kèm ({selectedAmenities.length})
                                     </label>
                                     {selectedAmenities.length > 0 && (
@@ -455,7 +455,7 @@ export default function LodgingPage() {
                         <button
                             type="button"
                             onClick={() => setShowAmenitiesDropdown((prev) => !prev)}
-                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 hover:border-[#006971] rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer"
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 hover:border-[#006971] rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer"
                         >
                             <span className="text-xs font-semibold text-gray-700 truncate pr-2">
                                 {selectedAmenities.length === 0

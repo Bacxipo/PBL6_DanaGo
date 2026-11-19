@@ -10,6 +10,7 @@ import PostTypeSelector from './PostTypeSelector';
 import PostImagePicker from './PostImagePicker';
 
 import { createFeedPost, getFeedCategories, getMyProfile } from '@/lib/feed-api';
+import { getDestinations } from '@/lib/destination-api';
 
 const INITIAL_PLACE_DATA = {
   placeName: '',
@@ -38,6 +39,8 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
   const [placeData, setPlaceData] = useState({
     ...INITIAL_PLACE_DATA,
   });
+  const [destinations, setDestinations] = useState([]);
+  const [selectedDestination, setSelectedDestination] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -62,6 +65,15 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
     }
 
     loadProfile();
+    return () => { active = false; };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    getDestinations({ status: 'APPROVED' })
+      .then((data) => { if (active) setDestinations(data); })
+      .catch(() => { if (active) setDestinations([]); });
     return () => { active = false; };
   }, [isOpen]);
 
@@ -175,7 +187,7 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
                   `${placeData.openTime} - ${placeData.closeTime}`,
               },
             }
-            : {}),
+            : postType === 'trai-nghiem' && selectedDestination ? { destinationId: selectedDestination.id } : {}),
         },
         files,
         token,
@@ -184,6 +196,7 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
       setContent('');
       setFiles([]);
       setPlaceData({ ...INITIAL_PLACE_DATA });
+      setSelectedDestination(null);
 
 
       onAddPost?.(post);
@@ -219,6 +232,9 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
             files={files}
             onRemoveImage={handleRemoveImage}
             isSubmitting={isSubmitting}
+            destinations={destinations}
+            selectedDestination={selectedDestination}
+            onSelectDestination={setSelectedDestination}
           />
         ) : (
           <ExperiencePostForm
@@ -228,6 +244,9 @@ export default function CreatePostModal({ isOpen, onClose, onAddPost }) {
             files={files}
             onRemoveImage={handleRemoveImage}
             isSubmitting={isSubmitting}
+            destinations={destinations}
+            selectedDestination={selectedDestination}
+            onSelectDestination={setSelectedDestination}
           />
         )}
         <PostImagePicker

@@ -59,20 +59,10 @@ const mapCategoryToType = (cat = '') => {
 
 export default function ItineraryDetail({ isStandalone = false }) {
     // 1. Dữ liệu lịch trình lưu trữ lâu dài
-    const [itineraries, setItineraries] = useState(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const saved = localStorage.getItem(getItinerariesStorageKey());
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed)) return parsed;
-                }
-            } catch (e) {
-                console.warn('Lỗi đọc lịch trình từ localStorage:', e);
-            }
-        }
-        return [];
-    });
+    // Luôn render lần đầu với cùng một dữ liệu ở server và client.
+    // localStorage chỉ được đọc sau khi component đã mount để tránh hydration mismatch.
+    const [itineraries, setItineraries] = useState([]);
+    const [isStorageHydrated, setIsStorageHydrated] = useState(false);
 
     const [selectedItineraryId, setSelectedItineraryId] = useState(null);
     const [workingItinerary, setWorkingItinerary] = useState(null);
@@ -90,6 +80,20 @@ export default function ItineraryDetail({ isStandalone = false }) {
 
     // Dữ liệu tìm kiếm nhanh từ backend
     const [searchPlaces, setSearchPlaces] = useState(quickSearchPlacesData);
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(getItinerariesStorageKey());
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) setItineraries(parsed);
+            }
+        } catch (e) {
+            console.warn('Lỗi đọc lịch trình từ localStorage:', e);
+        } finally {
+            setIsStorageHydrated(true);
+        }
+    }, []);
 
     // Tải lịch trình từ Backend PostgreSQL khi vào trang
     useEffect(() => {
@@ -175,14 +179,13 @@ export default function ItineraryDetail({ isStandalone = false }) {
 
     // Lưu vào localStorage khi itineraries thay đổi
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                localStorage.setItem(getItinerariesStorageKey(), JSON.stringify(itineraries));
-            } catch (e) {
-                console.error('Lỗi khi lưu lịch trình vào localStorage:', e);
-            }
+        if (!isStorageHydrated) return;
+        try {
+            localStorage.setItem(getItinerariesStorageKey(), JSON.stringify(itineraries));
+        } catch (e) {
+            console.error('Lỗi khi lưu lịch trình vào localStorage:', e);
         }
-    }, [itineraries]);
+    }, [itineraries, isStorageHydrated]);
 
     // Tự động tắt Toast sau 3 giây
     useEffect(() => {

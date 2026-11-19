@@ -6,12 +6,14 @@ import { Sparkles } from 'lucide-react';
 import UserAvatar from '@/components/comon/ui/UserAvatar';
 import { getMyProfile } from '@/lib/feed-api';
 import { useEffect, useState } from 'react';
-import { Compass, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Bell } from 'lucide-react';
+import { getMyNotifications } from '@/lib/notification-api';
 
 export default function Header() {
     const [profile, setProfile] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [authReady, setAuthReady] = useState(false);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
 
     const pathname = usePathname();
 
@@ -24,15 +26,24 @@ export default function Header() {
             setIsLoggedIn(Boolean(token));
             setAuthReady(true);
             setProfile(null);
-            if (!token) return;
+            if (!token) {
+                setUnreadNotifications(0);
+                return;
+            }
             try {
-                const user = await getMyProfile(token);
-                if (
+                const [userResult, notificationsResult] = await Promise.allSettled([
+                    getMyProfile(token),
+                    getMyNotifications(token),
+                ]);
+                if (userResult.status === 'fulfilled' &&
                     active &&
                     request === generation &&
                     token === sessionStorage.getItem('accessToken')
                 )
-                    setProfile(user);
+                    setProfile(userResult.value);
+                if (notificationsResult.status === 'fulfilled' && active && token === sessionStorage.getItem('accessToken')) {
+                    setUnreadNotifications(notificationsResult.value.filter((item) => !item.isRead).length);
+                }
             } catch {
                 if (active && request === generation) setProfile(null);
             }
@@ -61,12 +72,10 @@ export default function Header() {
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:px-6">
                 <Link
                     href="/"
-                    className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-[#006971]"
+                    className="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-[#006971]"
                 >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#006971] text-white">
-                        <Compass size={22} aria-hidden="true" />
-                    </span>
-                    DanaGo<span className="text-[#ed9b50]">.</span>
+                    <img src="/danago_logo_mark.svg" alt="DanaGo" className="h-9 w-9 object-contain" />
+                    <span><span className="text-[#006971]">Dana</span><span className="text-[#ed9b50]">Go</span></span>
                 </Link>
                 <nav
                     aria-label="Điều hướng chính"
@@ -107,9 +116,10 @@ export default function Header() {
                         <span>AI Plan</span>
                     </Link>
                 </nav>
-                <div className="flex min-w-24 items-center justify-end">
+                <div className="flex min-w-24 items-center justify-end gap-3">
                     {authReady &&
                         (isLoggedIn ? (
+                            <>
                             <Link
                                 href="/personal"
                                 aria-label="Trang cá nhân"
@@ -117,6 +127,11 @@ export default function Header() {
                             >
                                 <UserAvatar user={profile} size={32} />
                             </Link>
+                            <Link href="/notifications" aria-label="Thông báo" className="relative text-gray-600 transition-colors hover:text-[#006971]">
+                                <Bell size={21} />
+                                {unreadNotifications > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}
+                            </Link>
+                            </>
                         ) : (
                             <Link
                                 href="/login"

@@ -62,7 +62,7 @@ export default function CreateItineraryModal({ isOpen, onClose, onSave, initialD
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-white rounded-2xl border border-teal-100/70 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                     <h3 className="text-xl font-bold text-slate-800">
@@ -77,7 +77,7 @@ export default function CreateItineraryModal({ isOpen, onClose, onSave, initialD
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     {error && (
                         <div className="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100">
                             {error}
@@ -94,7 +94,7 @@ export default function CreateItineraryModal({ isOpen, onClose, onSave, initialD
                                 placeholder="Ví dụ: Đà Nẵng 3 Ngày 2 Đêm..."
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]/30 focus:border-[#006971]"
+                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]/15 focus:border-[#006971]"
                             />
                         </div>
                     </div>
@@ -109,7 +109,7 @@ export default function CreateItineraryModal({ isOpen, onClose, onSave, initialD
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]/30 focus:border-[#006971]"
+                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]/15 focus:border-[#006971]"
                                 />
                             </div>
                         </div>
@@ -123,7 +123,7 @@ export default function CreateItineraryModal({ isOpen, onClose, onSave, initialD
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]/30 focus:border-[#006971]"
+                                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]/15 focus:border-[#006971]"
                                 />
                             </div>
                         </div>
@@ -138,7 +138,7 @@ export default function CreateItineraryModal({ isOpen, onClose, onSave, initialD
                             placeholder="Ghi chú thêm về chuyến đi của bạn..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]/30 focus:border-[#006971]"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006971]/15 focus:border-[#006971]"
                         />
                     </div>
 
@@ -147,7 +147,7 @@ export default function CreateItineraryModal({ isOpen, onClose, onSave, initialD
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-2.5 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 text-sm font-semibold transition"
+                            className="px-5 py-2.5 rounded-xl text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-sm font-semibold transition"
                         >
                             Hủy
                         </button>
