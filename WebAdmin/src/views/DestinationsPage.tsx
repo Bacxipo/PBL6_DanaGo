@@ -3,11 +3,12 @@
 import React, { useMemo, useState, useRef } from 'react';
 import Header from '@/components/Header';
 import { Modal, Field, ModalActions, inputClass, PageHeading, searchInputClass, selectClass, StatusBadge, AsyncContent } from '@/components/ui';
-import { useApi, upsertById, removeById, orUndefined, getImageUrl, getImageId, normalizeSearch } from '@/lib/utils';
+import { useApi, upsertById, removeById, orUndefined, getImageUrl, getImageId, normalizeSearch, formatDate } from '@/lib/utils';
+import { ImageGallery, DetailGrid, DetailRow, DetailActions, detailButtonClass } from '@/components/DetailView';
 import Pagination from '@/components/Pagination';
 import { useAction, usePending } from '@/lib/context';
 import { CONTENT_STATUS_LABEL, CONTENT_STATUSES, DISTRICTS, type ContentStatus, type Destination, type DestinationInput, type DestinationImage } from '@/lib/types';
-import { Search, MapPin, Edit, Trash2, Star, Compass, CheckCircle2, ImageOff, Upload, X, ImageIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, MapPin, Edit, Trash2, Star, Compass, CheckCircle2, ImageOff, Upload, X, ImageIcon, Tag, ArrowUp, ArrowDown, ExternalLink } from 'lucide-react';
 import { destinationApi, categoryApi } from '@/lib/api';
 
 const emptyForm = {
@@ -73,6 +74,8 @@ export default function DestinationsPage() {
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Destination | null>(null);
+  // Popup xem chi tiết: lưu id để popup luôn lấy bản mới nhất trong data (sau khi duyệt / sửa / đặt nổi bật)
+  const [viewingId, setViewingId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
 
@@ -100,6 +103,8 @@ export default function DestinationsPage() {
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const paged = filtered.slice(pageStart, pageStart + PAGE_SIZE);
   const featuredCount = (data ?? []).filter((d) => d.isFeatured && d.status === 'APPROVED').length;
+  // Bị xóa thì không còn trong data -> popup tự đóng
+  const viewing = viewingId === null ? null : (data ?? []).find((d) => d.id === viewingId) ?? null;
 
   const upsert = (saved: Destination) => setData((xs) => upsertById(xs, saved));
 
@@ -300,14 +305,14 @@ export default function DestinationsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-[#e6f4f2] border-b border-[#e2e8f0] text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                       <th
                         onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-                        className="py-3.5 pl-4 w-16 cursor-pointer hover:bg-[#d0eae6] transition-colors select-none"
-                        title="Bấm để đổi chiều sắp xếp theo ID"
+                        className="py-3.5 pl-4 w-16 cursor-pointer hover:bg-[#e6f4f2] transition-colors select-none"
+                        title={sortOrder === 'asc' ? 'Đang xếp cũ → mới, bấm để đổi' : 'Đang xếp mới → cũ, bấm để đổi'}
                       >
                         <div className="flex items-center gap-1 text-gray-700">
-                          <span>ID</span>
+                          <span>STT</span>
                           {sortOrder === 'asc' ? (
                             <ArrowUp className="w-3.5 h-3.5 text-[#006971]" />
                           ) : (
@@ -333,15 +338,21 @@ export default function DestinationsPage() {
                         </td>
                       </tr>
                     ) : (
-                      paged.map((d) => {
+                      paged.map((d, i) => {
                         const firstImgUrl = getImageUrl(d.images?.[0]);
                         const catName = d.categoryName || categories.find((c) => c.id === d.categoryId)?.name;
                         const imageCount = d.images?.length ?? 0;
 
                         return (
-                          <tr key={d.id} className="hover:bg-[#e6f4f2]/70 transition-colors">
+                          <tr
+                            key={d.id}
+                            onClick={() => setViewingId(d.id)}
+                            title="Bấm để xem chi tiết"
+                            className="hover:bg-[#e6f4f2]/70 transition-colors cursor-pointer"
+                          >
+                            {/* STT theo danh sách đang hiển thị (không phải ID trong CSDL) nên luôn liền mạch sau khi xóa / lọc */}
                             <td className="py-3 pl-4 font-mono font-bold text-gray-600 whitespace-nowrap">
-                              #{d.id}
+                              {pageStart + i + 1}
                             </td>
                             <td className="py-3 px-3">
                               <div className="flex items-center gap-3">
@@ -377,6 +388,7 @@ export default function DestinationsPage() {
                                       href={d.addressUrl}
                                       target="_blank"
                                       rel="noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
                                       className="inline-flex items-center gap-0.5 text-[11px] text-[#006971] hover:underline"
                                     >
                                       <MapPin className="w-3 h-3" /> Xem bản đồ
@@ -406,7 +418,7 @@ export default function DestinationsPage() {
                             <td className="py-3 px-3">
                               <StatusBadge status={d.status} size="xs" />
                             </td>
-                            <td className="py-3 pr-4">
+                            <td className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-end gap-1.5">
                                 {d.status === 'PENDING' && (
                                   <button
@@ -463,7 +475,7 @@ export default function DestinationsPage() {
                     <>Không có điểm đến nào</>
                   ) : (
                     <>
-                      Hiển thị <b>{pageStart + 1}–{pageStart + paged.length}</b> trong <b>{filtered.length}</b> điểm đến phù hợp (tổng <b>{all.length}</b>, {PAGE_SIZE} điểm đến/trang)
+                      Hiển thị <b>{pageStart + 1}–{pageStart + paged.length}</b> trong <b>{filtered.length}</b> điểm đến
                     </>
                   )}
                 </p>
@@ -473,6 +485,70 @@ export default function DestinationsPage() {
           )}
         </AsyncContent>
       </div>
+
+      {viewing && !formOpen && (
+        <Modal title={viewing.name} icon={MapPin} maxWidth="max-w-3xl" onClose={() => setViewingId(null)}>
+          <div className="space-y-4">
+            <ImageGallery key={viewing.id} images={viewing.images} />
+
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge status={viewing.status} size="xs" />
+              {viewing.isFeatured && (
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#FFB347]/20 text-[#a43c12] text-[11px] font-bold">
+                  <Star className="w-3 h-3 fill-[#FFB347] text-[#FFB347]" /> Nổi bật
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-gray-900">
+                <Star className="w-3.5 h-3.5 fill-[#FFB347] text-[#FFB347]" /> {viewing.avgRating.toFixed(1)}
+              </span>
+            </div>
+
+            <DetailGrid>
+              <DetailRow label="Danh mục">
+                {viewing.categoryName || categories.find((c) => c.id === viewing.categoryId)?.name || '—'}
+              </DetailRow>
+              <DetailRow label="Quận / Huyện">{viewing.district}</DetailRow>
+              <DetailRow label="Giờ mở cửa">{viewing.openHours || '—'}</DetailRow>
+              <DetailRow label="Giá vé">{viewing.ticketPrice || '—'}</DetailRow>
+              <DetailRow label="Bản đồ">
+                {(() => {
+                  // Chưa có link bản đồ thì tạo link Google Maps từ tọa độ
+                  const mapUrl =
+                    viewing.addressUrl ||
+                    (viewing.latitude != null && viewing.longitude != null
+                      ? `https://www.google.com/maps?q=${viewing.latitude},${viewing.longitude}`
+                      : '');
+                  return mapUrl ? (
+                    <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#006971] hover:underline">
+                      Mở Google Maps <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  ) : (
+                    '—'
+                  );
+                })()}
+              </DetailRow>
+              <DetailRow label="Ngày tạo">{formatDate(viewing.createdAt)}</DetailRow>
+              <DetailRow label="Mô tả" full>
+                <p className="font-normal text-gray-700 whitespace-pre-line leading-relaxed">{viewing.description || '—'}</p>
+              </DetailRow>
+            </DetailGrid>
+          </div>
+
+          <DetailActions>
+            {viewing.status === 'PENDING' && (
+              <button onClick={() => approve(viewing)} disabled={busy} className={`${detailButtonClass} text-emerald-700 bg-emerald-50 hover:bg-emerald-100`}>
+                <CheckCircle2 className="w-4 h-4" /> Duyệt
+              </button>
+            )}
+            <button onClick={() => remove(viewing)} disabled={busy} className={`${detailButtonClass} text-red-600 bg-red-50 hover:bg-red-100`}>
+              <Trash2 className="w-4 h-4" /> Xóa
+            </button>
+            <button onClick={() => openForm(viewing)} className={`${detailButtonClass} text-white bg-[#006971] hover:bg-[#005258]`}>
+              <Edit className="w-4 h-4" /> Chỉnh sửa
+            </button>
+          </DetailActions>
+        </Modal>
+      )}
 
       {formOpen && (
         <Modal

@@ -9,6 +9,7 @@ import SearchSelect, { type SearchSelectOption } from '@/components/SearchSelect
 import { getTimeline, TIMELINE_LABEL, type ContentStatus, type EventItem, type EventTimeline, type DestinationImage } from '@/lib/types';
 import { Calendar, Search, MapPin, Edit, Trash2, ImageOff, Ticket, CheckCircle2, XCircle, Upload, X } from 'lucide-react';
 import { destinationApi, eventApi } from '@/lib/api';
+import { ImageGallery, DetailGrid, DetailRow, DetailActions, detailButtonClass } from '@/components/DetailView';
 
 interface PendingUploadFile {
   file: File;
@@ -22,6 +23,9 @@ const TIMELINE_STYLE: Record<EventTimeline, string> = {
 };
 const TIMELINE_ORDER: Record<EventTimeline, number> = { HAPPENING: 0, UPCOMING: 1, ENDED: 2 };
 
+const priceLabel = (price: EventItem['ticketPrice']) =>
+  Number(price) === 0 ? 'Miễn phí' : `${Number(price).toLocaleString('vi-VN')} đ`;
+
 const emptyForm = () => ({ name: '', description: '', destinationId: '', locationNote: '', startDate: todayIso(), endDate: todayIso(), ticketPrice: '0' });
 type FormState = ReturnType<typeof emptyForm>;
 
@@ -34,6 +38,8 @@ export default function EventsPage() {
   const [search, setSearch] = useState('');
   const [timelineFilter, setTimelineFilter] = useState<EventTimeline | 'ALL'>('ALL');
   const [editing, setEditing] = useState<EventItem | null>(null);
+  // Popup xem chi tiết: lưu id để popup luôn lấy bản mới nhất (sau khi duyệt / sửa)
+  const [viewingId, setViewingId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
 
@@ -55,6 +61,9 @@ export default function EventsPage() {
       .filter(({ timeline }) => timelineFilter === 'ALL' || timeline === timelineFilter)
       .sort((a, b) => TIMELINE_ORDER[a.timeline] - TIMELINE_ORDER[b.timeline] || a.ev.startDate.localeCompare(b.ev.startDate));
   }, [data, search, timelineFilter]);
+
+  // Bị xóa thì không còn trong data -> popup tự đóng
+  const viewing = viewingId === null ? null : (data ?? []).find((ev) => ev.id === viewingId) ?? null;
 
   const upsert = (saved: EventItem) => setData((xs) => upsertById(xs, saved));
 
@@ -189,7 +198,7 @@ export default function EventsPage() {
             <input type="search" placeholder="Tìm sự kiện, địa điểm..." value={search} onChange={(e) => setSearch(e.target.value)} className={searchInputClass} />
           </div>
           <select value={timelineFilter} onChange={(e) => setTimelineFilter(e.target.value as EventTimeline | 'ALL')} className={selectClass} aria-label="Lọc theo thời gian diễn ra">
-            <option value="ALL">Mọi thời gian</option>
+            <option value="ALL">Tất cả</option>
             {(['HAPPENING', 'UPCOMING', 'ENDED'] as EventTimeline[]).map((t) => <option key={t} value={t}>{TIMELINE_LABEL[t]}</option>)}
           </select>
         </div>
@@ -201,7 +210,11 @@ export default function EventsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {rows.map(({ ev, timeline }) => (
-                  <div key={ev.id} className={`bg-white rounded-2xl border overflow-hidden shadow-xs hover:border-[#006971]/40 transition-all flex flex-col ${ev.status === 'PENDING' ? 'border-amber-300' : 'border-[#e2e8f0]'} ${timeline === 'ENDED' || ev.status === 'REJECTED' ? 'opacity-75' : ''}`}>
+                  <div
+                    key={ev.id}
+                    onClick={() => setViewingId(ev.id)}
+                    title="Bấm để xem chi tiết"
+                    className={`bg-white rounded-2xl border overflow-hidden shadow-xs hover:border-[#006971]/40 transition-all flex flex-col cursor-pointer ${ev.status === 'PENDING' ? 'border-amber-300' : 'border-[#e2e8f0]'} ${timeline === 'ENDED' || ev.status === 'REJECTED' ? 'opacity-75' : ''}`}>
                     <div className="relative h-44 bg-gray-100">
                       {ev.images[0] ? <img src={ev.images[0].imageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><ImageOff className="w-8 h-8 text-gray-300" /></div>}
                       <span className={`absolute top-3 right-3 px-2.5 py-1 text-[11px] font-bold rounded-lg shadow-xs ${TIMELINE_STYLE[timeline]}`}>{TIMELINE_LABEL[timeline]}</span>
@@ -220,11 +233,11 @@ export default function EventsPage() {
                             <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
                             <span>{ev.destination && <b className="text-[#006971]">{ev.destination.name}</b>}{ev.destination && ev.locationNote && ' · '}{ev.locationNote}</span>
                           </p>
-                          <p className="flex items-center gap-2"><Ticket className="w-3.5 h-3.5 text-gray-400" /><b className="text-gray-800">{Number(ev.ticketPrice) === 0 ? 'Miễn phí' : `${Number(ev.ticketPrice).toLocaleString('vi-VN')} đ`}</b></p>
+                          <p className="flex items-center gap-2"><Ticket className="w-3.5 h-3.5 text-gray-400" /><b className="text-gray-800">{priceLabel(ev.ticketPrice)}</b></p>
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t border-[#e2e8f0] flex items-center justify-between gap-2">
+                      <div className="pt-3 border-t border-[#e2e8f0] flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
                         {ev.status === 'PENDING' ? (
                           <div className="flex gap-1.5">
                             <button disabled={busy} onClick={() => setEventStatus(ev, 'APPROVED')} className="px-2.5 py-1.5 bg-[#006971] hover:bg-[#005258] text-white rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer disabled:opacity-60"><CheckCircle2 className="w-3.5 h-3.5" /> Duyệt</button>
@@ -244,6 +257,67 @@ export default function EventsPage() {
           }
         </AsyncContent>
       </div>
+
+      {viewing && !formOpen && (() => {
+        const timeline = getTimeline(viewing);
+        return (
+          <Modal title={viewing.name} icon={Calendar} maxWidth="max-w-3xl" onClose={() => setViewingId(null)}>
+            <div className="space-y-4">
+              <ImageGallery key={viewing.id} images={viewing.images} />
+
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={viewing.status} size="xs" />
+                <span className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full ${TIMELINE_STYLE[timeline]}`}>{TIMELINE_LABEL[timeline]}</span>
+              </div>
+
+              <DetailGrid>
+                <DetailRow label="Thời gian">
+                  {formatDate(viewing.startDate)} — {formatDate(viewing.endDate)}
+                </DetailRow>
+                <DetailRow label="Giá vé">{priceLabel(viewing.ticketPrice)}</DetailRow>
+                <DetailRow label="Điểm đến liên kết">
+                  {viewing.destination ? (
+                    <>
+                      <span className="text-[#006971]">{viewing.destination.name}</span>
+                      <span className="text-gray-500 font-normal"> · {viewing.destination.district}</span>
+                    </>
+                  ) : (
+                    <span className="text-gray-500 font-normal">Không gắn điểm đến</span>
+                  )}
+                </DetailRow>
+                <DetailRow label="Ngày tạo">{formatDate(viewing.createdAt)}</DetailRow>
+                {viewing.locationNote && (
+                  <DetailRow label="Địa điểm tổ chức" full>
+                    {viewing.locationNote}
+                  </DetailRow>
+                )}
+                <DetailRow label="Mô tả" full>
+                  <p className="font-normal text-gray-700 whitespace-pre-line leading-relaxed">{viewing.description || '—'}</p>
+                </DetailRow>
+              </DetailGrid>
+            </div>
+
+            <DetailActions>
+              {viewing.status === 'PENDING' && (
+                <>
+                  <button onClick={() => setEventStatus(viewing, 'APPROVED')} disabled={busy} className={`${detailButtonClass} text-emerald-700 bg-emerald-50 hover:bg-emerald-100`}>
+                    <CheckCircle2 className="w-4 h-4" /> Duyệt
+                  </button>
+                  <button onClick={() => setEventStatus(viewing, 'REJECTED')} disabled={busy} className={`${detailButtonClass} text-rose-600 bg-white border border-rose-200 hover:bg-rose-50`}>
+                    <XCircle className="w-4 h-4" /> Từ chối
+                  </button>
+                </>
+              )}
+              <button onClick={() => remove(viewing)} disabled={busy} className={`${detailButtonClass} text-red-600 bg-red-50 hover:bg-red-100`}>
+                <Trash2 className="w-4 h-4" /> Xóa
+              </button>
+              <button onClick={() => openForm(viewing)} className={`${detailButtonClass} text-white bg-[#006971] hover:bg-[#005258]`}>
+                <Edit className="w-4 h-4" /> Chỉnh sửa
+              </button>
+            </DetailActions>
+          </Modal>
+        );
+      })()}
 
       {formOpen && (
         <Modal title={editing ? 'Chỉnh Sửa Sự Kiện' : 'Thêm Sự Kiện Mới'} icon={Calendar} maxWidth="max-w-xl" onClose={closeForm}>

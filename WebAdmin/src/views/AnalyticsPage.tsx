@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-[#e6f4f2] border-y border-[#e2e8f0] text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <tr className="bg-[#f8fafc] border-y border-[#e2e8f0] text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                       <th className="py-3 pl-6">#</th>
                       <th className="py-3 px-3">Điểm đến</th>
                       <th className="py-3 px-3">Danh mục</th>
