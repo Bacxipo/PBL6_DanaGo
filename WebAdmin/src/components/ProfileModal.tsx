@@ -67,7 +67,6 @@ export default function ProfileModal({ onClose }: { onClose: () => void }) {
             <p className="text-xs text-gray-500">{user.email}</p>
             <p className="text-[11px] font-semibold text-[#006971] mt-0.5">{ROLE_LABEL[user.role]}</p>
           </div>
-          <p className="text-[11px] text-gray-400">JPG, PNG hoặc WebP, tối đa 5MB. Chưa chọn ảnh thì hiển thị ảnh mặc định.</p>
           {error && <p role="alert" className="text-xs text-rose-600">{error}</p>}
         </div>
 
